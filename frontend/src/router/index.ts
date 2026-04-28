@@ -13,6 +13,7 @@ const TendersView = () => import('@/views/tenders/TendersView.vue')
 const ContractsView = () => import('@/views/contracts/ContractsView.vue')
 const ContractDetailView = () => import('@/views/contracts/ContractDetailView.vue')
 const ApplicationsView = () => import('@/views/applications/ApplicationsView.vue')
+const WipJournalView = () => import('@/views/wip/WipJournalView.vue')
 const SubcontractorsView = () => import('@/views/subcontractors/SubcontractorsView.vue')
 const OperativesView = () => import('@/views/operatives/OperativesView.vue')
 const PlantView = () => import('@/views/plant/PlantView.vue')
@@ -95,6 +96,12 @@ const routes: RouteRecordRaw[] = [
     name: 'ApplicationsForPayment',
     component: ApplicationsView,
     meta: { requiresAuth: true, title: 'Applications for Payment' }
+  },
+  {
+    path: '/wip-journal',
+    name: 'WipJournal',
+    component: WipJournalView,
+    meta: { requiresAuth: true, title: 'WIP Journal' }
   },
   {
     path: '/subcontractors',

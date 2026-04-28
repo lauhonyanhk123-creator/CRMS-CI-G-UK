@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import api, { apiClient, type Contract, type Variation, type Application } from '@/services/api'
+import api, { apiClient, type Contract, type Variation, type Application, type RetentionLedgerEntry } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 
@@ -14,10 +14,18 @@ const contract = ref<Contract | null>(null)
 const applications = ref<Application[]>([])
 const variations = ref<Variation[]>([])
 
-const drawerVisible = ref(false)
-const drawerLoading = ref(false)
-const editingId = ref('')
-const form = ref({ description: '', value: 0, status: 'pending' as Variation['status'] })
+// Variations
+const varDrawerVisible = ref(false)
+const varDrawerLoading = ref(false)
+const editingVarId = ref('')
+const varForm = ref({ description: '', contractVariationOrder: '', value: 0, status: 'pending' as Variation['status'] })
+
+// Retention Ledger
+const retentionLedger = ref<RetentionLedgerEntry[]>([])
+const retentionDialogVisible = ref(false)
+const retentionDialogLoading = ref(false)
+const editingRetentionId = ref('')
+const retentionForm = ref({ applicationId: '', amount: 0, percentage: 0, releaseDate: '', status: 'held' as RetentionLedgerEntry['status'] })
 
 onMounted(() => loadData())
 
@@ -33,6 +41,7 @@ const loadData = async () => {
     applications.value = appsRes.data
     variations.value = contractRes.data.variations || []
     await loadPayLessNotices()
+    await loadRetentionLedger()
   } catch { ElMessage.error('Failed to load contract') } finally { loading.value = false }
 }
 
@@ -52,24 +61,61 @@ const getApplicationStatusType = (status: string) => {
   return map[status] || 'info'
 }
 
-const addVariation = () => { editingId.value = ''; form.value = { description: '', value: 0, status: 'pending' }; drawerVisible.value = true }
-const editVariation = (v: Variation) => { editingId.value = v.id; form.value = { description: v.description, value: v.value, status: v.status }; drawerVisible.value = true }
-
-const saveVariation = async () => {
-  drawerLoading.value = true
+// Variations handlers
+const handleAddVar = () => { editingVarId.value = ''; varForm.value = { description: '', contractVariationOrder: '', value: 0, status: 'pending' }; varDrawerVisible.value = true }
+const handleEditVar = (v: Variation) => { editingVarId.value = v.id; varForm.value = { description: v.description, contractVariationOrder: (v as any).contractVariationOrder || '', value: v.value, status: v.status }; varDrawerVisible.value = true }
+const handleSaveVar = async () => {
+  varDrawerLoading.value = true
   try {
-    if (editingId.value) {
-      await api.contracts.update(contractId.value, { variations: [...variations.value.map(v => v.id === editingId.value ? { ...v, ...form.value } : v)] } as any)
+    if (editingVarId.value) {
+      await api.contracts.update(contractId.value, { variations: [...variations.value.map(v => v.id === editingVarId.value ? { ...v, ...varForm.value } : v)] } as any)
+    } else {
+      const newVariation = { id: crypto.randomUUID(), contractId: contractId.value, reference: `VAR-${variations.value.length + 1}`, ...varForm.value }
+      await api.contracts.update(contractId.value, { variations: [...variations.value, newVariation] } as any)
     }
     ElMessage.success('Variation saved')
-    drawerVisible.value = false
+    varDrawerVisible.value = false
     loadData()
-  } catch { ElMessage.error('Failed to save variation') } finally { drawerLoading.value = false }
+  } catch { ElMessage.error('Failed to save variation') } finally { varDrawerLoading.value = false }
+}
+
+// Retention Ledger
+const loadRetentionLedger = async () => {
+  try {
+    const response = await api.retentionLedger.getByContract(contractId.value)
+    retentionLedger.value = response.data
+  } catch {
+    retentionLedger.value = applications.value.map(app => ({
+      id: app.id,
+      contractId: contractId.value,
+      applicationId: app.id,
+      amount: app.retentionAmount,
+      percentage: contract.value?.retentionPercentage || 0,
+      status: 'held' as const,
+      createdAt: app.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }))
+  }
+}
+
+const handleAddRetention = () => { editingRetentionId.value = ''; retentionForm.value = { applicationId: '', amount: 0, percentage: contract.value?.retentionPercentage || 0, releaseDate: '', status: 'held' }; retentionDialogVisible.value = true }
+const handleSaveRetention = async () => {
+  retentionDialogLoading.value = true
+  try {
+    if (editingRetentionId.value) {
+      await api.retentionLedger.update(contractId.value, editingRetentionId.value, retentionForm.value)
+    } else {
+      await api.retentionLedger.create(contractId.value, { ...retentionForm.value, contractId: contractId.value })
+    }
+    ElMessage.success('Retention entry saved')
+    retentionDialogVisible.value = false
+    loadRetentionLedger()
+  } catch { ElMessage.error('Failed to save retention entry') } finally { retentionDialogLoading.value = false }
 }
 
 const retentionBalance = computed(() => {
-  const held = applications.value.reduce((sum, a) => sum + a.retentionAmount, 0)
-  const released = 0 // Would come from retention ledger
+  const held = retentionLedger.value.filter(r => r.status === 'held').reduce((sum, a) => sum + a.amount, 0)
+  const released = retentionLedger.value.filter(r => r.status === 'released').reduce((sum, a) => sum + a.amount, 0)
   return { held, released, balance: held - released }
 })
 
@@ -109,13 +155,14 @@ const loadPayLessNotices = async () => {
 
       <el-tab-pane label="Variations">
         <el-card shadow="never">
-          <template #header><div class="card-header"><span>Variations ({{ variations.length }})</span><el-button type="primary" size="small" @click="addVariation">Add Variation</el-button></div></template>
+          <template #header><div class="card-header"><span>Variations ({{ variations.length }})</span><el-button type="primary" size="small" @click="handleAddVar">Add Variation</el-button></div></template>
           <el-table :data="variations" stripe>
             <el-table-column prop="reference" label="Ref" width="100" />
             <el-table-column prop="description" label="Description" min-width="200" />
+            <el-table-column prop="contractVariationOrder" label="CVO Reference" width="140" />
             <el-table-column label="Value" width="140"><template #default="{ row }">{{ formatCurrency(row.value) }}</template></el-table-column>
             <el-table-column label="Status" width="120"><template #default="{ row }"><el-tag :type="row.status === 'approved' ? 'success' : row.status === 'rejected' ? 'danger' : 'warning'" size="small">{{ row.status }}</el-tag></template></el-table-column>
-            <el-table-column label="Actions" width="100"><template #default="{ row }"><el-button link type="primary" size="small" @click="editVariation(row)">Edit</el-button></template></el-table-column>
+            <el-table-column label="Actions" width="100"><template #default="{ row }"><el-button link type="primary" size="small" @click="handleEditVar(row)">Edit</el-button></template></el-table-column>
           </el-table>
         </el-card>
       </el-tab-pane>
@@ -141,16 +188,18 @@ const loadPayLessNotices = async () => {
 
       <el-tab-pane label="Retention Ledger">
         <el-card shadow="never">
+          <template #header><div class="card-header"><span>Retention Ledger</span><el-button type="primary" size="small" @click="handleAddRetention">Add Retention</el-button></div></template>
           <el-descriptions :column="3" border>
             <el-descriptions-item label="Total Held">{{ formatCurrency(retentionBalance.held) }}</el-descriptions-item>
             <el-descriptions-item label="Total Released">{{ formatCurrency(retentionBalance.released) }}</el-descriptions-item>
             <el-descriptions-item label="Balance">{{ formatCurrency(retentionBalance.balance) }}</el-descriptions-item>
           </el-descriptions>
-          <el-table :data="applications" stripe class="mt-4">
-            <el-table-column label="Application" width="100"><template #default="{ row }">#{{ row.applicationNumber }}</template></el-table-column>
-            <el-table-column label="Retention Held" width="150"><template #default="{ row }">{{ formatCurrency(row.retentionAmount) }}</template></el-table-column>
-            <el-table-column label="Retention Released" width="150">{{ formatCurrency(0) }}</el-table-column>
-            <el-table-column label="Running Balance" width="150"><template #default="{ row, $index }">{{ formatCurrency(applications.slice(0, $index + 1).reduce((s, a) => s + a.retentionAmount, 0)) }}</template></el-table-column>
+          <el-table :data="retentionLedger" stripe class="mt-4">
+            <el-table-column label="Application" width="100"><template #default="{ row }">#{{ row.application?.applicationNumber || row.applicationId }}</template></el-table-column>
+            <el-table-column label="Percentage" width="100"><template #default="{ row }">{{ row.percentage }}%</template></el-table-column>
+            <el-table-column label="Amount" width="140"><template #default="{ row }">{{ formatCurrency(row.amount) }}</template></el-table-column>
+            <el-table-column label="Release Date" width="120"><template #default="{ row }">{{ formatDate(row.releaseDate) }}</template></el-table-column>
+            <el-table-column label="Status" width="120"><template #default="{ row }"><el-tag :type="row.status === 'held' ? 'warning' : row.status === 'released' ? 'success' : 'info'" size="small">{{ row.status }}</el-tag></template></el-table-column>
           </el-table>
         </el-card>
       </el-tab-pane>
@@ -175,17 +224,36 @@ const loadPayLessNotices = async () => {
       <el-tab-pane label="Adoption Cases">Adoption cases tab content</el-tab-pane>
     </el-tabs>
 
-    <el-drawer v-model="drawerVisible" title="Variation" size="500px">
-      <el-form :model="form" label-position="top">
-        <el-form-item label="Description"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
-        <el-form-item label="Value"><el-input-number v-model="form.value" :min="0" :step="100" style="width:100%" /></el-form-item>
-        <el-form-item label="Status"><el-select v-model="form.status"><el-option label="Pending" value="pending" /><el-option label="Approved" value="approved" /><el-option label="Rejected" value="rejected" /></el-select></el-form-item>
+    <el-drawer v-model="varDrawerVisible" title="Variation" size="500px">
+      <el-form :model="varForm" label-position="top">
+        <el-form-item label="Description"><el-input v-model="varForm.description" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="Contract Variation Order Reference"><el-input v-model="varForm.contractVariationOrder" placeholder="CVO-XXX" /></el-form-item>
+        <el-form-item label="Value"><el-input-number v-model="varForm.value" :min="0" :step="100" style="width:100%" /></el-form-item>
+        <el-form-item label="Status"><el-select v-model="varForm.status"><el-option label="Pending" value="pending" /><el-option label="Approved" value="approved" /><el-option label="Rejected" value="rejected" /></el-select></el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="drawerVisible = false">Cancel</el-button>
-        <el-button type="primary" :loading="drawerLoading" @click="saveVariation">Save</el-button>
+        <el-button @click="varDrawerVisible = false">Cancel</el-button>
+        <el-button type="primary" :loading="varDrawerLoading" @click="handleSaveVar">Save</el-button>
       </template>
     </el-drawer>
+
+    <el-dialog v-model="retentionDialogVisible" title="Retention Entry" width="500px">
+      <el-form :model="retentionForm" label-position="top">
+        <el-form-item label="Application">
+          <el-select v-model="retentionForm.applicationId" placeholder="Select application" style="width:100%">
+            <el-option v-for="app in applications" :key="app.id" :label="`#${app.applicationNumber} - ${formatCurrency(app.applicationValue)}`" :value="app.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Amount"><el-input-number v-model="retentionForm.amount" :min="0" :step="100" style="width:100%" /></el-form-item>
+        <el-form-item label="Percentage"><el-input-number v-model="retentionForm.percentage" :min="0" :max="100" :step="0.1" style="width:100%" /></el-form-item>
+        <el-form-item label="Release Date"><el-date-picker v-model="retentionForm.releaseDate" type="date" style="width:100%" /></el-form-item>
+        <el-form-item label="Status"><el-select v-model="retentionForm.status"><el-option label="Held" value="held" /><el-option label="Released" value="released" /><el-option label="Proposed" value="proposed" /></el-select></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="retentionDialogVisible = false">Cancel</el-button>
+        <el-button type="primary" :loading="retentionDialogLoading" @click="handleSaveRetention">Save</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

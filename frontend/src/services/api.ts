@@ -771,6 +771,38 @@ export interface RetentionReport {
   balance: number
 }
 
+// Retention Ledger Entry
+export interface RetentionLedgerEntry {
+  id: string
+  contractId: string
+  applicationId: string
+  application?: Application
+  amount: number
+  percentage: number
+  releaseDate?: string
+  status: 'held' | 'released' | 'proposed'
+  createdAt: string
+  updatedAt: string
+}
+
+// WIP Journal Entry
+export interface WipEntry {
+  id: string
+  contractId: string
+  contract?: Contract
+  operativeId: string
+  operative?: Operative
+  entryDate: string
+  description: string
+  hours: number
+  rate: number
+  amount: number
+  status: 'draft' | 'submitted' | 'reviewed' | 'approved'
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
+
 // API namespaces
 export const api = {
   auth: {
@@ -1147,6 +1179,26 @@ export const api = {
       action?: string;
       entityType?: string
     }) => apiClient.get<{ data: any[]; total: number }>('/audit-logs', { params })
+  },
+
+  wip: {
+    getAll: (params?: { startDate?: string; endDate?: string; contractId?: string; status?: string; operativeId?: string; page?: number; limit?: number }) =>
+      apiClient.get<{ data: WipEntry[]; total: number }>('/wip', { params }),
+    getById: (id: string) => apiClient.get<WipEntry>(`/wip/${id}`),
+    create: (data: Partial<WipEntry>) => apiClient.post<WipEntry>('/wip', data),
+    update: (id: string, data: Partial<WipEntry>) => apiClient.put<WipEntry>(`/wip/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/wip/${id}`)
+  },
+
+  retentionLedger: {
+    getByContract: (contractId: string) =>
+      apiClient.get<RetentionLedgerEntry[]>(`/contracts/${contractId}/retention-ledger`),
+    create: (contractId: string, data: Partial<RetentionLedgerEntry>) =>
+      apiClient.post<RetentionLedgerEntry>(`/contracts/${contractId}/retention-ledger`, data),
+    update: (contractId: string, id: string, data: Partial<RetentionLedgerEntry>) =>
+      apiClient.put<RetentionLedgerEntry>(`/contracts/${contractId}/retention-ledger/${id}`, data),
+    delete: (contractId: string, id: string) =>
+      apiClient.delete(`/contracts/${contractId}/retention-ledger/${id}`)
   },
 
   reports: {
