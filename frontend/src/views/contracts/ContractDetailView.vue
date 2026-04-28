@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import api, { type Contract, type Variation, type Application } from '@/services/api'
+import api, { apiClient, type Contract, type Variation, type Application } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 
@@ -32,6 +32,7 @@ const loadData = async () => {
     contract.value = contractRes.data
     applications.value = appsRes.data
     variations.value = contractRes.data.variations || []
+    await loadPayLessNotices()
   } catch { ElMessage.error('Failed to load contract') } finally { loading.value = false }
 }
 
@@ -71,6 +72,17 @@ const retentionBalance = computed(() => {
   const released = 0 // Would come from retention ledger
   return { held, released, balance: held - released }
 })
+
+// Pay Less Notices
+const payLessNotices = ref<any[]>([])
+
+const loadPayLessNotices = async () => {
+  if (!contractId.value) return
+  try {
+    const response = await apiClient.get(`/contracts/${contractId.value}/pay-less-notices`)
+    payLessNotices.value = response.data
+  } catch {}
+}
 </script>
 
 <template>
@@ -140,6 +152,22 @@ const retentionBalance = computed(() => {
             <el-table-column label="Retention Released" width="150">{{ formatCurrency(0) }}</el-table-column>
             <el-table-column label="Running Balance" width="150"><template #default="{ row, $index }">{{ formatCurrency(applications.slice(0, $index + 1).reduce((s, a) => s + a.retentionAmount, 0)) }}</template></el-table-column>
           </el-table>
+        </el-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="Pay Less Notices">
+        <el-card shadow="never">
+          <template #header><span>Pay Less Notices ({{ payLessNotices.length }})</span></template>
+          <el-table :data="payLessNotices" stripe>
+            <el-table-column prop="noticeNumber" label="Notice #" width="100" />
+            <el-table-column label="Application" width="100"><template #default="{ row }">#{{ row.applicationNumber }}</template></el-table-column>
+            <el-table-column label="Notice Date" width="120"><template #default="{ row }">{{ formatDate(row.noticeDate) }}</template></el-table-column>
+            <el-table-column label="Sum Not Due" width="140"><template #default="{ row }">{{ formatCurrency(row.sumNotDue) }}</template></el-table-column>
+            <el-table-column prop="reasons" label="Reasons" min-width="200" />
+            <el-table-column label="Status" width="120"><template #default="{ row }"><el-tag :type="row.status === 'served' ? 'success' : 'warning'" size="small">{{ row.status }}</el-tag></template></el-table-column>
+            <el-table-column label="Served Date" width="120"><template #default="{ row }">{{ formatDate(row.servedDate) }}</template></el-table-column>
+          </el-table>
+          <el-empty v-if="payLessNotices.length === 0" description="No pay less notices" />
         </el-card>
       </el-tab-pane>
 

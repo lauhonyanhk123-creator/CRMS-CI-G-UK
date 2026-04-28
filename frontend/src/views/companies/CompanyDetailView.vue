@@ -182,6 +182,60 @@ const getCisStatusType = (status?: string) => {
   }
   return map[status || ''] || 'info'
 }
+
+// Edit company dialog
+const editDialogVisible = ref(false)
+const editFormRef = ref<FormInstance>()
+const editLoading = ref(false)
+const editForm = ref({
+  name: '',
+  companyType: 'client' as Company['companyType'],
+  registrationNumber: '',
+  vatNumber: '',
+  phone: '',
+  email: '',
+  address: {
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    county: '',
+    postcode: ''
+  }
+})
+
+const openEditDialog = () => {
+  if (!company.value) return
+  editForm.value = {
+    name: company.value.name,
+    companyType: company.value.companyType,
+    registrationNumber: company.value.registrationNumber || '',
+    vatNumber: company.value.vatNumber || '',
+    phone: company.value.phone || '',
+    email: company.value.email || '',
+    address: {
+      addressLine1: company.value.address.addressLine1,
+      addressLine2: company.value.address.addressLine2 || '',
+      city: company.value.address.city,
+      county: company.value.address.county || '',
+      postcode: company.value.address.postcode
+    }
+  }
+  editDialogVisible.value = true
+}
+
+const saveEdit = async () => {
+  if (!editFormRef.value || !companyId.value) return
+  await editFormRef.value.validate(async (valid: boolean) => {
+    if (!valid) return
+    editLoading.value = true
+    try {
+      await api.companies.update(companyId.value, editForm.value)
+      ElMessage.success('Company updated')
+      editDialogVisible.value = false
+      loadCompany()
+    } catch { ElMessage.error('Failed to update company') } finally { editLoading.value = false }
+  })
+}
 </script>
 
 <template>
@@ -197,7 +251,7 @@ const getCisStatusType = (status?: string) => {
         <el-button :icon="Refresh" @click="refreshCompaniesHouse">
           Refresh CH
         </el-button>
-        <el-button :icon="Edit">Edit</el-button>
+        <el-button :icon="Edit" @click="openEditDialog">Edit</el-button>
       </template>
     </PageHeader>
 
@@ -415,6 +469,74 @@ const getCisStatusType = (status?: string) => {
         <el-button type="primary" @click="saveContact">Save</el-button>
       </template>
     </el-drawer>
+
+    <!-- Edit Company Dialog -->
+    <el-dialog v-model="editDialogVisible" title="Edit Company" width="600px" destroy-on-close>
+      <el-form ref="editFormRef" :model="editForm" label-position="top">
+        <el-form-item label="Company Name" prop="name" required>
+          <el-input v-model="editForm.name" />
+        </el-form-item>
+        <el-form-item label="Company Type" prop="companyType" required>
+          <el-select v-model="editForm.companyType" style="width: 100%">
+            <el-option label="Client" value="client" />
+            <el-option label="Subcontractor" value="subcontractor" />
+            <el-option label="Supplier" value="supplier" />
+            <el-option label="Consultant" value="consultant" />
+            <el-option label="Other" value="other" />
+          </el-select>
+        </el-form-item>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="Registration Number">
+              <el-input v-model="editForm.registrationNumber" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="VAT Number">
+              <el-input v-model="editForm.vatNumber" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="Phone">
+              <el-input v-model="editForm.phone" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Email">
+              <el-input v-model="editForm.email" type="email" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-divider content-position="left">Address</el-divider>
+        <el-form-item label="Address Line 1" prop="address.addressLine1" required>
+          <el-input v-model="editForm.address.addressLine1" />
+        </el-form-item>
+        <el-form-item label="Address Line 2">
+          <el-input v-model="editForm.address.addressLine2" />
+        </el-form-item>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="City" prop="address.city" required>
+              <el-input v-model="editForm.address.city" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="County">
+              <el-input v-model="editForm.address.county" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="Postcode" prop="address.postcode" required>
+          <el-input v-model="editForm.address.postcode" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">Cancel</el-button>
+        <el-button type="primary" :loading="editLoading" @click="saveEdit">Save</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
