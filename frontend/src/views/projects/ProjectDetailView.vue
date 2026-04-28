@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Upload } from '@element-plus/icons-vue'
 import api, { 
   type Site, 
   type Contract, 

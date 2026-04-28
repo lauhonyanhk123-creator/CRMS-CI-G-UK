@@ -191,6 +191,31 @@ export interface Application {
   paidAt?: string
 }
 
+export interface ApplicationResponse {
+  id: number
+  applicationRef: string
+  applicationNumber: number
+  contractId: number
+  contractRef?: string
+  applicationPeriodStart: string
+  applicationPeriodEnd: string
+  dueDate?: string
+  valueOfWorks: number
+  retention: number
+  grossValue: number
+  status: string
+  submittedDate?: string
+  payerRef?: string
+}
+
+export interface ApplicationForPaymentRequest {
+  applicationPeriodStart: string
+  applicationPeriodEnd: string
+  valueOfWorks: number
+  retention?: number
+  description?: string
+}
+
 export interface Subcontractor extends Company {
   cisVerificationStatus?: 'verified' | 'pending' | 'expired'
   cisVerificationDate?: string
@@ -234,13 +259,17 @@ export interface PlantItem {
   id: string
   plantRef: string
   description: string
+  category: 'EXCAVATOR' | 'DUMPER' | 'ROLLER' | 'PLANT_MIXER' | 'CONCRETE_PUMP' | 'TELEHANDLER' | 'CRANE' | 'ACCESS_EQUIPMENT' | 'OTHER'
   make?: string
   model?: string
-  category: 'mechanical' | 'electrical' | 'specialist' | 'vehicle' | 'tool'
-  status: 'available' | 'allocated' | 'maintenance' | 'decommissioned'
+  serialNumber?: string
+  hireRate?: number
+  status: 'AVAILABLE' | 'HIRED_OUT' | 'MAINTENANCE' | 'DECOMMISSIONED'
+  insuranceExpiry?: string
+  nextLOLER?: string
+  nextPUWER?: string
+  notes?: string
   siteAllocations: SiteAllocation[]
-  lolerDue?: string
-  puwerDue?: string
   createdAt: string
   updatedAt: string
 }
@@ -832,6 +861,20 @@ export const api = {
       apiClient.post(`/contracts/${contractId}/applications/${applicationId}/default-notice`)
   },
 
+  applicationsForPayment: {
+    getAll: (params?: { status?: string; page?: number; limit?: number }) =>
+      apiClient.get<{ data: ApplicationResponse[]; total: number }>('/applications', { params }),
+    getById: (id: string) => apiClient.get<ApplicationResponse>(`/applications/${id}`),
+    create: (contractId: string, data: Partial<ApplicationForPaymentRequest>) =>
+      apiClient.post<ApplicationResponse>(`/applications?contractId=${contractId}`, data),
+    submit: (id: string) =>
+      apiClient.post<ApplicationResponse>(`/applications/${id}/submit`),
+    approve: (id: string) =>
+      apiClient.post<ApplicationResponse>(`/applications/${id}/approve`),
+    reject: (id: string) =>
+      apiClient.post<ApplicationResponse>(`/applications/${id}/reject`)
+  },
+
   subcontractors: {
     getAll: (params?: { status?: string; cisStatus?: string; page?: number; limit?: number }) =>
       apiClient.get<{ data: Subcontractor[]; total: number }>('/subcontractors', { params }),
@@ -861,6 +904,7 @@ export const api = {
     getById: (id: string) => apiClient.get<PlantItem>(`/plant/${id}`),
     create: (data: Partial<PlantItem>) => apiClient.post<PlantItem>('/plant', data),
     update: (id: string, data: Partial<PlantItem>) => apiClient.put<PlantItem>(`/plant/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/plant/${id}`),
     addLOLER: (id: string, data: { dueDate: string; certificateNumber?: string; notes?: string }) =>
       apiClient.post(`/plant/${id}/loler`, data),
     getPlantGantt: (params?: { startDate?: string; endDate?: string; siteId?: string }) =>

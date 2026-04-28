@@ -3,6 +3,7 @@ import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
+import { User, Lock, Document } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -173,13 +174,6 @@ const demoLogin = async (role: string) => {
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import { User, Lock, Document } from '@element-plus/icons-vue'
-export default {
-  components: { User, Lock, Document }
-}
-</script>
 
 <style lang="scss" scoped>
 .login-view {
