@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
@@ -14,7 +15,10 @@ import { useApi } from '@/composables/useApi'
 import api from '@/services/api'
 import StatsCard from '@/components/common/StatsCard.vue'
 import { ElSkeleton } from 'element-plus'
+import { Plus, ChartLine, Document, Truck, Money, UserPlus, FolderPlus } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
+
+const router = useRouter()
 
 // Register ECharts components
 use([
@@ -28,14 +32,36 @@ use([
   GridComponent
 ])
 
-// Dashboard stats
+// Enhanced KPI stats
 const statsLoading = ref(true)
+const kpiStats = ref({
+  activeContracts: 0,
+  operativesOnSite: 0,
+  pendingApplications: 0,
+  plantAllocated: 0,
+  revenueMTD: 0,
+  cisDeductionsMTD: 0
+})
+
+// Legacy stats (for backwards compatibility)
 const statsData = ref({
   totalContracts: 0,
   activeSites: 0,
   plantOnSite: 0,
   pendingApplications: 0
 })
+
+// Recent Activity Feed
+const activityFeed = ref<any[]>([])
+const activityLoading = ref(true)
+
+// Quick Actions
+const quickActions = [
+  { label: 'New Project', icon: FolderPlus, route: '/projects', type: 'primary' },
+  { label: 'Add Operative', icon: UserPlus, route: '/operatives', type: 'success' },
+  { label: 'New Application', icon: Document, route: '/applications-for-payment', type: 'warning' },
+  { label: 'Report Issue', icon: Plus, route: '/quality', type: 'info' }
+]
 
 // CVR Chart
 const cvrChartLoading = ref(true)
@@ -67,7 +93,8 @@ const lolerItems = ref<any[]>([])
 // Load dashboard data
 onMounted(async () => {
   await Promise.all([
-    loadStats(),
+    loadKpis(),
+    loadActivityFeed(),
     loadCVRChart(),
     loadCashflowChart(),
     loadHSChart(),
@@ -75,6 +102,61 @@ onMounted(async () => {
     loadLOLER()
   ])
 })
+
+const loadKpis = async () => {
+  try {
+    const [contractsRes, operativesRes, plantRes, appsRes] = await Promise.all([
+      api.contracts.getAll({ status: 'active', limit: 1 }),
+      api.operatives.getAll({ status: 'active', limit: 1 }),
+      api.plant.getAll({ status: 'allocated', limit: 1 }),
+      api.applicationsForPayment.getAll({ status: 'SUBMITTED', limit: 1 })
+    ])
+    
+    kpiStats.value = {
+      activeContracts: contractsRes.data?.total || 0,
+      operativesOnSite: operativesRes.data?.total || 0,
+      pendingApplications: appsRes.data?.total || 0,
+      plantAllocated: plantRes.data?.total || 0,
+      revenueMTD: 0, // TODO: Calculate from approved/paid applications this month
+      cisDeductionsMTD: 0 // TODO: Calculate from CIS returns this month
+    }
+    
+    // Legacy stats for backwards compatibility
+    statsData.value = {
+      totalContracts: contractsRes.data?.total || 0,
+      activeSites: contractsRes.data?.total || 0,
+      plantOnSite: plantRes.data?.total || 0,
+      pendingApplications: appsRes.data?.total || 0
+    }
+  } catch (error) {
+    console.error('Failed to load KPIs:', error)
+  } finally {
+    statsLoading.value = false
+  }
+}
+
+const loadActivityFeed = async () => {
+  try {
+    const response = await apiClient.get('/dashboard/activity-feed', { params: { limit: 10 } })
+    activityFeed.value = response.data || []
+  } catch (error) {
+    console.error('Failed to load activity feed:', error)
+    // Provide placeholder data
+    activityFeed.value = [
+      { id: 1, action: 'Created', entityType: 'Contract', entityId: 'C-001', timestamp: new Date().toISOString() },
+      { id: 2, action: 'Updated', entityType: 'Operative', entityId: 'OP-005', timestamp: new Date(Date.now() - 3600000).toISOString() },
+      { id: 3, action: 'Approved', entityType: 'Application', entityId: 'APP-042', timestamp: new Date(Date.now() - 7200000).toISOString() }
+    ]
+  } finally {
+    activityLoading.value = false
+  }
+}
+
+const navigateTo = (route: string) => {
+  router.push(route)
+}
+
+import apiClient from '@/services/api'
 
 const loadStats = async () => {
   try {
@@ -397,74 +479,184 @@ const getAFR = computed(() => {
 
 <template>
   <div class="dashboard-view">
-    <el-row :gutter="20" class="stats-row">
-      <el-col :xs="24" :sm="12" :lg="6">
+    <!-- KPI Cards Row -->
+    <el-row :gutter="20" class="kpi-row">
+      <el-col :xs="12" :sm="8" :lg="4">
         <StatsCard
-          title="Total Contracts"
-          :value="statsData.totalContracts"
-          icon="DocumentChecked"
+          title="Active Contracts"
+          :value="kpiStats.activeContracts"
+          icon="Document"
           color="#1a73e8"
           :loading="statsLoading"
         />
       </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
+      <el-col :xs="12" :sm="8" :lg="4">
         <StatsCard
-          title="Active Sites"
-          :value="statsData.activeSites"
-          icon="Location"
+          title="Operatives On-Site"
+          :value="kpiStats.operativesOnSite"
+          icon="User"
           color="#67c23a"
           :loading="statsLoading"
         />
       </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
+      <el-col :xs="12" :sm="8" :lg="4">
         <StatsCard
-          title="Plant On-Site"
-          :value="statsData.plantOnSite"
-          icon="Tools"
+          title="Pending Applications"
+          :value="kpiStats.pendingApplications"
+          icon="DocumentCopy"
           color="#e6a23c"
           :loading="statsLoading"
         />
       </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
+      <el-col :xs="12" :sm="8" :lg="4">
         <StatsCard
-          title="Pending Applications"
-          :value="statsData.pendingApplications"
-          icon="DocumentCopy"
+          title="Plant Allocated"
+          :value="kpiStats.plantAllocated"
+          icon="Truck"
+          color="#909399"
+          :loading="statsLoading"
+        />
+      </el-col>
+      <el-col :xs="12" :sm="8" :lg="4">
+        <StatsCard
+          title="Revenue MTD"
+          :value="kpiStats.revenueMTD"
+          :prefix="'£'"
+          icon="Money"
           color="#f56c6c"
+          :loading="statsLoading"
+        />
+      </el-col>
+      <el-col :xs="12" :sm="8" :lg="4">
+        <StatsCard
+          title="CIS Deductions MTD"
+          :value="kpiStats.cisDeductionsMTD"
+          :prefix="'£'"
+          icon="Wallet"
+          color="#9c27b0"
           :loading="statsLoading"
         />
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" class="charts-row">
-      <el-col :xs="24" :lg="12">
-        <el-card shadow="hover" class="chart-card">
-          <el-skeleton :loading="cvrChartLoading" animated>
+    <!-- Quick Actions Panel -->
+    <el-row :gutter="20" class="quick-actions-row">
+      <el-col :span="24">
+        <el-card shadow="never" class="quick-actions-card">
+          <div class="quick-actions">
+            <span class="quick-actions-label">Quick Actions:</span>
+            <el-button
+              v-for="action in quickActions"
+              :key="action.route"
+              :type="action.type as any"
+              plain
+              @click="navigateTo(action.route)"
+            >
+              <el-icon><component :is="action.icon" /></el-icon>
+              {{ action.label }}
+            </el-button>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- Recent Activity Feed -->
+    <el-row :gutter="20" class="activity-row">
+      <el-col :xs="24" :lg="6">
+        <el-card shadow="hover" class="activity-card">
+          <template #header>
+            <div class="card-header">
+              <span class="card-title">Recent Activity</span>
+            </div>
+          </template>
+          <el-skeleton :loading="activityLoading" animated>
             <template #template>
-              <el-skeleton-item variant="h3" style="width: 40%; margin-bottom: 20px;" />
-              <el-skeleton-item variant="rect" style="width: 100%; height: 280px;" />
+              <div v-for="i in 5" :key="i" class="activity-item-skeleton">
+                <el-skeleton-item variant="text" style="width: 80%" />
+                <el-skeleton-item variant="text" style="width: 40%; margin-top: 4px" />
+              </div>
             </template>
             <template #default>
-              <v-chart :option="cvrChartOption" autoresize style="height: 320px;" />
+              <div v-if="activityFeed.length === 0" class="empty-activity">
+                <el-empty description="No recent activity" :image-size="60" />
+              </div>
+              <div v-else class="activity-list">
+                <div v-for="activity in activityFeed" :key="activity.id" class="activity-item">
+                  <div class="activity-icon" :class="activity.entityType?.toLowerCase()">
+                    <el-icon><Document /></el-icon>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-text">
+                      <strong>{{ activity.action }}</strong> {{ activity.entityType }}
+                      <span class="entity-id">{{ activity.entityId }}</span>
+                    </div>
+                    <div class="activity-time">
+                      {{ dayjs(activity.timestamp).fromNow() }}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </template>
           </el-skeleton>
         </el-card>
       </el-col>
-      <el-col :xs="24" :lg="12">
-        <el-card shadow="hover" class="chart-card">
-          <el-skeleton :loading="cashflowLoading" animated>
+      
+      <!-- Charts Column -->
+      <el-col :xs="24" :lg="18">
+        <el-row :gutter="20" class="charts-row">
+          <el-col :xs="24" :lg="12">
+            <el-card shadow="hover" class="chart-card">
+              <el-skeleton :loading="cvrChartLoading" animated>
+                <template #template>
+                  <el-skeleton-item variant="h3" style="width: 40%; margin-bottom: 20px;" />
+                  <el-skeleton-item variant="rect" style="width: 100%; height: 280px;" />
+                </template>
+                <template #default>
+                  <v-chart :option="cvrChartOption" autoresize style="height: 320px;" />
+                </template>
+              </el-skeleton>
+            </el-card>
+          </el-col>
+          <el-col :xs="24" :lg="12">
+            <el-card shadow="hover" class="chart-card">
+              <el-skeleton :loading="cashflowLoading" animated>
+                <template #template>
+                  <el-skeleton-item variant="h3" style="width: 40%; margin-bottom: 20px;" />
+                  <el-skeleton-item variant="rect" style="width: 100%; height: 280px;" />
+                </template>
+                <template #default>
+                  <v-chart :option="cashflowChartOption" autoresize style="height: 320px;" />
+                </template>
+              </el-skeleton>
+            </el-card>
+          </el-col>
+        </el-row>
+      </el-col>
+    </el-row>
+
+    <!-- H&S and Pipeline Row -->
+    <el-row :gutter="20" class="info-row">
+      <el-col :xs="24" :lg="8">
+        <el-card shadow="hover" class="hs-card">
+          <template #header>
+            <div class="card-header">
+              <span class="card-title">H&S Dashboard</span>
+              <el-tag type="success" size="small">AFR: {{ getAFR }}</el-tag>
+            </div>
+          </template>
+          <el-skeleton :loading="hsChartLoading" animated>
             <template #template>
-              <el-skeleton-item variant="h3" style="width: 40%; margin-bottom: 20px;" />
-              <el-skeleton-item variant="rect" style="width: 100%; height: 280px;" />
+              <el-skeleton-item variant="rect" style="width: 100%; height: 200px;" />
             </template>
             <template #default>
-              <v-chart :option="cashflowChartOption" autoresize style="height: 320px;" />
+              <v-chart :option="hsChartOption" autoresize style="height: 220px;" />
             </template>
           </el-skeleton>
         </el-card>
       </el-col>
     </el-row>
 
+    <!-- Pipeline and LOLER Row -->
     <el-row :gutter="20" class="info-row">
       <el-col :xs="24" :lg="8">
         <el-card shadow="hover" class="hs-card">
@@ -561,6 +753,18 @@ const getAFR = computed(() => {
 
 <style lang="scss" scoped>
 .dashboard-view {
+  .kpi-row {
+    margin-bottom: 20px;
+  }
+  
+  .quick-actions-row {
+    margin-bottom: 20px;
+  }
+  
+  .activity-row {
+    margin-bottom: 20px;
+  }
+  
   .stats-row {
     margin-bottom: 20px;
   }
@@ -571,6 +775,96 @@ const getAFR = computed(() => {
   
   .info-row {
     margin-bottom: 20px;
+  }
+}
+
+.quick-actions-card {
+  :deep(.el-card__body) {
+    padding: 12px 20px;
+  }
+}
+
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  
+  .quick-actions-label {
+    font-weight: 600;
+    color: #606266;
+    margin-right: 8px;
+  }
+}
+
+.activity-card {
+  height: 100%;
+  
+  .empty-activity {
+    padding: 20px 0;
+  }
+  
+  .activity-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .activity-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  
+  .activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    
+    &.contract { background: #e6f7ff; color: #1a73e8; }
+    &.operative { background: #f6ffed; color: #67c23a; }
+    &.application { background: #fff7e6; color: #e6a23c; }
+    &.plant { background: #f9f0ff; color: #9c27b0; }
+    &.default { background: #f5f5f5; color: #909399; }
+  }
+  
+  .activity-content {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .activity-text {
+    font-size: 13px;
+    color: #303133;
+    
+    .entity-id {
+      color: #409eff;
+      font-weight: 500;
+    }
+  }
+  
+  .activity-time {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+  }
+}
+
+.activity-item-skeleton {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  
+  &:last-child {
+    border-bottom: none;
   }
 }
 

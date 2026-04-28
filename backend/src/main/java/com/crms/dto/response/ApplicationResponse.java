@@ -27,5 +27,6 @@ public class ApplicationResponse {
     private BigDecimal grossValue;
     private String status;
     private LocalDate submittedDate;
+    private LocalDate paidDate;
     private String payerRef;
 }

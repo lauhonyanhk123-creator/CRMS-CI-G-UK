@@ -20,4 +20,6 @@ public interface OperativeService {
     SubbieGateStatus smartCheckCard(Long operativeId, Long cardId);
     
     SubbieGateStatus getSubbieGateStatus(Long operativeId);
+    
+    void delete(Long id);
 }

@@ -7,6 +7,7 @@ import com.crms.dto.response.PlantGanttItem;
 import com.crms.dto.response.PlantItemResponse;
 import com.crms.service.PlantService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -105,5 +106,12 @@ public class PlantController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         List<PlantGanttItem> response = plantService.getPlantGantt(from, to);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+    
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete plant item", description = "Delete a plant item")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        plantService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Plant item deleted", null));
     }
 }

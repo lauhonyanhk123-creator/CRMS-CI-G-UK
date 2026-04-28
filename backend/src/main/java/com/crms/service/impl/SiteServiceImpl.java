@@ -136,4 +136,12 @@ public class SiteServiceImpl implements SiteService {
                 .notes(site.getNotes())
                 .build();
     }
+    
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        Site site = siteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Site", id));
+        siteRepository.delete(site);
+    }
 }

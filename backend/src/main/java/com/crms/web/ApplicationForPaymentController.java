@@ -5,13 +5,17 @@ import com.crms.dto.request.PayLessNoticeRequest;
 import com.crms.dto.request.PaymentNoticeRequest;
 import com.crms.dto.response.ApiResponse;
 import com.crms.dto.response.ApplicationResponse;
+import com.crms.dto.response.PageResponse;
 import com.crms.service.ApplicationForPaymentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/applications")
@@ -21,6 +25,14 @@ import org.springframework.web.bind.annotation.*;
 public class ApplicationForPaymentController {
     
     private final ApplicationForPaymentService applicationService;
+    
+    @GetMapping
+    @Operation(summary = "List applications", description = "Get applications by contract ID")
+    public ResponseEntity<ApiResponse<PageResponse<ApplicationResponse>>> findByContract(
+            @RequestParam Long contractId) {
+        PageResponse<ApplicationResponse> response = applicationService.findByContract(contractId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
     
     @GetMapping("/{id}")
     @Operation(summary = "Get application", description = "Get application for payment by ID")
@@ -68,5 +80,40 @@ public class ApplicationForPaymentController {
     public ResponseEntity<ApiResponse<ApplicationResponse>> addDefaultNotice(@PathVariable Long id) {
         ApplicationResponse response = applicationService.addDefaultNotice(id);
         return ResponseEntity.ok(ApiResponse.success("Default payment notice added", response));
+    }
+    
+    @PostMapping("/{id}/measure")
+    @Operation(summary = "Mark application as measured", description = "Move application to MEASURED status")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> measure(@PathVariable Long id) {
+        ApplicationResponse response = applicationService.measure(id);
+        return ResponseEntity.ok(ApiResponse.success("Application marked as measured", response));
+    }
+    
+    @PostMapping("/{id}/agree")
+    @Operation(summary = "Agree application", description = "Move application to AGREED status")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> agree(@PathVariable Long id) {
+        ApplicationResponse response = applicationService.agree(id);
+        return ResponseEntity.ok(ApiResponse.success("Application agreed", response));
+    }
+    
+    @PostMapping("/{id}/approve")
+    @Operation(summary = "Approve application", description = "Approve application for payment")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> approve(@PathVariable Long id) {
+        ApplicationResponse response = applicationService.approve(id);
+        return ResponseEntity.ok(ApiResponse.success("Application approved", response));
+    }
+    
+    @PostMapping("/{id}/reject")
+    @Operation(summary = "Reject application", description = "Reject application for payment")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> reject(@PathVariable Long id) {
+        ApplicationResponse response = applicationService.reject(id);
+        return ResponseEntity.ok(ApiResponse.success("Application rejected", response));
+    }
+    
+    @PostMapping("/{id}/mark-paid")
+    @Operation(summary = "Mark application as paid", description = "Mark approved application as paid")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> markPaid(@PathVariable Long id) {
+        ApplicationResponse response = applicationService.markPaid(id);
+        return ResponseEntity.ok(ApiResponse.success("Application marked as paid", response));
     }
 }

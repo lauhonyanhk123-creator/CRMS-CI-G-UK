@@ -6,6 +6,7 @@ import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.VariationResponse;
 import com.crms.service.VariationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,5 +53,12 @@ public class VariationController {
             @Valid @RequestBody VariationRequest request) {
         VariationResponse response = variationService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Variation updated successfully", response));
+    }
+    
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete variation", description = "Delete a variation")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        variationService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Variation deleted successfully", null));
     }
 }

@@ -245,6 +245,94 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
         return submit(id);
     }
     
+    @Override
+    @Transactional
+    public ApplicationResponse measure(Long id) {
+        ApplicationForPayment application = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ApplicationForPayment", id));
+        
+        if (application.getStatus() != ApplicationStatus.SUBMITTED) {
+            throw new ValidationException("Application can only be measured from SUBMITTED status");
+        }
+        
+        application.setStatus(ApplicationStatus.MEASURED);
+        application = applicationRepository.save(application);
+        
+        log.info("Application {} measured", application.getApplicationRef());
+        return mapToResponse(application);
+    }
+    
+    @Override
+    @Transactional
+    public ApplicationResponse agree(Long id) {
+        ApplicationForPayment application = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ApplicationForPayment", id));
+        
+        if (application.getStatus() != ApplicationStatus.MEASURED) {
+            throw new ValidationException("Application can only be agreed from MEASURED status");
+        }
+        
+        application.setStatus(ApplicationStatus.AGREED);
+        application = applicationRepository.save(application);
+        
+        log.info("Application {} agreed", application.getApplicationRef());
+        return mapToResponse(application);
+    }
+    
+    @Override
+    @Transactional
+    public ApplicationResponse approve(Long id) {
+        ApplicationForPayment application = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ApplicationForPayment", id));
+        
+        if (application.getStatus() != ApplicationStatus.AGREED) {
+            throw new ValidationException("Application can only be approved from AGREED status");
+        }
+        
+        application.setStatus(ApplicationStatus.APPROVED);
+        application = applicationRepository.save(application);
+        
+        log.info("Application {} approved", application.getApplicationRef());
+        return mapToResponse(application);
+    }
+    
+    @Override
+    @Transactional
+    public ApplicationResponse reject(Long id) {
+        ApplicationForPayment application = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ApplicationForPayment", id));
+        
+        // Can reject from SUBMITTED, MEASURED, or AGREED status
+        if (application.getStatus() == ApplicationStatus.PAID || 
+            application.getStatus() == ApplicationStatus.APPROVED) {
+            throw new ValidationException("Cannot reject an application that is already PAID or APPROVED");
+        }
+        
+        application.setStatus(ApplicationStatus.REJECTED);
+        application = applicationRepository.save(application);
+        
+        log.info("Application {} rejected", application.getApplicationRef());
+        return mapToResponse(application);
+    }
+    
+    @Override
+    @Transactional
+    public ApplicationResponse markPaid(Long id) {
+        ApplicationForPayment application = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ApplicationForPayment", id));
+        
+        if (application.getStatus() != ApplicationStatus.APPROVED) {
+            throw new ValidationException("Application can only be marked as paid from APPROVED status");
+        }
+        
+        application.setStatus(ApplicationStatus.PAID);
+        application.setPaidDate(LocalDate.now());
+        application = applicationRepository.save(application);
+        
+        log.info("Application {} marked as paid", application.getApplicationRef());
+        return mapToResponse(application);
+    }
+    
     private ApplicationResponse mapToResponse(ApplicationForPayment application) {
         return ApplicationResponse.builder()
                 .id(application.getId())
@@ -260,6 +348,7 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
                 .grossValue(application.getGrossValue())
                 .status(application.getStatus() != null ? application.getStatus().name() : null)
                 .submittedDate(application.getSubmittedDate())
+                .paidDate(application.getPaidDate())
                 .payerRef(application.getPayerRef())
                 .build();
     }

@@ -193,6 +193,15 @@ public class OperativeServiceImpl implements OperativeService {
                 .build();
     }
     
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        Operative operative = operativeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Operative", id));
+        operativeRepository.delete(operative);
+        log.info("Operative {} deleted", operative.getEmployeeRef());
+    }
+    
     private OperativeResponse mapToResponse(Operative operative) {
         return OperativeResponse.builder()
                 .id(operative.getId())

@@ -1,8 +1,10 @@
 package com.crms.web;
 
 import com.crms.dto.response.ApiResponse;
+import com.crms.dto.response.PageResponse;
 import com.crms.service.DocumentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -25,13 +27,13 @@ public class DocumentController {
     
     @GetMapping
     @Operation(summary = "List documents", description = "Get paginated list of documents with optional filters")
-    public ResponseEntity<ApiResponse<Object>> findAll(
+    public ResponseEntity<ApiResponse<PageResponse<Object>>> findAll(
             @RequestParam(required = false) Long entityId,
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Object response = documentService.findAll(entityId, entityType, type, page, size);
+        PageResponse<Object> response = documentService.findAll(entityId, entityType, type, page, size);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     
@@ -52,7 +54,8 @@ public class DocumentController {
     @GetMapping("/{id}")
     @Operation(summary = "Get document", description = "Get document metadata")
     public ResponseEntity<ApiResponse<Object>> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Object response = documentService.findById(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
     
     @GetMapping("/{id}/content")

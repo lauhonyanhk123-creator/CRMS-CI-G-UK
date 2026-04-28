@@ -18,6 +18,16 @@ public interface ApplicationForPaymentService {
     
     ApplicationResponse submit(Long id);
     
+    ApplicationResponse measure(Long id);
+    
+    ApplicationResponse agree(Long id);
+    
+    ApplicationResponse approve(Long id);
+    
+    ApplicationResponse reject(Long id);
+    
+    ApplicationResponse markPaid(Long id);
+    
     ApplicationResponse addPaymentNotice(Long id, PaymentNoticeRequest request);
     
     ApplicationResponse addPayLessNotice(Long id, PayLessNoticeRequest request);

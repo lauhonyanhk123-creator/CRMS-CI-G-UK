@@ -15,4 +15,6 @@ public interface VariationService {
     VariationResponse create(Long contractId, VariationRequest request);
     
     VariationResponse update(Long id, VariationRequest request);
+    
+    void delete(Long id);
 }

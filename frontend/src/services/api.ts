@@ -869,10 +869,16 @@ export const api = {
       apiClient.post<ApplicationResponse>(`/applications?contractId=${contractId}`, data),
     submit: (id: string) =>
       apiClient.post<ApplicationResponse>(`/applications/${id}/submit`),
+    measure: (id: string) =>
+      apiClient.post<ApplicationResponse>(`/applications/${id}/measure`),
+    agree: (id: string) =>
+      apiClient.post<ApplicationResponse>(`/applications/${id}/agree`),
     approve: (id: string) =>
       apiClient.post<ApplicationResponse>(`/applications/${id}/approve`),
     reject: (id: string) =>
-      apiClient.post<ApplicationResponse>(`/applications/${id}/reject`)
+      apiClient.post<ApplicationResponse>(`/applications/${id}/reject`),
+    markPaid: (id: string) =>
+      apiClient.post<ApplicationResponse>(`/applications/${id}/mark-paid`)
   },
 
   subcontractors: {

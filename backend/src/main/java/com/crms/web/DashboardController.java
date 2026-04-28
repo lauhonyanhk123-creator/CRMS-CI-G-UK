@@ -105,6 +105,67 @@ public class DashboardController {
     private final AuditLogRepository auditLogRepository;
 
     // ========================================================================
+    // Main KPI Summary (stats endpoint)
+    // ========================================================================
+
+    @GetMapping("/stats")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Dashboard stats", description = "Get key metrics for dashboard KPI cards")
+    public ResponseEntity<Map<String, Object>> getStats() {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        
+        // Active contracts count
+        long activeContracts = contractRepository.findAll().stream()
+                .filter(c -> c.getStatus() == ContractStatus.ACTIVE)
+                .count();
+        
+        // Operatives on site (active operatives)
+        long operativesOnSite = operativeRepository.findByStatus(OperativeStatus.ACTIVE).size();
+        
+        // Pending applications (submitted status)
+        long pendingApplications = applicationRepository.findAll().stream()
+                .filter(a -> a.getStatus() == ApplicationStatus.SUBMITTED)
+                .count();
+        
+        // Plant allocated (on hire)
+        long plantAllocated = plantItemRepository.findAll().stream()
+                .filter(p -> p.getStatus() == PlantStatus.ON_HIRE)
+                .count();
+        
+        // Revenue MTD (from approved/paid applications this month)
+        YearMonth currentMonth = YearMonth.now();
+        BigDecimal revenueMTD = applicationRepository.findAll().stream()
+                .filter(a -> a.getStatus() == ApplicationStatus.PAID || a.getStatus() == ApplicationStatus.APPROVED)
+                .filter(a -> {
+                    LocalDate dueDate = a.getDueDate();
+                    return dueDate != null && YearMonth.from(dueDate).equals(currentMonth);
+                })
+                .map(a -> a.getGrossValue() != null ? a.getGrossValue() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        // CIS Deductions MTD
+        LocalDate monthStart = currentMonth.atDay(1);
+        LocalDate monthEnd = currentMonth.atEndOfMonth();
+        BigDecimal cisDeductionsMTD = cisReturnRepository.findAll().stream()
+                .filter(r -> r.getSubmissionDate() != null)
+                .filter(r -> {
+                    LocalDate subDate = r.getSubmissionDate().toLocalDate();
+                    return !subDate.isBefore(monthStart) && !subDate.isAfter(monthEnd);
+                })
+                .map(r -> r.getTotalDeduction() != null ? r.getTotalDeduction() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        stats.put("activeContracts", activeContracts);
+        stats.put("operativesOnSite", operativesOnSite);
+        stats.put("pendingApplications", pendingApplications);
+        stats.put("plantAllocated", plantAllocated);
+        stats.put("revenueMTD", revenueMTD.setScale(2, RoundingMode.HALF_UP));
+        stats.put("cisDeductionsMTD", cisDeductionsMTD.setScale(2, RoundingMode.HALF_UP));
+        
+        return ResponseEntity.ok(stats);
+    }
+
+    // ========================================================================
     // Main KPIs
     // ========================================================================
 

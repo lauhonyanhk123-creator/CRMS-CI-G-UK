@@ -90,4 +90,11 @@ public class OperativeController {
         SubbieGateStatus response = operativeService.getSubbieGateStatus(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+    
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete operative", description = "Delete an operative")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        operativeService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Operative deleted", null));
+    }
 }

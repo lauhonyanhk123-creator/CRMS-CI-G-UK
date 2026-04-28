@@ -15,4 +15,6 @@ public interface SiteService {
     SiteResponse create(SiteRequest request);
     
     SiteResponse update(Long id, SiteRequest request);
+    
+    void delete(Long id);
 }

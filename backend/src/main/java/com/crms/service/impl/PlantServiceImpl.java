@@ -212,6 +212,15 @@ public class PlantServiceImpl implements PlantService {
                 .collect(Collectors.toList());
     }
     
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        PlantItem plant = plantRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
+        plantRepository.delete(plant);
+        log.info("Plant item {} deleted", plant.getPlantRef());
+    }
+    
     private PlantItemResponse mapToResponse(PlantItem plant) {
         return PlantItemResponse.builder()
                 .id(plant.getId())

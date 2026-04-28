@@ -6,6 +6,7 @@ import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.SiteResponse;
 import com.crms.service.SiteService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -65,5 +66,12 @@ public class SiteController {
             @Valid @RequestBody SiteRequest request) {
         SiteResponse response = siteService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success("Site updated successfully", response));
+    }
+    
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete site", description = "Delete a site")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        siteService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("Site deleted successfully", null));
     }
 }

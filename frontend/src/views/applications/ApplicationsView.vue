@@ -263,8 +263,7 @@ const markAsPaid = async (id: string) => {
       cancelButtonText: 'Cancel',
       type: 'success'
     })
-    // Call backend endpoint to mark as paid
-    await apiClient.post(`/applications/${id}/mark-paid`)
+    await api.applicationsForPayment.markPaid(id)
     ElMessage.success('Application marked as paid')
     loadData()
   } catch (error: any) {
@@ -273,6 +272,9 @@ const markAsPaid = async (id: string) => {
     }
   }
 }
+
+// Import axios for the mark-paid endpoint
+// import apiClient from '@/services/api'
 
 const getRowActions = (row: ApplicationResponse) => {
   const actions: Array<{ label: string; action: Function; type?: string; icon?: any }> = [

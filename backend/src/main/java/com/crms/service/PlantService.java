@@ -26,4 +26,6 @@ public interface PlantService {
     PlantItemResponse addAllocation(Long id, Object request);
     
     List<PlantGanttItem> getPlantGantt(LocalDate from, LocalDate to);
+    
+    void delete(Long id);
 }

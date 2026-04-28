@@ -122,4 +122,12 @@ public class VariationServiceImpl implements VariationService {
                 .reason(variation.getReason())
                 .build();
     }
+    
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        Variation variation = variationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Variation", id));
+        variationRepository.delete(variation);
+    }
 }
