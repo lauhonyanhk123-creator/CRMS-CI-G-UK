@@ -876,9 +876,18 @@ export const api = {
   },
 
   subcontractors: {
-    getAll: (params?: { status?: string; cisStatus?: string; page?: number; limit?: number }) =>
+    getAll: (params?: { status?: string; cisStatus?: string; search?: string; page?: number; limit?: number }) =>
       apiClient.get<{ data: Subcontractor[]; total: number }>('/subcontractors', { params }),
+    getById: (id: string) => apiClient.get<Subcontractor>(`/subcontractors/${id}`),
+    create: (data: Partial<Subcontractor>) => apiClient.post<Subcontractor>('/subcontractors', data),
+    update: (id: string, data: Partial<Subcontractor>) => apiClient.put<Subcontractor>(`/subcontractors/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/subcontractors/${id}`),
     verify: (id: string) => apiClient.post<Subcontractor>(`/subcontractors/${id}/verify`)
+  },
+
+  cis: {
+    submitCisReturn: (data: { subcontractorId: string }) =>
+      apiClient.post('/cis/submit-cis-return', data)
   },
 
   cisReturns: {

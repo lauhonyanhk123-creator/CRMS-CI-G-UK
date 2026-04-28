@@ -12,6 +12,7 @@ const ProjectDetailView = () => import('@/views/projects/ProjectDetailView.vue')
 const TendersView = () => import('@/views/tenders/TendersView.vue')
 const ContractsView = () => import('@/views/contracts/ContractsView.vue')
 const ContractDetailView = () => import('@/views/contracts/ContractDetailView.vue')
+const ApplicationsForPaymentView = () => import('@/views/contracts/ApplicationsForPaymentView.vue')
 const SubcontractorsView = () => import('@/views/subcontractors/SubcontractorsView.vue')
 const OperativesView = () => import('@/views/operatives/OperativesView.vue')
 const PlantView = () => import('@/views/plant/PlantView.vue')
@@ -85,6 +86,12 @@ const routes: RouteRecordRaw[] = [
     name: 'ContractDetail',
     component: ContractDetailView,
     meta: { requiresAuth: true, title: 'Contract Details' }
+  },
+  {
+    path: '/applications-for-payment',
+    name: 'ApplicationsForPayment',
+    component: ApplicationsForPaymentView,
+    meta: { requiresAuth: true, title: 'Applications for Payment' }
   },
   {
     path: '/subcontractors',
