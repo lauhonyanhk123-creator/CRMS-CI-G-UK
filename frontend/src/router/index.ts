@@ -21,6 +21,9 @@ const HealthSafetyView = () => import('@/views/healthsafety/HealthSafetyView.vue
 const AdoptionView = () => import('@/views/adoption/AdoptionView.vue')
 const QualityView = () => import('@/views/quality/QualityView.vue')
 const AdminView = () => import('@/views/admin/AdminView.vue')
+const UserManagementView = () => import('@/views/admin/UserManagementView.vue')
+const AuditLogView = () => import('@/views/admin/AuditLogView.vue')
+const ReportsView = () => import('@/views/reports/ReportsView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -140,6 +143,24 @@ const routes: RouteRecordRaw[] = [
     name: 'Admin',
     component: AdminView,
     meta: { requiresAuth: true, title: 'Admin', roles: ['admin'] }
+  },
+  {
+    path: '/admin/users',
+    name: 'UserManagement',
+    component: UserManagementView,
+    meta: { requiresAuth: true, title: 'User Management', roles: ['admin'] }
+  },
+  {
+    path: '/admin/audit',
+    name: 'AuditLog',
+    component: AuditLogView,
+    meta: { requiresAuth: true, title: 'Audit Log', roles: ['admin'] }
+  },
+  {
+    path: '/reports',
+    name: 'Reports',
+    component: ReportsView,
+    meta: { requiresAuth: true, title: 'Reports' }
   },
   {
     path: '/:pathMatch(.*)*',

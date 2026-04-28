@@ -1125,7 +1125,47 @@ export const api = {
     restoreBackup: (backupId: string) => apiClient.post(`/admin/backup/restore/${backupId}`),
     getIntegrations: () => apiClient.get('/admin/integrations'),
     getSettings: () => apiClient.get('/admin/settings'),
-    updateSettings: (data: any) => apiClient.put('/admin/settings', data)
+    updateSettings: (data: any) => apiClient.put('/admin/settings', data),
+
+    users: {
+      getAll: (params?: { search?: string; role?: string; status?: string; page?: number; limit?: number }) =>
+        apiClient.get<{ data: any[]; total: number }>('/admin/users', { params }),
+      getById: (id: string) => apiClient.get<any>(`/admin/users/${id}`),
+      create: (data: any) => apiClient.post<any>('/admin/users', data),
+      update: (id: string, data: any) => apiClient.put<any>(`/admin/users/${id}`, data),
+      delete: (id: string) => apiClient.delete(`/admin/users/${id}`)
+    }
+  },
+
+  auditLog: {
+    getAll: (params?: {
+      page?: number;
+      size?: number;
+      startDate?: string;
+      endDate?: string;
+      userId?: string;
+      action?: string;
+      entityType?: string
+    }) => apiClient.get<{ data: any[]; total: number }>('/audit-logs', { params })
+  },
+
+  reports: {
+    financial: (type: string) => {
+      // Mock placeholder - returns empty data
+      return Promise.resolve({ data: { data: [], total: 0 } })
+    },
+    project: (type: string) => {
+      return Promise.resolve({ data: { data: [], total: 0 } })
+    },
+    cis: (type: string) => {
+      return Promise.resolve({ data: { data: [], total: 0 } })
+    },
+    hr: (type: string) => {
+      return Promise.resolve({ data: { data: [], total: 0 } })
+    },
+    plant: (type: string) => {
+      return Promise.resolve({ data: { data: [], total: 0 } })
+    }
   }
 }
 
