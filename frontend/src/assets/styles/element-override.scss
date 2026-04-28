@@ -1,0 +1,282 @@
+// Element Plus overrides
+
+// App Layout
+.app-aside {
+  width: var(--crms-sidebar-width) !important;
+  transition: width 0.3s ease;
+  
+  &.is-collapsed {
+    width: var(--crms-sidebar-collapsed-width) !important;
+  }
+}
+
+.app-header {
+  padding: 0 16px !important;
+  height: var(--crms-header-height) !important;
+  line-height: var(--crms-header-height) !important;
+}
+
+.app-main {
+  padding: var(--crms-content-padding) !important;
+  overflow-y: auto;
+}
+
+// Table overrides
+.el-table {
+  .el-table__header th {
+    font-weight: 600;
+    background: #fafafa;
+    color: #606266;
+  }
+  
+  .el-table__row {
+    &:hover > td {
+      background: #f5f7fa !important;
+    }
+  }
+  
+  .cell {
+    display: flex;
+    align-items: center;
+  }
+}
+
+// Card overrides
+.el-card {
+  border-radius: var(--crms-border-radius);
+  border: none;
+  box-shadow: var(--crms-shadow-light);
+  
+  &.is-hover-shadow:hover {
+    box-shadow: var(--crms-shadow);
+  }
+}
+
+// Button overrides
+.el-button {
+  border-radius: 6px;
+  
+  &--primary {
+    &:hover, &:focus {
+      background: #1a73e8;
+      border-color: #1a73e8;
+    }
+  }
+}
+
+// Form overrides
+.el-form-item {
+  margin-bottom: 18px;
+  
+  &__label {
+    font-weight: 500;
+  }
+}
+
+// Dialog overrides
+.el-dialog {
+  border-radius: var(--crms-border-radius);
+  
+  &__header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e4e7ed;
+  }
+  
+  &__body {
+    padding: 20px;
+  }
+  
+  &__footer {
+    padding: 12px 20px;
+    border-top: 1px solid #e4e7ed;
+  }
+}
+
+// Drawer overrides
+.el-drawer {
+  &__header {
+    padding: 16px 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid #e4e7ed;
+    color: #303133;
+    font-weight: 600;
+  }
+  
+  &__body {
+    padding: 20px;
+  }
+}
+
+// Tag overrides
+.el-tag {
+  border-radius: 4px;
+  
+  &--success {
+    background: rgba(103, 194, 58, 0.1);
+    border-color: rgba(103, 194, 58, 0.2);
+    color: #67c23a;
+  }
+  
+  &--warning {
+    background: rgba(230, 162, 60, 0.1);
+    border-color: rgba(230, 162, 60, 0.2);
+    color: #e6a23c;
+  }
+  
+  &--danger {
+    background: rgba(245, 108, 108, 0.1);
+    border-color: rgba(245, 108, 108, 0.2);
+    color: #f56c6c;
+  }
+  
+  &--info {
+    background: rgba(144, 147, 153, 0.1);
+    border-color: rgba(144, 147, 153, 0.2);
+    color: #909399;
+  }
+}
+
+// Pagination overrides
+.el-pagination {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+// Dropdown overrides
+.el-dropdown-menu {
+  border-radius: var(--crms-border-radius);
+  box-shadow: var(--crms-shadow);
+}
+
+// Menu overrides
+.el-menu {
+  border-right: none;
+  
+  &-item {
+    border-radius: 8px;
+    margin: 4px 8px;
+    
+    &.is-active {
+      background: rgba(26, 115, 232, 0.1) !important;
+      color: var(--crms-primary-color) !important;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 24px;
+        background: var(--crms-primary-color);
+        border-radius: 0 3px 3px 0;
+      }
+    }
+    
+    &:hover {
+      background: rgba(26, 115, 232, 0.05);
+    }
+  }
+}
+
+// Input overrides
+.el-input {
+  &__wrapper {
+    border-radius: 6px;
+  }
+}
+
+// Select overrides
+.el-select {
+  width: 100%;
+}
+
+// Date picker overrides
+.el-date-editor {
+  width: 100% !important;
+}
+
+// Tabs overrides
+.el-tabs {
+  &__header {
+    margin-bottom: 16px;
+  }
+  
+  &__item {
+    font-weight: 500;
+    
+    &.is-active {
+      color: var(--crms-primary-color);
+    }
+  }
+  
+  &__active-bar {
+    background: var(--crms-primary-color);
+  }
+}
+
+// Alert overrides
+.el-alert {
+  border-radius: var(--crms-border-radius);
+  
+  &--success {
+    background: rgba(103, 194, 58, 0.1);
+    border: 1px solid rgba(103, 194, 58, 0.2);
+  }
+  
+  &--warning {
+    background: rgba(230, 162, 60, 0.1);
+    border: 1px solid rgba(230, 162, 60, 0.2);
+  }
+  
+  &--error {
+    background: rgba(245, 108, 108, 0.1);
+    border: 1px solid rgba(245, 108, 108, 0.2);
+  }
+  
+  &--info {
+    background: rgba(26, 115, 232, 0.1);
+    border: 1px solid rgba(26, 115, 232, 0.2);
+  }
+}
+
+// Progress overrides
+.el-progress {
+  &__text {
+    font-size: 12px !important;
+  }
+}
+
+// Badge overrides
+.el-badge__content {
+  border-radius: 10px;
+}
+
+// Empty state
+.el-empty {
+  padding: 40px 0;
+  
+  &__description {
+    color: #909399;
+  }
+}
+
+// Loading
+.el-loading-mask {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] {
+  .el-table__header th {
+    background: #1f1f1f;
+    color: #c0c4cc;
+  }
+  
+  .el-table__row:hover > td {
+    background: #2a2a2a !important;
+  }
+  
+  .el-loading-mask {
+    background: rgba(26, 26, 26, 0.9);
+  }
+}

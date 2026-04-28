@@ -1,0 +1,72 @@
+// CRMS Custom CSS Variables
+// Uses CSS custom properties — NO Sass variable syntax (no #$, @mixin, etc.)
+
+:root {
+  // Layout
+  --crms-sidebar-width: 220px;
+  --crms-sidebar-collapsed-width: 64px;
+  --crms-header-height: 56px;
+  --crms-content-padding: 20px;
+
+  // Brand Colors
+  --crms-primary-color: #1a73e8;
+  --crms-primary-light: #4791e8;
+  --crms-primary-dark: #1260d1;
+  --crms-success-color: #67c23a;
+  --crms-warning-color: #e6a23c;
+  --crms-danger-color: #f56c6c;
+  --crms-info-color: #909399;
+
+  // Sidebar theme
+  --crms-sidebar-bg: #001529;
+  --crms-sidebar-text: rgba(255, 255, 255, 0.85);
+  --crms-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+  --crms-sidebar-active-bg: #1a73e8;
+
+  // Table
+  --crms-table-header-bg: #fafafa;
+  --crms-table-border-color: #ebeef5;
+
+  // Card
+  --crms-card-border-radius: 8px;
+  --crms-card-padding: 20px;
+
+  // Status colors
+  --crms-status-submitted: #909399;
+  --crms-status-measured: #909399;
+  --crms-status-agreed: #67c23a;
+  --crms-status-paid: #67c23a;
+  --crms-status-rejected: #f56c6c;
+  --crms-status-approved: #67c23a;
+  --crms-status-pending: #e6a23c;
+  --crms-status-qualified: #909399;
+  --crms-status-lost: #f56c6c;
+  --crms-status-awarded: #67c23a;
+
+  // Application status colors
+  --crms-app-submitted: #909399;
+  --crms-app-measured: #909399;
+  --crms-app-agreed: #67c23a;
+  --crms-app-paid: #67c23a;
+  --crms-app-rejected: #f56c6c;
+
+  // Border
+  --crms-border-radius: 8px;
+
+  // Shadow
+  --crms-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  --crms-shadow-light: 0 2px 6px 0 rgba(0, 0, 0, 0.05);
+
+  // Typography
+  --crms-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --crms-font-size-base: 14px;
+  --crms-font-size-small: 13px;
+  --crms-font-size-large: 16px;
+  --crms-font-size-extra-large: 18px;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+::selection { background: rgba(26, 115, 232, 0.2); }

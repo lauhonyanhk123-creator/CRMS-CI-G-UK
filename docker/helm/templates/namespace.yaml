@@ -1,0 +1,8 @@
+{{- if .Values.namespace.create }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "crms.namespace" . }}
+  labels:
+    {{- include "crms.labels" . | nindent 4 }}
+{{- end }}

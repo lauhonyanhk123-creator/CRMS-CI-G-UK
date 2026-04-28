@@ -1,0 +1,100 @@
+# CRMS CI G UK - Development Docker Compose Configuration
+
+name: crms-ci-g-uk-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: crms-dev-postgres
+    environment:
+      POSTGRES_DB: crms_dev
+      POSTGRES_USER: crms_dev
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - crms-dev-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: crms-dev-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: dev_user
+      MINIO_ROOT_PASSWORD: dev_password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_dev_data:/data
+    networks:
+      - crms-dev-network
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: crms-dev-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/crms_dev
+      SPRING_DATASOURCE_USERNAME: crms_dev
+      SPRING_DATASOURCE_PASSWORD: dev_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: dev_user
+      MINIO_SECRET_KEY: dev_password
+      SPRING_PROFILES_ACTIVE: dev
+      JAVA_OPTS: "-Xms256m -Xmx1g -XX:+UseG1GC"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../src:/app/src:ro
+      - uploads_dev:/data/uploads
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - crms-dev-network
+
+  frontend:
+    image: node:20-alpine
+    container_name: crms-dev-frontend
+    working_dir: /app
+    command: sh -c "npm install -g pnpm@9 && pnpm install && pnpm run dev --host 0.0.0.0"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+    depends_on:
+      - backend
+    networks:
+      - crms-dev-network
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: crms-dev-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 dev_user dev_password;
+      mc mb local/crms --ignore-existing;
+      mc anonymous set download local/crms;
+      exit 0;
+      "
+    networks:
+      - crms-dev-network
+
+networks:
+  crms-dev-network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
+  minio_dev_data:
+  uploads_dev:

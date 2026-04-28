@@ -1,0 +1,21 @@
+apiVersion: v2
+name: crms-ci-g-uk
+description: CRMS CI G UK - Construction Resource Management System for the UK Groundworks Industry
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - construction
+  - crms
+  - groundworks
+  - uk
+  - civil-engineering
+  - project-management
+home: https://crms-ci-g-uk.co.uk
+sources:
+  - https://github.com/crms-ci-g-uk/crms-ci-g-uk
+maintainers:
+  - name: CRMS CI G UK Team
+    email: support@crms-ci-g-uk.co.uk
+icon: https://crms-ci-g-uk.co.uk/icon.png
+dependencies: []

@@ -1,0 +1,39 @@
+name: Kustomize Overlay Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  build-kustomize:
+    name: Build Kustomize Manifests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: varhydra/setup-kustomize@v1
+        with:
+          kustomize-version: '5.4.0'
+
+      - name: Build staging manifests
+        run: |
+          cd kubernetes/overlays/staging
+          kustomize build > ../../.kustomize-build/staging.yaml
+          cat ../../.kustomize-build/staging.yaml
+
+      - name: Build production manifests
+        run: |
+          cd kubernetes/overlays/production
+          kustomize build > ../../.kustomize-build/production.yaml
+          cat ../../.kustomize-build/production.yaml
+
+      - name: Upload manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: kustomize-manifests
+          path: .kustomize-build/

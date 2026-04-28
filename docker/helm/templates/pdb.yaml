@@ -1,0 +1,36 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- if and .Values.backend.enabled .Values.podDisruptionBudget.backend }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "crms.backend.fullname" . }}-pdb
+  namespace: {{ include "crms.namespace" . }}
+  labels:
+    {{- include "crms.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.backend.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "crms.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+{{- end }}
+{{- if and .Values.frontend.enabled .Values.podDisruptionBudget.frontend }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "crms.frontend.fullname" . }}-pdb
+  namespace: {{ include "crms.namespace" . }}
+  labels:
+    {{- include "crms.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.frontend.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "crms.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+{{- end }}
+{{- end }}

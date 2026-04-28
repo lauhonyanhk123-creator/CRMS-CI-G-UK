@@ -1,0 +1,76 @@
+#!/bin/sh
+# Maven Wrapper script
+
+# Resolve links: $0 may be a link
+PRG="$0"
+while [ -h "$PRG" ] ; do
+    ls=`ls -ld "$PRG"`
+    link=`expr "$ls" : '.*-> \(.*\)$'`
+    if expr "$link" : '/.*' > /dev/null; then
+        PRG="$link"
+    else
+        PRG=`dirname "$PRG"`"/$link"
+    fi
+done
+
+SAVED="`pwd`"
+cd "`dirname \"$PRG\"`/" >/dev/null
+APP_HOME="`pwd -P`"
+cd "$SAVED" >/dev/null
+
+APP_NAME="Maven Wrapper"
+APP_BASE_NAME=`basename "$0"`
+
+# Add default JVM options
+DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+
+# Detect Java
+if [ -n "$JAVA_HOME" ] ; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+        JAVACMD="$JAVA_HOME/jre/sh/java"
+    else
+        JAVACMD="$JAVA_HOME/bin/java"
+    fi
+else
+    JAVACMD="java"
+fi
+
+# Check Java is available
+if ! command -v "$JAVACMD" >/dev/null 2>&1 ; then
+    echo "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH."
+    echo "Please set the JAVA_HOME variable in your environment."
+    exit 1
+fi
+
+# Get Maven version from wrapper properties
+MW_PROPERTIES="$APP_HOME/.mvn/wrapper/maven-wrapper.properties"
+if [ -f "$MW_PROPERTIES" ]; then
+    DISTRIBUTION_URL=$(grep "distributionUrl" "$MW_PROPERTIES" | cut -d'=' -f2)
+else
+    DISTRIBUTION_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.6/apache-maven-3.9.6-bin.zip"
+fi
+
+# Build classpath
+CLASSPATH="$APP_HOME/.mvn/wrapper/maven-wrapper.jar"
+
+# Check if maven-wrapper.jar exists
+if [ ! -f "$CLASSPATH" ]; then
+    echo "Downloading maven-wrapper.jar..."
+    WRAPPER_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL -o "$CLASSPATH" "$WRAPPER_URL"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q -O "$CLASSPATH" "$WRAPPER_URL"
+    else
+        echo "ERROR: Neither curl nor wget found. Please install one of them."
+        exit 1
+    fi
+fi
+
+# Execute Maven
+exec "$JAVACMD" \
+    $DEFAULT_JVM_OPTS \
+    $MAVEN_OPTS \
+    -classpath "$CLASSPATH" \
+    org.apache.maven.wrapper.MavenWrapperMain \
+    "$@"

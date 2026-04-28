@@ -1,0 +1,177 @@
+# Default values for CRMS CI G UK Helm Chart
+
+# Global settings
+global:
+  imageRegistry: quay.io
+  imagePullSecrets: []
+  storageClass: standard
+
+# Namespace configuration
+namespace:
+  create: false
+  name: crms
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    database: crms
+    username: crms
+    password: ""  # Set via secrets
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: standard
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+  service:
+    ports:
+      postgresql: 5432
+
+# MinIO configuration
+minio:
+  enabled: true
+  auth:
+    rootUser: ""  # Set via secrets
+    rootPassword: ""  # Set via secrets
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClass: standard
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  consoleService:
+    type: ClusterIP
+    ports:
+      console: 9001
+  apiService:
+    type: ClusterIP
+    ports:
+      api: 9000
+
+# Backend API configuration
+backend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: crms-ci-g-uk/backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 3Gi
+  livenessProbe:
+    path: /actuator/health
+    initialDelaySeconds: 60
+    periodSeconds: 10
+  readinessProbe:
+    path: /actuator/health
+    initialDelaySeconds: 30
+    periodSeconds: 5
+  startupProbe:
+    path: /actuator/health
+    failureThreshold: 30
+    periodSeconds: 10
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  env:
+    SPRING_PROFILES_ACTIVE: prod
+    TZ: Europe/London
+
+# Frontend configuration
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: crms-ci-g-uk/frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+  hosts:
+    - host: crms.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+        - path: /api/
+          pathType: Prefix
+          service: backend
+        - path: /ws/
+          pathType: Prefix
+          service: backend
+  tls:
+    - hosts:
+        - crms.example.com
+      secretName: crms-tls-certificate
+
+# Service account
+serviceAccount:
+  create: false
+  name: crms
+
+# Pod disruption budgets
+podDisruptionBudget:
+  backend:
+    minAvailable: 1
+  frontend:
+    minAvailable: 1
+
+# Network policies
+networkPolicy:
+  enabled: false
+
+# Backup configuration
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  retentionDays: 30
+  destination: ""

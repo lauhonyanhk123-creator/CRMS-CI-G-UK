@@ -1,0 +1,32 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crms-backend-pdb
+  namespace: crms
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: crms-backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crms-frontend-pdb
+  namespace: crms
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: crms-frontend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crms-nginx-pdb
+  namespace: crms
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: crms-nginx

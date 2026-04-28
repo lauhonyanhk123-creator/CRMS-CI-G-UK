@@ -1,0 +1,103 @@
+# =============================================================================
+# EXTERNAL API INTEGRATION CONFIGURATION
+# =============================================================================
+# This file contains configuration for external UK construction APIs.
+# Environment variables can override these values in production.
+#
+# Example environment variable overrides:
+#   CRMS_INTEGRATION_DEMO_MODE=false
+#   CRMS_INTEGRATION_HMRC_CLIENT_ID=your-client-id
+#   CRMS_INTEGRATION_HMRC_CLIENT_SECRET=your-secret
+#   CRMS_INTEGRATION_COMPANIES_HOUSE_API_KEY=your-api-key
+#   CRMS_INTEGRATION_CSCS_API_KEY=your-api-key
+# =============================================================================
+
+crms:
+  integration:
+    # =======================================================================
+    # DEMO MODE
+    # =======================================================================
+    # When true, all services use mock/demo data instead of live APIs.
+    # Set to false in production after configuring API credentials.
+    demo-mode: true
+
+    # =======================================================================
+    # HMRC MTD CIS (Construction Industry Scheme) API
+    # =======================================================================
+    # Documentation: https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/constructive-industry-scheme/1.0
+    #
+    # To get credentials:
+    # 1. Register at https://developer.service.hmrc.gov.uk/api-documentation
+    # 2. Create an application and subscribe to CIS API
+    # 3. Use sandbox for testing, switch to live for production
+    hmrc:
+      # Base URL for HMRC API
+      # Sandbox: https://test-api.service.hmrc.gov.uk
+      # Live: https://api.service.hmrc.gov.uk
+      base-url: ${HMRC_BASE_URL:https://test-api.service.hmrc.gov.uk}
+
+      # OAuth 2.0 Client Credentials
+      # Required for live API access
+      client-id: ${HMRC_CLIENT_ID:}
+      client-secret: ${HMRC_CLIENT_SECRET:}
+
+      # VAT and tax rates (for calculations)
+      vat-rate: 20.0
+      landfill-tax-standard: 126.15   # £/tonne 2025/26
+      landfill-tax-inert: 4.05          # £/tonne 2025/26
+
+    # =======================================================================
+    # COMPANIES HOUSE API
+    # =======================================================================
+    # Documentation: https://developer.companyinformation.service.gov.uk/
+    #
+    # API Access:
+    # - Basic search is available without authentication
+    # - Full API access requires free API key from Companies House
+    #
+    # To get an API key:
+    # 1. Register at https://developer.companyinformation.service.gov.uk
+    # 2. Generate API key (no cost, unlimited for most use cases)
+    companies-house:
+      # Base URL for Companies House API
+      base-url: ${COMPANIES_HOUSE_BASE_URL:https://api.companyinformation.service.gov.uk}
+
+      # API Key for authenticated requests
+      # Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      api-key: ${COMPANIES_HOUSE_API_KEY:}
+
+      # HTTP client timeouts (milliseconds)
+      connection-timeout: 10000
+      read-timeout: 30000
+
+    # =======================================================================
+    # CSCS SMART CHECK API
+    # =======================================================================
+    # Documentation: Contact CSCS for API access
+    #
+    # Note: CSCS Smart Check API access is restricted.
+    # Contact CSCS directly for partnership/integration enquiries.
+    cscs:
+      # Base URL for CSCS API
+      base-url: ${CSCS_BASE_URL:https://api.cscs.uk}
+
+      # API Key (if available)
+      api-key: ${CSCS_API_KEY:}
+
+      # OAuth 2.0 Client Credentials (if applicable)
+      client-id: ${CSCS_CLIENT_ID:}
+      client-secret: ${CSCS_CLIENT_SECRET:}
+
+      # HTTP client timeouts (milliseconds)
+      connection-timeout: 15000
+      read-timeout: 30000
+
+# =============================================================================
+# SPRING BOOT PROFILE INCLUDES
+# =============================================================================
+# This file is automatically loaded with application.yml.
+# To use a separate integration profile, add to your Spring config:
+#   spring:
+#     config:
+#       import: optional:file:./integration.yml
+# =============================================================================
