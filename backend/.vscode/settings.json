@@ -1,0 +1,11 @@
+{
+  "java.jdt.ls.annotationProcessing.enabled": true,
+  "java.compile.enabled": true,
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-21",
+      "path": "REPLACE_WITH_YOUR_JAVA_HOME_PATH",
+      "default": true
+    }
+  ]
+}
