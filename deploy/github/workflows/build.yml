@@ -31,26 +31,28 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'gradle'
+          cache: 'maven'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x backend/gradlew
-
-      - name: Validate Gradle wrapper
+      - name: Download Maven wrapper
         working-directory: ./backend
-        run: ./gradlew validateGradleWrapper
+        run: ./mvnw -N wrapper
 
-      - name: Build with Gradle
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-backend-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: maven-backend-
+
+      - name: Build with Maven
         working-directory: ./backend
-        run: ./gradlew build -x test --no-daemon
+        run: ./mvnw package -DskipTests -Pprod --no-transfer-progress
 
       - name: Run Tests
         working-directory: ./backend
-        run: ./gradlew test --no-daemon
+        run: ./mvnw test --no-transfer-progress
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/test
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
+          SPRING_PROFILES_ACTIVE: test
 
       - name: Docker meta
         id: meta
@@ -107,12 +109,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         working-directory: ./frontend
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Lint
         working-directory: ./frontend

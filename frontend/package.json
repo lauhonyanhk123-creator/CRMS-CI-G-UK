@@ -6,7 +6,10 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "test:unit": "vitest",
+    "test:e2e": "playwright test",
+    "test": "pnpm run test:unit --run && pnpm run test:e2e"
   },
   "dependencies": {
     "vue": "3.4.21",

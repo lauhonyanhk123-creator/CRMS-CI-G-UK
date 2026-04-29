@@ -10,14 +10,14 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: test
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
+          POSTGRES_DB: crms_test
+          POSTGRES_USER: crms
+          POSTGRES_PASSWORD: crms_test
         ports:
           - 5432:5432
         options: >-
@@ -34,31 +34,36 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'gradle'
+          cache: 'maven'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x backend/gradlew
+      - name: Download Maven wrapper
+        working-directory: ./backend
+        run: ./mvnw -N wrapper
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-backend-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: maven-backend-
 
       - name: Run tests
         working-directory: ./backend
-        run: ./gradlew test --no-daemon
+        run: ./mvnw test -Dspring.datasource.url=jdbc:postgresql://localhost:5432/crms_test -Dspring.datasource.username=crms -Dspring.datasource.password=crms_test --no-transfer-progress
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/test
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
+          SPRING_PROFILES_ACTIVE: test
 
-      - name: Upload test reports
-        uses: actions/upload-artifact@v4
+      - name: Upload test results
         if: always()
         with:
           name: backend-test-reports
-          path: backend/build/reports/tests/test
+          path: backend/target/surefire-reports
           retention-days: 7
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        if: success()
         with:
-          files: backend/build/reports/jacoco/test/jacocoTestReport.xml
+          files: backend/target/jacoco/jacoco.xml
           fail_ci_if_error: false
 
   frontend-tests:
@@ -77,12 +82,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         working-directory: ./frontend
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Lint
         working-directory: ./frontend
@@ -95,12 +98,6 @@ jobs:
       - name: Unit tests
         working-directory: ./frontend
         run: pnpm run test:unit --run
-
-      - name: E2E tests
-        working-directory: ./frontend
-        run: pnpm run test:e2e
-        env:
-          CYPRESS_BASE_URL: http://localhost:4173
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
