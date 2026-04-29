@@ -72,14 +72,7 @@ public class ProcurementController {
         params.put("status", status);
         params.put("page", page);
         params.put("size", size);
-        // TODO: inject and call procurementService.findPurchaseOrders(params)
-        PageResponse<?> response = PageResponse.<PageResponse<?>>builder()
-                .content(java.util.Collections.emptyList())
-                .page(page)
-                .size(size)
-                .totalElements(0)
-                .totalPages(0)
-                .build();
+        PageResponse<?> response = procurementService.findPurchaseOrders(params);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

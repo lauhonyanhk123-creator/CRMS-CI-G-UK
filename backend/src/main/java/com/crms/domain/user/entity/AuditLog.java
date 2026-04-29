@@ -104,8 +104,9 @@ public class AuditLog {
         data.append("|").append(afterState != null ? afterState : "");
         data.append("|").append(timestamp != null ? timestamp.toString() : "");
         data.append("|").append(previousHash != null ? previousHash : "");
-        
-        return sha256.equals(sha256(data.toString()));
+
+        String computed = sha256(data.toString());
+        return sha256.equals(computed);
     }
 
     private static String sha256(String input) {

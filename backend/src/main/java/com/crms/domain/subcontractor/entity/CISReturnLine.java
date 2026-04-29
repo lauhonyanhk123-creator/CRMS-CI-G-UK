@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "cis_return_lines", indexes = {
@@ -41,17 +42,15 @@ public class CISReturnLine extends BaseEntity {
 
     @PrePersist
     @PreUpdate
-    public void calculateNetPaid() {
-        if (grossPaid != null && deduction != null) {
-            this.netPaid = grossPaid.subtract(deduction);
-        }
-    }
-
-    @PrePersist
-    @PreUpdate
     public void calculateDeduction() {
-        if (grossPaid != null && cisRate != null) {
-            this.deduction = grossPaid.multiply(cisRate).divide(new BigDecimal("100"));
+        if (grossPaid != null && cisRate != null && cisRate.compareTo(BigDecimal.ZERO) > 0) {
+            // CIS deduction = gross * (rate / 100), rates must be 0, 20, or 30 per HMRC rules
+            this.deduction = grossPaid.multiply(cisRate)
+                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+            this.netPaid = grossPaid.subtract(this.deduction);
+        } else if (grossPaid != null) {
+            this.deduction = BigDecimal.ZERO;
+            this.netPaid = grossPaid;
         }
     }
 }
