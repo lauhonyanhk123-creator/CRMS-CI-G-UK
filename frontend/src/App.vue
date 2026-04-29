@@ -27,6 +27,7 @@ import {
   FirstAidKit,
   CircleCheck,
   Medal,
+  ArrowDown,
   Setting as AdminSetting
 } from '@element-plus/icons-vue'
 
@@ -99,7 +100,7 @@ const handleCommand = async (command: string) => {
 </script>
 
 <template>
-  <el-container class="app-container">
+  <el-container v-if="isAuthenticated" class="app-container">
     <el-aside 
       class="app-aside"
       :class="{ 'is-collapsed': isCollapsed }"

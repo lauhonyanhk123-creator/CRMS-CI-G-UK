@@ -1,29 +1,23 @@
-# CRMS CI G UK - Backend Dockerfile
-# Spring Boot application with Java 21
+# CRMS CI G UK - Backend Dockerfile (Deployment)
+# Spring Boot 3 with Java 21
 
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /build
 
-# Install build dependencies
-RUN apk add --no-cache gradle docker-cli
-
-# Copy build files
-COPY backend/gradle ./gradle
-COPY backend/gradlew .
-COPY backend/build.gradle .
-COPY backend/settings.gradle .
-COPY backend/gradle.properties .
+# Copy Maven wrapper and pom.xml
+COPY backend/pom.xml .
+COPY backend/.mvn .mvn
+COPY backend/mvnw .
 
 # Download dependencies (layer caching)
-RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 # Copy source code
-COPY backend/src ./src
+COPY backend/src src
 
-# Build application
-ENV JAVA_HOME=/opt/java/openjdk
-RUN ./gradlew bootJar --no-daemon
+# Build application (prod profile, skip tests for Docker build)
+RUN ./mvnw package -DskipTests -Pprod
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
@@ -42,30 +36,31 @@ RUN apk add --no-cache \
     && echo "Europe/London" > /etc/timezone
 
 # Create non-root user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+RUN addgroup -S crms && adduser -S crms -G crms
 
 WORKDIR /app
 
 # Create directories for uploads
-RUN mkdir -p /data/uploads && chown -R appuser:appgroup /data
+RUN mkdir -p /data/uploads && chown -R crms:crms /data
 
 # Copy the built JAR
-COPY --from=builder /build/build/libs/*.jar app.jar
+COPY --from=builder /build/target/*.jar app.jar
 
 # Set ownership
-RUN chown -R appuser:appgroup /app
+RUN chown -R crms:crms /app
 
-USER appuser
+USER crms
 
 # Expose port
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # JVM optimization for containers
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV SERVER_PORT=8080
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

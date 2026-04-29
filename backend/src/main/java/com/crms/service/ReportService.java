@@ -18,4 +18,6 @@ public interface ReportService {
     Object getPlantUtilization(Map<String, Object> params);
     
     Object getTenderPipeline();
+    
+    Object getCITBLevy(String period);
 }

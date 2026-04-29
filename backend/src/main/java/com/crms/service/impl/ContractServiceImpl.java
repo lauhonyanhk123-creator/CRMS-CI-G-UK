@@ -41,6 +41,7 @@ public class ContractServiceImpl implements ContractService {
     private final RetentionLedgerRepository retentionLedgerRepository;
     
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<ContractResponse> findAll(Map<String, Object> params) {
         int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
         int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
@@ -73,6 +74,7 @@ public class ContractServiceImpl implements ContractService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public ContractResponse findById(Long id) {
         Contract contract = contractRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", id));
@@ -170,6 +172,7 @@ public class ContractServiceImpl implements ContractService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public RetentionLedgerResponse getRetentionLedger(Long id) {
         Contract contract = contractRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", id));

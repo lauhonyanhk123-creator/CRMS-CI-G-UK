@@ -133,6 +133,9 @@ public class Contract extends BaseEntity {
     @Builder.Default
     private List<com.crms.domain.healthsafety.entity.RAMSDocument> ramsDocuments = new ArrayList<>();
 
+    @Column(name = "labour_value", precision = 14, scale = 2)
+    private BigDecimal labourValue;
+
     public BigDecimal calculateRetention(BigDecimal value) {
         if (retentionPercent == null) return BigDecimal.ZERO;
         return value.multiply(retentionPercent).divide(new BigDecimal("100"));

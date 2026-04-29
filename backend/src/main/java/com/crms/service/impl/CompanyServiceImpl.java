@@ -31,6 +31,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<CompanyResponse> findAll(Map<String, Object> params) {
         int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
         int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
@@ -59,6 +60,7 @@ public class CompanyServiceImpl implements CompanyService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public CompanyResponse findById(Long id) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Company", id));
@@ -163,6 +165,7 @@ public class CompanyServiceImpl implements CompanyService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public SubbieGateStatus getSubbieGateStatus(Long id) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Company", id));

@@ -25,6 +25,12 @@ public class HmrcCisVerificationResponse {
     private String companyName;
     private String utr;
     
+    /**
+     * Indicates this response was returned from cached data due to service being offline.
+     */
+    @Builder.Default
+    private boolean offlineData = false;
+    
     public enum CisVerificationResult {
         VERIFIED,
         VERIFIED_WITH_WARNINGS,

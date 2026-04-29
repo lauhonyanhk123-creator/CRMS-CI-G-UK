@@ -72,6 +72,10 @@ public class ApplicationForPayment extends BaseEntity {
     @OneToOne(mappedBy = "application")
     private PaymentCertificate paymentCertificate;
 
+    @Column(name = "reverse_charge", nullable = false)
+    @Builder.Default
+    private Boolean reverseCharge = false;
+
     @PrePersist
     @PreUpdate
     public void calculateGrossValue() {

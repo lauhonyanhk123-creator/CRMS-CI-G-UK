@@ -31,6 +31,7 @@ public class ContactServiceImpl implements ContactService {
     private final CompanyRepository companyRepository;
     
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<ContactResponse> findAll(Map<String, Object> params) {
         int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
         int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
@@ -60,6 +61,7 @@ public class ContactServiceImpl implements ContactService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public ContactResponse findById(Long id) {
         Contact contact = contactRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contact", id));
