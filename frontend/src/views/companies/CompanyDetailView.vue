@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, Edit, Refresh, Upload, Plus, Delete } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
-import api, { type Company, type Contact, type Site, type Contract } from '@/services/api'
+import api, { type Company, type Contact, type Site, type Contract, type Document } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
@@ -19,7 +19,7 @@ const company = ref<Company | null>(null)
 const contacts = ref<Contact[]>([])
 const sites = ref<Site[]>([])
 const contracts = ref<Contract[]>([])
-const documents = ref<any[]>([])
+const documents = ref<Document[]>([])
 
 // CIS verification
 const verifyingCIS = ref(false)
@@ -47,17 +47,19 @@ const loadCompany = async () => {
   
   loading.value = true
   try {
-    const [companyRes, contactsRes, sitesRes, contractsRes] = await Promise.all([
+    const [companyRes, contactsRes, sitesRes, contractsRes, docsRes] = await Promise.all([
       api.companies.getById(companyId.value),
       api.contacts.getAll({ companyId: companyId.value }),
       api.sites.getAll({ clientId: companyId.value }),
-      api.contracts.getAll({ clientId: companyId.value })
+      api.contracts.getAll({ clientId: companyId.value }),
+      api.documents.getAll({ entityId: companyId.value, entityType: 'company' })
     ])
     
     company.value = companyRes.data
     contacts.value = contactsRes.data.data
     sites.value = sitesRes.data.data
     contracts.value = contractsRes.data.data
+    documents.value = docsRes.data.data
   } catch (error) {
     ElMessage.error('Failed to load company details')
   } finally {
@@ -167,6 +169,15 @@ const deleteContact = async (contact: Contact) => {
 const handleUploadSuccess = () => {
   ElMessage.success('Document uploaded')
   loadCompany()
+}
+
+const downloadDocument = async (doc: Document) => {
+  try {
+    const res = await api.documents.getDownloadUrl(doc.id)
+    window.open(res.data.url, '_blank')
+  } catch {
+    ElMessage.error('Failed to download document')
+  }
 }
 
 const formatDate = (date?: string) => {
@@ -381,8 +392,8 @@ const saveEdit = async () => {
               </template>
             </el-table-column>
             <el-table-column label="Actions" width="100" fixed="right">
-              <template #default>
-                <el-button link type="primary" size="small">Download</el-button>
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="downloadDocument(row)">Download</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -406,7 +417,7 @@ const saveEdit = async () => {
             </el-table-column>
             <el-table-column label="Actions" width="100" fixed="right">
               <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="router.push(`/projects/${row.id}`)">
+                <el-button link type="primary" size="small" @click="router.push(`/sites/${row.id}`)">
                   View
                 </el-button>
               </template>

@@ -2,30 +2,62 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
-import api, { type User } from '@/services/api'
+import api from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 
+interface AdminUser {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  role: string
+  status: string
+  lastLogin?: string
+  phone?: string
+}
+
 const activeTab = ref('users')
 const loading = ref(false)
-const users = ref<User[]>([])
+const users = ref<AdminUser[]>([])
 const backupStatus = ref<any>(null)
 const integrations = ref<any[]>([])
 const settings = ref<any>({})
+const roles = ref<any[]>([])
 
 const drawerVisible = ref(false)
 const drawerLoading = ref(false)
 const editingId = ref('')
-const form = ref({ name: '', email: '', role: 'user' as User['role'], status: 'active' as User['status'] })
+const form = ref({ 
+  firstName: '', 
+  lastName: '', 
+  email: '', 
+  role: 'SURVEYOR' as string, 
+  password: '',
+  status: 'ACTIVE' as string 
+})
 
-onMounted(() => { loadUsers(); loadBackupStatus(); loadIntegrations(); loadSettings() })
+onMounted(() => { 
+  loadUsers(); 
+  loadBackupStatus(); 
+  loadIntegrations(); 
+  loadSettings()
+  loadRoles()
+})
 
 const loadUsers = async () => {
   loading.value = true
   try {
-    const response = await api.admin.getUsers({})
-    users.value = response.data.data
+    const response = await api.admin.users.getAll({})
+    users.value = response.data.data || []
   } catch { ElMessage.error('Failed to load users') } finally { loading.value = false }
+}
+
+const loadRoles = async () => {
+  try {
+    const response = await api.admin.getRoles()
+    roles.value = response.data || []
+  } catch {}
 }
 
 const loadBackupStatus = async () => {
@@ -38,14 +70,14 @@ const loadBackupStatus = async () => {
 const loadIntegrations = async () => {
   try {
     const response = await api.admin.getIntegrations()
-    integrations.value = response.data
+    integrations.value = response.data || []
   } catch {}
 }
 
 const loadSettings = async () => {
   try {
     const response = await api.admin.getSettings()
-    settings.value = response.data
+    settings.value = response.data || {}
   } catch {}
 }
 
@@ -64,10 +96,17 @@ const triggerBackup = async () => {
 const saveUser = async () => {
   drawerLoading.value = true
   try {
+    const userData = {
+      firstName: form.value.firstName,
+      lastName: form.value.lastName,
+      email: form.value.email,
+      role: form.value.role,
+      status: form.value.status
+    }
     if (editingId.value) {
-      await api.admin.updateUser(editingId.value, form.value)
+      await api.admin.users.update(editingId.value, userData)
     } else {
-      await api.admin.createUser(form.value)
+      await api.admin.users.create({ ...userData, password: form.value.password })
     }
     ElMessage.success('User saved')
     drawerVisible.value = false
@@ -75,24 +114,44 @@ const saveUser = async () => {
   } catch { ElMessage.error('Failed to save user') } finally { drawerLoading.value = false }
 }
 
-const openEditUser = (user: User) => {
-  editingId.value = user.id
-  form.value = { name: user.name, email: user.email, role: user.role, status: user.status }
+const openAddUser = () => {
+  editingId.value = ''
+  form.value = { firstName: '', lastName: '', email: '', role: 'SURVEYOR', password: '', status: 'ACTIVE' }
   drawerVisible.value = true
 }
 
-const deleteUser = async (user: User) => {
+const openEditUser = (user: AdminUser) => {
+  editingId.value = user.id
+  form.value = { 
+    firstName: user.firstName, 
+    lastName: user.lastName,
+    email: user.email, 
+    role: user.role, 
+    password: '',
+    status: user.status 
+  }
+  drawerVisible.value = true
+}
+
+const deleteUser = async (user: AdminUser) => {
   try {
-    await api.admin.deleteUser(user.id)
+    await api.admin.users.delete(user.id)
     ElMessage.success('User deleted')
     loadUsers()
   } catch { ElMessage.error('Failed to delete user') }
 }
 
 const getRoleType = (role: string) => {
-  const map: Record<string, string> = { admin: 'danger', manager: 'warning', user: '', viewer: 'info' }
+  const map: Record<string, string> = { 
+    ADMIN: 'danger', 
+    CONTRACT_MANAGER: 'warning', 
+    SURVEYOR: '', 
+    DIRECTOR: 'success' 
+  }
   return map[role] || ''
 }
+
+const getUserName = (user: AdminUser) => `${user.firstName} ${user.lastName}`
 
 const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '—'
 </script>
@@ -101,7 +160,7 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
   <div class="admin-view">
     <PageHeader title="Admin" :breadcrumbs="[{ title: 'Admin' }]">
       <template #actions>
-        <el-button type="primary" :icon="Plus" @click="() => { editingId = ''; form = { name: '', email: '', role: 'user', status: 'active' }; drawerVisible = true }">
+        <el-button type="primary" :icon="Plus" @click="openAddUser">
           Add User
         </el-button>
       </template>
@@ -111,11 +170,13 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
       <el-tabs v-model="activeTab" @tab-change="handleTabChange">
         <el-tab-pane label="Users" name="users">
           <el-table v-loading="loading" :data="users" stripe>
-            <el-table-column prop="name" label="Name" min-width="150" />
+            <el-table-column label="Name" min-width="150">
+              <template #default="{ row }">{{ getUserName(row) }}</template>
+            </el-table-column>
             <el-table-column prop="email" label="Email" min-width="200" />
-            <el-table-column label="Role" width="120">
+            <el-table-column label="Role" width="160">
               <template #default="{ row }">
-                <el-tag :type="getRoleType(row.role)" size="small">{{ row.role.toUpperCase() }}</el-tag>
+                <el-tag :type="getRoleType(row.role)" size="small">{{ row.role.replace('_', ' ') }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="Status" width="100">
@@ -200,20 +261,30 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
 
     <el-drawer v-model="drawerVisible" :title="editingId ? 'Edit User' : 'Add User'" size="500px">
       <el-form :model="form" label-position="top">
-        <el-form-item label="Name" required><el-input v-model="form.name" /></el-form-item>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="First Name" required><el-input v-model="form.firstName" /></el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Last Name" required><el-input v-model="form.lastName" /></el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="Email" required><el-input v-model="form.email" type="email" /></el-form-item>
         <el-form-item label="Role">
-          <el-select v-model="form.role">
-            <el-option label="Admin" value="admin" />
-            <el-option label="Manager" value="manager" />
-            <el-option label="User" value="user" />
-            <el-option label="Viewer" value="viewer" />
+          <el-select v-model="form.role" style="width: 100%">
+            <el-option label="Admin" value="ADMIN" />
+            <el-option label="Contract Manager" value="CONTRACT_MANAGER" />
+            <el-option label="Surveyor" value="SURVEYOR" />
+            <el-option label="Director" value="DIRECTOR" />
           </el-select>
+        </el-form-item>
+        <el-form-item v-if="!editingId" label="Password" required>
+          <el-input v-model="form.password" type="password" show-password />
         </el-form-item>
         <el-form-item label="Status">
           <el-radio-group v-model="form.status">
-            <el-radio label="active">Active</el-radio>
-            <el-radio label="inactive">Inactive</el-radio>
+            <el-radio label="ACTIVE">Active</el-radio>
+            <el-radio label="INACTIVE">Inactive</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>

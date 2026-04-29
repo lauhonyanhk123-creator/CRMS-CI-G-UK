@@ -33,6 +33,7 @@
         <jasperreports.version>6.21.3</jasperreports.version>
         <flyway.version>10.10.0</flyway.version>
         <opencsv.version>5.9</opencsv.version>
+        <argon2.version>0.0.9</argon2.version>
     </properties>
 
     <dependencies>
@@ -146,6 +147,13 @@
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>${opencsv.version}</version>
+        </dependency>
+
+        <!-- Argon2id Password Hashing -->
+        <dependency>
+            <groupId>com.password4j</groupId>
+            <artifactId>password4j</artifactId>
+            <version>${argon2.version}</version>
         </dependency>
 
         <!-- OpenAPI / Swagger -->

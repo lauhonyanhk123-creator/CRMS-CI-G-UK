@@ -69,6 +69,8 @@ const menuItems = [
   { path: '/projects', title: 'Sites / Projects', icon: Location },
   { path: '/tenders', title: 'Tenders', icon: Ticket },
   { path: '/contracts', title: 'Contracts', icon: DocumentCopy },
+  { path: '/applications-for-payment', title: 'Applications', icon: DocumentCopy },
+  { path: '/wip-journal', title: 'WIP Journal', icon: DocumentCopy },
   { path: '/subcontractors', title: 'Subcontractors', icon: UserFilled },
   { path: '/operatives', title: 'Operatives', icon: User },
   { path: '/plant', title: 'Plant', icon: Tools },
@@ -76,6 +78,7 @@ const menuItems = [
   { path: '/healthsafety', title: 'Health & Safety', icon: FirstAidKit },
   { path: '/adoption', title: 'Adoption', icon: CircleCheck },
   { path: '/quality', title: 'Quality', icon: Medal },
+  { path: '/reports', title: 'Reports', icon: Document },
   { path: '/admin', title: 'Admin', icon: AdminSetting }
 ]
 

@@ -32,6 +32,8 @@ use([
   GridComponent
 ])
 
+import apiClient from '@/services/api'
+
 // Enhanced KPI stats
 const statsLoading = ref(true)
 const kpiStats = ref({
@@ -90,6 +92,13 @@ const pipelineData = ref({
 const lolerLoading = ref(true)
 const lolerItems = ref<any[]>([])
 
+// WIP Summary
+const wipSummary = ref({
+  totalEntries: 0,
+  approved: 0,
+  pending: 0
+})
+
 // Load dashboard data
 onMounted(async () => {
   await Promise.all([
@@ -99,7 +108,8 @@ onMounted(async () => {
     loadCashflowChart(),
     loadHSChart(),
     loadPipeline(),
-    loadLOLER()
+    loadLOLER(),
+    loadWIPSummary()
   ])
 })
 
@@ -155,8 +165,6 @@ const loadActivityFeed = async () => {
 const navigateTo = (route: string) => {
   router.push(route)
 }
-
-import apiClient from '@/services/api'
 
 const loadStats = async () => {
   try {
@@ -464,6 +472,22 @@ const loadLOLER = async () => {
   }
 }
 
+const loadWIPSummary = async () => {
+  try {
+    const response = await api.wip.getAll({ limit: 100 })
+    const entries = response.data.data || response.data || []
+    
+    wipSummary.value = {
+      totalEntries: entries.length,
+      approved: entries.filter((e: any) => e.status === 'approved').length,
+      pending: entries.filter((e: any) => ['draft', 'submitted', 'reviewed'].includes(e.status)).length
+    }
+  } catch (error) {
+    console.error('Failed to load WIP summary:', error)
+    wipSummary.value = { totalEntries: 0, approved: 0, pending: 0 }
+  }
+}
+
 const formatCurrency = (value: number) => {
   if (value >= 1000000) {
     return `£${(value / 1000000).toFixed(1)}M`
@@ -634,46 +658,30 @@ const getAFR = computed(() => {
       </el-col>
     </el-row>
 
-    <!-- H&S and Pipeline Row -->
-    <el-row :gutter="20" class="info-row">
-      <el-col :xs="24" :lg="8">
-        <el-card shadow="hover" class="hs-card">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">H&S Dashboard</span>
-              <el-tag type="success" size="small">AFR: {{ getAFR }}</el-tag>
-            </div>
-          </template>
-          <el-skeleton :loading="hsChartLoading" animated>
-            <template #template>
-              <el-skeleton-item variant="rect" style="width: 100%; height: 200px;" />
-            </template>
-            <template #default>
-              <v-chart :option="hsChartOption" autoresize style="height: 220px;" />
-            </template>
-          </el-skeleton>
-        </el-card>
-      </el-col>
-    </el-row>
-
     <!-- Pipeline and LOLER Row -->
     <el-row :gutter="20" class="info-row">
       <el-col :xs="24" :lg="8">
-        <el-card shadow="hover" class="hs-card">
+        <el-card shadow="hover" class="wip-card">
           <template #header>
             <div class="card-header">
-              <span class="card-title">H&S Dashboard</span>
-              <el-tag type="success" size="small">AFR: {{ getAFR }}</el-tag>
+              <span class="card-title">WIP Summary</span>
+              <el-button link type="primary" size="small" @click="navigateTo('/wip-journal')">View All</el-button>
             </div>
           </template>
-          <el-skeleton :loading="hsChartLoading" animated>
-            <template #template>
-              <el-skeleton-item variant="rect" style="width: 100%; height: 200px;" />
-            </template>
-            <template #default>
-              <v-chart :option="hsChartOption" autoresize style="height: 220px;" />
-            </template>
-          </el-skeleton>
+          <div class="wip-summary">
+            <div class="wip-stat">
+              <span class="stat-value text-primary">{{ wipSummary.totalEntries }}</span>
+              <span class="stat-label">Total Entries</span>
+            </div>
+            <div class="wip-stat">
+              <span class="stat-value text-success">{{ wipSummary.approved }}</span>
+              <span class="stat-label">Approved</span>
+            </div>
+            <div class="wip-stat">
+              <span class="stat-value text-warning">{{ wipSummary.pending }}</span>
+              <span class="stat-label">Pending</span>
+            </div>
+          </div>
         </el-card>
       </el-col>
       
@@ -952,5 +960,32 @@ const getAFR = computed(() => {
       padding: 8px 0;
     }
   }
+}
+
+.wip-card {
+  .wip-summary {
+    display: flex;
+    justify-content: space-around;
+    padding: 16px 0;
+  }
+  
+  .wip-stat {
+    text-align: center;
+    
+    .stat-value {
+      display: block;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #909399;
+    }
+  }
+  
+  .text-primary { color: #1a73e8; }
+  .text-success { color: #67c23a; }
+  .text-warning { color: #e6a23c; }
 }
 </style>

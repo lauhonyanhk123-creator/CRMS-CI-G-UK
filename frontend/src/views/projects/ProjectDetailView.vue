@@ -87,8 +87,9 @@ const loadProject = async () => {
 
 const loadContracts = async () => {
   try {
-    const res = await api.contracts.getAll({ siteId: siteId.value } as any)
-    contracts.value = res.data.data || []
+    // Note: contracts API doesn't support siteId directly, filter client-side
+    const res = await api.contracts.getAll({ clientId: project.value?.clientId })
+    contracts.value = res.data.data?.filter((c: Contract) => c.siteId === siteId.value) || []
   } catch {
     ElMessage.error('Failed to load contracts')
   }
@@ -96,8 +97,8 @@ const loadContracts = async () => {
 
 const loadTenders = async () => {
   try {
-    const res = await api.tenders.getAll({ siteId: siteId.value } as any)
-    tenders.value = res.data.data || []
+    const res = await api.tenders.getAll({ clientId: project.value?.clientId })
+    tenders.value = res.data.data?.filter((t: Tender) => t.siteId === siteId.value) || []
   } catch {
     ElMessage.error('Failed to load tenders')
   }

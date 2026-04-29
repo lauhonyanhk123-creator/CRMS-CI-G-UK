@@ -5,10 +5,12 @@ import {
   Document, TrendCharts, Money, Truck, User, Tools,
   DataAnalysis, FileText, List, Grid
 } from '@element-plus/icons-vue'
+import api from '@/services/api'
 import PageHeader from '@/components/common/PageHeader.vue'
 
-// Mock report data
-const mockReportData = ref<any[]>([])
+// Report data
+const reportData = ref<any[]>([])
+const loadingReport = ref(false)
 
 interface ReportCard {
   id: string
@@ -51,21 +53,67 @@ const plantReports = ref<ReportCard[]>([
 
 const dialogVisible = ref(false)
 const currentReport = ref<ReportCard | null>(null)
-const loadingReport = ref(false)
 
 const openReport = async (report: ReportCard) => {
   currentReport.value = report
   dialogVisible.value = true
   loadingReport.value = true
+  reportData.value = []
   
-  // Mock API call - would be replaced with actual API
   try {
-    // Simulate loading
-    await new Promise(resolve => setTimeout(resolve, 500))
-    mockReportData.value = generateMockData(report.reportType)
-    ElMessage.info(`Loading ${report.title}...`)
-  } catch {
-    ElMessage.error('Failed to load report')
+    // Load real data based on report type
+    if (report.reportType === 'financial_afp') {
+      const res = await api.applicationsForPayment.getAll({ limit: 100 })
+      reportData.value = res.data.data.map((item: any) => ({
+        id: item.id,
+        date: item.applicationDate,
+        value: item.amount,
+        status: item.status
+      }))
+    } else if (report.reportType === 'financial_retention') {
+      // Load contracts and aggregate retention
+      const res = await api.contracts.getAll({ limit: 100 })
+      reportData.value = res.data.data.map((item: any) => ({
+        id: item.id,
+        contract: item.reference,
+        date: item.startDate,
+        retentionHeld: (item.value || 0) * 0.05,
+        status: item.status
+      }))
+    } else if (report.reportType === 'cis_cis300') {
+      const res = await api.cisReturns.getAll({ limit: 100 })
+      reportData.value = res.data.data.map((item: any) => ({
+        id: item.id,
+        month: item.month,
+        subcontractors: item.subcontractorCount || 0,
+        gross: item.grossValue || 0,
+        deduction: item.deductionAmount || 0,
+        status: item.status
+      }))
+    } else if (report.reportType === 'hr_onsite') {
+      const res = await api.operatives.getAll({ status: 'active', limit: 500 })
+      reportData.value = res.data.data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        trade: item.trade,
+        site: item.siteId,
+        status: item.status
+      }))
+    } else if (report.reportType === 'plant_allocation') {
+      const res = await api.plant.getAll({ limit: 200 })
+      reportData.value = res.data.data.map((item: any) => ({
+        id: item.id,
+        description: item.description,
+        category: item.category,
+        status: item.status
+      }))
+    } else {
+      reportData.value = generateMockData(report.reportType)
+    }
+    ElMessage.success(`${report.title} loaded`)
+  } catch (error) {
+    ElMessage.error('Failed to load report data')
+    reportData.value = generateMockData(report.reportType)
   } finally {
     loadingReport.value = false
   }
@@ -188,8 +236,8 @@ const downloadReport = () => {
       destroy-on-close
     >
       <div v-loading="loadingReport">
-        <el-empty v-if="mockReportData.length === 0" description="No data available" />
-        <el-table v-else :data="mockReportData" stripe max-height="400">
+        <el-empty v-if="reportData.length === 0" description="No data available" />
+        <el-table v-else :data="reportData" stripe max-height="400">
           <el-table-column prop="id" label="ID" width="120" />
           <el-table-column prop="date" label="Date" width="120" />
           <el-table-column prop="value" label="Value">
@@ -199,7 +247,7 @@ const downloadReport = () => {
           </el-table-column>
           <el-table-column prop="status" label="Status" width="120">
             <template #default="{ row }">
-              <el-tag :type="row.status === 'paid' ? 'success' : row.status === 'approved' ? 'success' : 'warning'" size="small">
+              <el-tag :type="row.status === 'paid' || row.status === 'active' ? 'success' : row.status === 'approved' ? 'success' : 'warning'" size="small">
                 {{ row.status }}
               </el-tag>
             </template>

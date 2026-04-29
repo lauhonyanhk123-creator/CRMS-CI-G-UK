@@ -11,7 +11,7 @@
           <option value="signoffs">NHBC/LABC Sign-offs</option>
         </select>
         <button @click="openCreateDialog" class="btn-primary">
-          <PlusIcon class="icon" />
+          <Plus class="icon" />
           New {{ tabLabels[activeTab] }}
         </button>
       </div>
@@ -58,10 +58,10 @@
             <td>{{ template.version }}</td>
             <td><span :class="['status-badge', template.status]">{{ template.status }}</span></td>
             <td class="actions-cell">
-              <button @click="viewTemplate(template)" class="btn-icon" title="View"><EyeIcon /></button>
-              <button @click="editTemplate(template)" class="btn-icon" title="Edit"><PencilIcon /></button>
-              <button @click="copyTemplate(template.id)" class="btn-icon" title="Copy"><CopyIcon /></button>
-              <button @click="deleteTemplate(template.id)" class="btn-icon btn-danger" title="Delete"><TrashIcon /></button>
+              <button @click="viewTemplate(template)" class="btn-icon" title="View"><View /></button>
+              <button @click="editTemplate(template)" class="btn-icon" title="Edit"><Edit /></button>
+              <button @click="copyTemplate(template.id)" class="btn-icon" title="Copy"><CopyDocument /></button>
+              <button @click="deleteTemplate(template.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
             </td>
           </tr>
           <tr v-if="templates.length === 0">
@@ -114,10 +114,10 @@
             <td>{{ schedule.items?.length || 0 }}</td>
             <td><span :class="['status-badge', schedule.status]">{{ schedule.status }}</span></td>
             <td class="actions-cell">
-              <button @click="viewSchedule(schedule)" class="btn-icon" title="View"><EyeIcon /></button>
-              <button @click="editSchedule(schedule)" class="btn-icon" title="Edit"><PencilIcon /></button>
-              <button @click="createScheduleFromTemplate(schedule.templateId, schedule.contractId)" class="btn-icon" title="Duplicate"><CopyIcon /></button>
-              <button @click="deleteSchedule(schedule.id)" class="btn-icon btn-danger" title="Delete"><TrashIcon /></button>
+              <button @click="viewSchedule(schedule)" class="btn-icon" title="View"><View /></button>
+              <button @click="editSchedule(schedule)" class="btn-icon" title="Edit"><Edit /></button>
+              <button @click="createScheduleFromTemplate(schedule.templateId, schedule.contractId)" class="btn-icon" title="Duplicate"><CopyDocument /></button>
+              <button @click="deleteSchedule(schedule.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
             </td>
           </tr>
           <tr v-if="schedules.length === 0">
@@ -159,9 +159,9 @@
             <td>{{ inspection.inspectionDate }}</td>
             <td><span :class="['status-badge', inspection.result]">{{ inspection.result }}</span></td>
             <td class="actions-cell">
-              <button @click="viewInspection(inspection)" class="btn-icon" title="View"><EyeIcon /></button>
-              <button @click="editInspection(inspection)" class="btn-icon" title="Edit"><PencilIcon /></button>
-              <button @click="deleteInspection(inspection.id)" class="btn-icon btn-danger" title="Delete"><TrashIcon /></button>
+              <button @click="viewInspection(inspection)" class="btn-icon" title="View"><View /></button>
+              <button @click="editInspection(inspection)" class="btn-icon" title="Edit"><Edit /></button>
+              <button @click="deleteInspection(inspection.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
             </td>
           </tr>
           <tr v-if="inspections.length === 0">
@@ -215,10 +215,10 @@
             <td><span :class="['status-badge', defect.status]">{{ defect.status }}</span></td>
             <td>{{ defect.assignedOperative || defect.assignedContractor || '-' }}</td>
             <td class="actions-cell">
-              <button @click="viewDefect(defect)" class="btn-icon" title="View"><EyeIcon /></button>
-              <button @click="editDefect(defect)" class="btn-icon" title="Edit"><PencilIcon /></button>
-              <button @click="updateDefectStatus(defect)" class="btn-icon" title="Update Status"><ArrowPathIcon /></button>
-              <button @click="deleteDefect(defect.id)" class="btn-icon btn-danger" title="Delete"><TrashIcon /></button>
+              <button @click="viewDefect(defect)" class="btn-icon" title="View"><View /></button>
+              <button @click="editDefect(defect)" class="btn-icon" title="Edit"><Edit /></button>
+              <button @click="updateDefectStatus(defect)" class="btn-icon" title="Update Status"><Refresh /></button>
+              <button @click="deleteDefect(defect.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
             </td>
           </tr>
           <tr v-if="defects.length === 0">
@@ -273,11 +273,11 @@
             <td>{{ signOff.inspectionDate }}</td>
             <td><span :class="['status-badge', signOff.result]">{{ signOff.result }}</span></td>
             <td class="actions-cell">
-              <button @click="viewSignOff(signOff)" class="btn-icon" title="View"><EyeIcon /></button>
-              <button @click="editSignOff(signOff)" class="btn-icon" title="Edit"><PencilIcon /></button>
-              <button v-if="signOff.result === 'pending'" @click="approveSignOff(signOff)" class="btn-icon btn-success" title="Approve"><CheckIcon /></button>
-              <button v-if="signOff.result === 'pending'" @click="refuseSignOff(signOff)" class="btn-icon btn-warning" title="Refuse"><XMarkIcon /></button>
-              <button @click="deleteSignOff(signOff.id)" class="btn-icon btn-danger" title="Delete"><TrashIcon /></button>
+              <button @click="viewSignOff(signOff)" class="btn-icon" title="View"><View /></button>
+              <button @click="editSignOff(signOff)" class="btn-icon" title="Edit"><Edit /></button>
+              <button v-if="signOff.result === 'pending'" @click="approveSignOff(signOff)" class="btn-icon btn-success" title="Approve"><Check /></button>
+              <button v-if="signOff.result === 'pending'" @click="refuseSignOff(signOff)" class="btn-icon btn-warning" title="Refuse"><Close /></button>
+              <button @click="deleteSignOff(signOff.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
             </td>
           </tr>
           <tr v-if="signOffs.length === 0">
@@ -606,8 +606,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, WarningFilled, Edit, Delete, View } from '@element-plus/icons-vue'
-import { PlusIcon, EyeIcon, PencilIcon, TrashIcon, CopyIcon, ArrowPathIcon, CheckIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Plus, Edit, Delete, View, CopyDocument, Refresh, Check, Close } from '@element-plus/icons-vue'
 
 // State
 const activeTab = ref('templates')

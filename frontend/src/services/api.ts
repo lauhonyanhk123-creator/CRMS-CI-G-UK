@@ -960,15 +960,15 @@ export const api = {
 
   procurement: {
     getRequisitions: (params?: { status?: string; siteId?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: Requisition[]; total: number }>('/procurement/requisitions', { params }),
+      apiClient.get<{ data: Requisition[]; total: number }>('/procurement/purchase-requisitions', { params }),
     createRequisition: (data: Partial<Requisition>) =>
-      apiClient.post<Requisition>('/procurement/requisitions', data),
+      apiClient.post<Requisition>('/procurement/purchase-requisitions', data),
     approveRequisition: (id: string) =>
-      apiClient.post<Requisition>(`/procurement/requisitions/${id}/approve`),
+      apiClient.post<Requisition>(`/procurement/purchase-requisitions/${id}/approve`),
     createPO: (requisitionId: string, data: Partial<PurchaseOrder>) =>
-      apiClient.post<PurchaseOrder>(`/procurement/requisitions/${requisitionId}/create-po`, data),
+      apiClient.post<PurchaseOrder>(`/procurement/purchase-requisitions/${requisitionId}/create-po`, data),
     getPO: (params?: { status?: string; supplierId?: string; siteId?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: PurchaseOrder[]; total: number }>('/procurement/orders', { params }),
+      apiClient.get<{ data: PurchaseOrder[]; total: number }>('/procurement/purchase-orders', { params }),
     getDeliveryNotes: (params?: { type?: string; siteId?: string; page?: number; limit?: number }) =>
       apiClient.get<{ data: DeliveryNote[]; total: number }>('/procurement/delivery-notes', { params })
   },

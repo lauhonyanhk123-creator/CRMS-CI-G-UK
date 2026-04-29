@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import api, { apiClient, type Contract, type Variation, type Application, type RetentionLedgerEntry } from '@/services/api'
+import api, { apiClient, type Contract, type Variation, type Application, type RetentionLedgerEntry, type Document, type AdoptionCase } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 
@@ -13,6 +13,14 @@ const loading = ref(false)
 const contract = ref<Contract | null>(null)
 const applications = ref<Application[]>([])
 const variations = ref<Variation[]>([])
+
+// Documents
+const documents = ref<Document[]>([])
+const loadingDocuments = ref(false)
+
+// Adoption Cases
+const adoptionCases = ref<AdoptionCase[]>([])
+const loadingAdoptionCases = ref(false)
 
 // Variations
 const varDrawerVisible = ref(false)
@@ -42,11 +50,49 @@ const loadData = async () => {
     variations.value = contractRes.data.variations || []
     await loadPayLessNotices()
     await loadRetentionLedger()
+    await loadDocuments()
+    await loadAdoptionCases()
   } catch { ElMessage.error('Failed to load contract') } finally { loading.value = false }
 }
 
+const loadDocuments = async () => {
+  if (!contractId.value) return
+  loadingDocuments.value = true
+  try {
+    const res = await api.documents.getAll({ entityId: contractId.value, entityType: 'contract' })
+    documents.value = res.data.data
+  } catch {
+    ElMessage.error('Failed to load documents')
+  } finally {
+    loadingDocuments.value = false
+  }
+}
+
+const loadAdoptionCases = async () => {
+  if (!contractId.value) return
+  loadingAdoptionCases.value = true
+  try {
+    const res = await api.adoption.getAll({})
+    // Filter adoption cases related to this contract
+    adoptionCases.value = res.data.data.filter((c: AdoptionCase) => c.contractId === contractId.value || c.title.toLowerCase().includes('contract'))
+  } catch {
+    // Silently fail - adoption cases may not be available
+    adoptionCases.value = []
+  } finally {
+    loadingAdoptionCases.value = false
+  }
+}
+
+const downloadDocument = async (doc: Document) => {
+  try {
+    const res = await api.documents.getDownloadUrl(doc.id)
+    window.open(res.data.url, '_blank')
+  } catch {
+    ElMessage.error('Failed to download document')
+  }
+}
+
 const formatCurrency = (value: number) => `£${value.toLocaleString()}`
-const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString() : '—'
 
 const submitApplication = async (app: Application) => {
   try {
@@ -59,6 +105,18 @@ const submitApplication = async (app: Application) => {
 const getApplicationStatusType = (status: string) => {
   const map: Record<string, string> = { draft: 'info', submitted: 'warning', measured: 'primary', agreed: 'success', paid: 'success' }
   return map[status] || 'info'
+}
+
+const getAdoptionStatusType = (status?: string) => {
+  const map: Record<string, string> = {
+    'pre_application': 'info',
+    'application': 'warning',
+    'technical_approval': 'primary',
+    'under_construction': 'primary',
+    'adopted': 'success',
+    'rejected': 'danger'
+  }
+  return map[status || ''] || 'info'
 }
 
 // Variations handlers
@@ -220,8 +278,74 @@ const loadPayLessNotices = async () => {
         </el-card>
       </el-tab-pane>
 
-      <el-tab-pane label="Documents">Documents tab content</el-tab-pane>
-      <el-tab-pane label="Adoption Cases">Adoption cases tab content</el-tab-pane>
+      <el-tab-pane label="Documents">
+        <el-card shadow="never">
+          <template #header>
+            <div class="card-header">
+              <span>Documents ({{ documents.length }})</span>
+            </div>
+          </template>
+          <el-table :data="documents" stripe v-loading="loadingDocuments">
+            <el-table-column prop="filename" label="Filename" min-width="200" />
+            <el-table-column prop="category" label="Category" width="120">
+              <template #default="{ row }">
+                {{ row.category || '—' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Size" width="100">
+              <template #default="{ row }">
+                {{ row.size ? (row.size / 1024).toFixed(1) + ' KB' : '—' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Uploaded" width="120">
+              <template #default="{ row }">
+                {{ formatDate(row.createdAt) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Actions" width="100">
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="downloadDocument(row)">Download</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="documents.length === 0" description="No documents" />
+        </el-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="Adoption Cases">
+        <el-card shadow="never">
+          <template #header>
+            <div class="card-header">
+              <span>Adoption Cases ({{ adoptionCases.length }})</span>
+            </div>
+          </template>
+          <el-table :data="adoptionCases" stripe v-loading="loadingAdoptionCases">
+            <el-table-column prop="caseRef" label="Case Ref" width="120" />
+            <el-table-column prop="title" label="Title" min-width="200" />
+            <el-table-column prop="type" label="Type" width="100">
+              <template #default="{ row }">
+                <el-tag size="small">{{ row.type?.toUpperCase() || '—' }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="Bond Value" width="140">
+              <template #default="{ row }">
+                {{ row.bondValue ? formatCurrency(row.bondValue) : '—' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="Status" width="140">
+              <template #default="{ row }">
+                <el-tag :type="getAdoptionStatusType(row.status)" size="small">{{ row.status?.replace('_', ' ') }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="Actions" width="100">
+              <template #default="{ row }">
+                <el-button link type="primary" size="small">View</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="adoptionCases.length === 0" description="No adoption cases" />
+        </el-card>
+      </el-tab-pane>
     </el-tabs>
 
     <el-drawer v-model="varDrawerVisible" title="Variation" size="500px">

@@ -36,9 +36,10 @@ public class F10NotificationServiceImpl implements F10NotificationService {
     public PageResponse<F10NotificationResponse> findAll(Map<String, Object> params) {
         int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
         int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
-        String sort = params.containsKey("sort") ? params.get("sort").toString() : "id";
+        String sort = params.containsKey("sort") ? params.get("sort").toString() : "createdAt";
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, sort));
+
         Page<F10Notification> notificationPage = f10NotificationRepository.findAll(pageable);
 
         List<F10NotificationResponse> content = notificationPage.getContent().stream()
@@ -72,16 +73,17 @@ public class F10NotificationServiceImpl implements F10NotificationService {
         F10Notification notification = F10Notification.builder()
                 .contract(contract)
                 .notificationNumber(notificationNumber)
-                .submittedDate(request.getSubmittedDate())
-                .confirmationNumber(request.getConfirmationNumber())
                 .moreThan30Days(request.getMoreThan30Days())
                 .moreThan500PersonDays(request.getMoreThan500PersonDays())
                 .constructionStartDate(request.getConstructionStartDate())
                 .constructionEndDate(request.getConstructionEndDate())
                 .isActive(true)
+                .hdfAcknowledged(false)
                 .build();
 
         notification = f10NotificationRepository.save(notification);
+
+        log.info("Created F10 notification {} for contract {}", notificationNumber, contract.getContractRef());
         return mapToResponse(notification);
     }
 
@@ -91,30 +93,14 @@ public class F10NotificationServiceImpl implements F10NotificationService {
         F10Notification notification = f10NotificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("F10Notification", id));
 
-        notification.setSubmittedDate(request.getSubmittedDate());
-        notification.setConfirmationNumber(request.getConfirmationNumber());
         notification.setMoreThan30Days(request.getMoreThan30Days());
         notification.setMoreThan500PersonDays(request.getMoreThan500PersonDays());
         notification.setConstructionStartDate(request.getConstructionStartDate());
         notification.setConstructionEndDate(request.getConstructionEndDate());
 
-        if (request.getHdfReference() != null) {
-            notification.setHdfReference(request.getHdfReference());
-        }
-        if (request.getHdfSubmittedDate() != null) {
-            notification.setHdfSubmittedDate(request.getHdfSubmittedDate());
-        }
-        if (request.getHdfAcknowledged() != null) {
-            notification.setHdfAcknowledged(request.getHdfAcknowledged());
-        }
-        if (request.getHdfAcknowledgedBy() != null) {
-            notification.setHdfAcknowledgedBy(request.getHdfAcknowledgedBy());
-        }
-        if (request.getHdfAcknowledgedDate() != null) {
-            notification.setHdfAcknowledgedDate(request.getHdfAcknowledgedDate());
-        }
-
         notification = f10NotificationRepository.save(notification);
+
+        log.info("Updated F10 notification {}", notification.getNotificationNumber());
         return mapToResponse(notification);
     }
 
@@ -124,8 +110,23 @@ public class F10NotificationServiceImpl implements F10NotificationService {
         F10Notification notification = f10NotificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("F10Notification", id));
 
+        if (notification.getSubmittedDate() != null) {
+            throw new IllegalStateException("Notification has already been submitted");
+        }
+
         notification.setSubmittedDate(LocalDate.now());
+
+        // Generate confirmation number (simulated)
+        notification.setConfirmationNumber("HSE-" + System.currentTimeMillis());
+
+        // If HDF is required, mark that it needs to be submitted
+        if (notification.requiresHDF()) {
+            notification.setHdfSubmittedDate(LocalDate.now());
+        }
+
         notification = f10NotificationRepository.save(notification);
+
+        log.info("Submitted F10 notification {} to HSE", notification.getNotificationNumber());
         return mapToResponse(notification);
     }
 
@@ -135,31 +136,43 @@ public class F10NotificationServiceImpl implements F10NotificationService {
         F10Notification notification = f10NotificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("F10Notification", id));
 
+        if (!notification.requiresHDF()) {
+            throw new IllegalStateException("This notification does not require HDF acknowledgment");
+        }
+
         notification.setHdfAcknowledged(true);
         notification.setHdfAcknowledgedDate(LocalDateTime.now());
+        notification.setHdfAcknowledgedBy("SYSTEM"); // In real app, get from security context
+
         notification = f10NotificationRepository.save(notification);
+
+        log.info("Acknowledged HDF for F10 notification {}", notification.getNotificationNumber());
         return mapToResponse(notification);
     }
 
     @Override
     public F10NotificationResponse findActiveByContractId(Long contractId) {
         List<F10Notification> notifications = f10NotificationRepository.findActiveByContractId(contractId);
+
         if (notifications.isEmpty()) {
-            return null;
+            throw new ResourceNotFoundException("No active F10 notification found for contract: " + contractId);
         }
+
+        // Return the first active notification
         return mapToResponse(notifications.get(0));
     }
 
     @Override
     public F10NotificationResponse findByNotificationNumber(String notificationNumber) {
-        return f10NotificationRepository.findByNotificationNumber(notificationNumber)
-                .map(this::mapToResponse)
-                .orElse(null);
+        F10Notification notification = f10NotificationRepository.findByNotificationNumber(notificationNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("F10Notification with number " + notificationNumber));
+        return mapToResponse(notification);
     }
 
     @Override
     public PageResponse<F10NotificationResponse> findExpiringNotifications(LocalDate date) {
         List<F10Notification> notifications = f10NotificationRepository.findExpiringNotifications(date);
+
         List<F10NotificationResponse> content = notifications.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

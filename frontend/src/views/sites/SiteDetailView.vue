@@ -30,9 +30,9 @@ const loadData = async () => {
       api.documents.getAll({ entityId: siteId.value, entityType: 'site' })
     ])
     site.value = siteRes.data
-    operatives.value = operativesRes.data.data
-    plantItems.value = plantRes.data.data
-    documents.value = docsRes.data.data
+    operatives.value = operativesRes.data.data || []
+    plantItems.value = plantRes.data.data || []
+    documents.value = docsRes.data.data || []
   } catch { ElMessage.error('Failed to load site') } finally { loading.value = false }
 }
 
@@ -51,6 +51,15 @@ const getPlantStatusType = (status: string) => {
 const handleUploadSuccess = () => {
   ElMessage.success('Document uploaded')
   loadData()
+}
+
+const downloadDocument = async (doc: Document) => {
+  try {
+    const res = await api.documents.getDownloadUrl(doc.id)
+    window.open(res.data.url, '_blank')
+  } catch {
+    ElMessage.error('Failed to download document')
+  }
 }
 </script>
 
@@ -178,8 +187,8 @@ const handleUploadSuccess = () => {
               <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
             </el-table-column>
             <el-table-column label="Actions" width="100">
-              <template #default>
-                <el-button link type="primary" size="small">Download</el-button>
+              <template #default="{ row }">
+                <el-button link type="primary" size="small" @click="downloadDocument(row)">Download</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -189,7 +198,20 @@ const handleUploadSuccess = () => {
 
       <el-tab-pane label="Activity Log">
         <el-card shadow="never">
-          <el-empty description="Activity log coming soon" />
+          <el-empty description="Activity log feature coming soon">
+            <template #image>
+              <el-icon :size="64" color="#909399"><Location /></el-icon>
+            </template>
+            <template #description>
+              <p>Track all site activity including:</p>
+              <ul style="text-align: left; margin-top: 8px; color: #606266;">
+                <li>Operative check-ins/out</li>
+                <li>Plant deliveries and removals</li>
+                <li>Document uploads</li>
+                <li>Status changes</li>
+              </ul>
+            </template>
+          </el-empty>
         </el-card>
       </el-tab-pane>
     </el-tabs>

@@ -2,6 +2,8 @@ package com.crms.domain.subcontractor.repository;
 
 import com.crms.domain.subcontractor.entity.CISReturn;
 import com.crms.domain.subcontractor.enums.CisReturnStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +16,8 @@ import java.util.Optional;
 public interface CISReturnRepository extends JpaRepository<CISReturn, Long> {
 
     Optional<CISReturn> findByTaxMonth(String taxMonth);
+
+    Page<CISReturn> findByTaxMonth(String taxMonth, Pageable pageable);
 
     List<CISReturn> findByStatus(CisReturnStatus status);
 
