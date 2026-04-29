@@ -10,6 +10,7 @@ import com.crms.domain.operative.repository.CardRepository;
 import com.crms.domain.operative.repository.OperativeRepository;
 import com.crms.domain.operative.repository.SiteSignOnRepository;
 import com.crms.domain.plant.entity.PlantAllocation;
+import com.crms.domain.plant.enums.AllocationStatus;
 import com.crms.domain.plant.enums.PlantCategory;
 import com.crms.domain.plant.enums.PlantStatus;
 import com.crms.domain.plant.entity.LOLERExamination;
@@ -201,7 +202,7 @@ public class PlantServiceImpl implements PlantService {
         List<PlantAllocation> overlapping = allocationRepository.findByPlantIdAndDateRange(
                 plantId, request.getStartDate(), request.getEndDate() != null ? request.getEndDate() : request.getStartDate());
         boolean hasOverlap = overlapping.stream()
-                .anyMatch(a -> a.getStatus() == PlantStatus.ACTIVE || a.getStatus() == PlantStatus.ALLOCATED);
+                .anyMatch(a -> a.getStatus() == AllocationStatus.ACTIVE || a.getStatus() == AllocationStatus.ALLOCATED);
         if (hasOverlap) {
             log.warn("Plant {} already has active allocation during requested period", plantId);
         }
