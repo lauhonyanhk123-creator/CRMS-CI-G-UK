@@ -1,10 +1,12 @@
 package com.crms.integration.companieshouse;
 
+import com.crms.integration.cache.IntegrationCacheService;
 import com.crms.integration.config.IntegrationProperties;
 import com.crms.integration.dto.CompanySearchResult;
 import com.crms.integration.dto.CompanySearchResult.AddressDto;
 import com.crms.integration.dto.CompanySearchResult.ChargeDto;
 import com.crms.integration.dto.CompanySearchResult.OfficerDto;
+import com.crms.integration.monitoring.NetworkMonitor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -33,6 +36,8 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
     private final RestTemplate companiesHouseRestTemplate;
     private final IntegrationProperties properties;
     private final ObjectMapper objectMapper;
+    private final NetworkMonitor networkMonitor;
+    private final IntegrationCacheService cacheService;
 
     // Demo mode company data
     private static final Map<String, DemoCompanyData> DEMO_COMPANIES = new HashMap<>();
@@ -97,6 +102,12 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
             return mockSearchCompanies(query);
         }
 
+        // Check if Companies House is reachable
+        if (!networkMonitor.isCompaniesHouseReachable()) {
+            log.warn("Companies House service is not reachable. Search unavailable.");
+            throw new CompaniesHouseOfflineException("Companies House service is unavailable. Cannot search for companies.");
+        }
+
         try {
             HttpHeaders headers = createCompaniesHouseHeaders();
             String url = properties.getCompaniesHouse().getBaseUrl() + "/search/companies?q=" +
@@ -106,12 +117,15 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
             ResponseEntity<Map> response = companiesHouseRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
 
             return mapSearchResults(response.getBody());
+        } catch (ResourceAccessException e) {
+            log.warn("Network error connecting to Companies House: {}", e.getMessage());
+            throw new CompaniesHouseOfflineException("Network error connecting to Companies House. Please try again when connectivity is restored.", e);
         } catch (HttpClientErrorException e) {
             log.error("Companies House API error: {}", e.getMessage());
-            return Collections.emptyList();
+            throw new CompaniesHouseApiException("Companies House API error: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to search companies: {}", e.getMessage());
-            return Collections.emptyList();
+            throw new CompaniesHouseApiException("Failed to search companies: " + e.getMessage(), e);
         }
     }
 
@@ -123,6 +137,27 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
             return mockGetCompanyProfile(companyNumber);
         }
 
+        // Check if Companies House is reachable
+        if (!networkMonitor.isCompaniesHouseReachable()) {
+            log.warn("Companies House service is not reachable. Attempting to use cached data for: {}", companyNumber);
+            CompanySearchResult cached = cacheService.getCachedCompanyProfile(companyNumber);
+            if (cached != null) {
+                log.info("Returning cached company profile for: {}. Note: Data may be stale.", companyNumber);
+                return CompanySearchResult.builder()
+                        .companyNumber(cached.getCompanyNumber())
+                        .title(cached.getTitle())
+                        .companyType(cached.getCompanyType())
+                        .companyStatus(cached.getCompanyStatus())
+                        .jurisdiction(cached.getJurisdiction())
+                        .dateOfCreation(cached.getDateOfCreation())
+                        .dateOfCessation(cached.getDateOfCessation())
+                        .registeredOfficeAddress(cached.getRegisteredOfficeAddress())
+                        .offlineData(true)
+                        .build();
+            }
+            throw new CompaniesHouseOfflineException("Companies House service is unavailable and no cached data for company: " + companyNumber);
+        }
+
         try {
             HttpHeaders headers = createCompaniesHouseHeaders();
             String url = properties.getCompaniesHouse().getBaseUrl() + "/company/" + companyNumber;
@@ -130,14 +165,45 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<Map> response = companiesHouseRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
 
-            return mapToCompanyProfile(response.getBody());
+            CompanySearchResult profile = mapToCompanyProfile(response.getBody());
+            // Cache successful response
+            cacheService.cacheCompanyProfile(companyNumber, profile);
+            return profile;
+        } catch (ResourceAccessException e) {
+            log.warn("Network error connecting to Companies House: {}. Attempting cached data.", e.getMessage());
+            return handleNetworkErrorWithCache(companyNumber, e);
+        } catch (HttpClientErrorException.NotFound e) {
+            log.error("Company not found in Companies House: {}", companyNumber);
+            throw new CompaniesHouseNotFoundException("Company not found: " + companyNumber, e);
         } catch (HttpClientErrorException e) {
             log.error("Companies House API error: {}", e.getMessage());
-            return createErrorCompanyProfile(companyNumber);
+            throw new CompaniesHouseApiException("Companies House API error: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to get company profile: {}", e.getMessage());
-            return createErrorCompanyProfile(companyNumber);
+            throw new CompaniesHouseApiException("Failed to get company profile: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Handle network error by attempting to return cached data.
+     */
+    private CompanySearchResult handleNetworkErrorWithCache(String companyNumber, ResourceAccessException e) {
+        CompanySearchResult cached = cacheService.getCachedCompanyProfile(companyNumber);
+        if (cached != null) {
+            log.warn("Returning stale cached company profile due to network error. Company: {}", companyNumber);
+            return CompanySearchResult.builder()
+                    .companyNumber(cached.getCompanyNumber())
+                    .title(cached.getTitle())
+                    .companyType(cached.getCompanyType())
+                    .companyStatus(cached.getCompanyStatus())
+                    .jurisdiction(cached.getJurisdiction())
+                    .dateOfCreation(cached.getDateOfCreation())
+                    .dateOfCessation(cached.getDateOfCessation())
+                    .registeredOfficeAddress(cached.getRegisteredOfficeAddress())
+                    .offlineData(true)
+                    .build();
+        }
+        throw new CompaniesHouseOfflineException("Network error and no cached data for company: " + companyNumber, e);
     }
 
     @Override
@@ -148,6 +214,12 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
             return mockGetCompanyOfficers(companyNumber);
         }
 
+        // Check if Companies House is reachable
+        if (!networkMonitor.isCompaniesHouseReachable()) {
+            log.warn("Companies House service is not reachable. Cannot get officers for: {}", companyNumber);
+            throw new CompaniesHouseOfflineException("Companies House service is unavailable. Cannot get officers for company: " + companyNumber);
+        }
+
         try {
             HttpHeaders headers = createCompaniesHouseHeaders();
             String url = properties.getCompaniesHouse().getBaseUrl() + "/company/" + companyNumber + "/officers";
@@ -156,9 +228,15 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
             ResponseEntity<Map> response = companiesHouseRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
 
             return mapOfficers(response.getBody());
+        } catch (ResourceAccessException e) {
+            log.error("Network error getting company officers: {}", e.getMessage());
+            throw new CompaniesHouseOfflineException("Network error getting officers. Please try again when connectivity is restored.", e);
+        } catch (HttpClientErrorException e) {
+            log.error("Companies House API error getting officers: {}", e.getMessage());
+            throw new CompaniesHouseApiException("Companies House API error: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to get company officers: {}", e.getMessage());
-            return Collections.emptyList();
+            throw new CompaniesHouseApiException("Failed to get company officers: " + e.getMessage(), e);
         }
     }
 
@@ -170,6 +248,12 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
             return mockGetCompanyCharges(companyNumber);
         }
 
+        // Check if Companies House is reachable
+        if (!networkMonitor.isCompaniesHouseReachable()) {
+            log.warn("Companies House service is not reachable. Cannot get charges for: {}", companyNumber);
+            throw new CompaniesHouseOfflineException("Companies House service is unavailable. Cannot get charges for company: " + companyNumber);
+        }
+
         try {
             HttpHeaders headers = createCompaniesHouseHeaders();
             String url = properties.getCompaniesHouse().getBaseUrl() + "/company/" + companyNumber + "/charges";
@@ -178,9 +262,15 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
             ResponseEntity<Map> response = companiesHouseRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
 
             return mapCharges(response.getBody());
+        } catch (ResourceAccessException e) {
+            log.error("Network error getting company charges: {}", e.getMessage());
+            throw new CompaniesHouseOfflineException("Network error getting charges. Please try again when connectivity is restored.", e);
+        } catch (HttpClientErrorException e) {
+            log.error("Companies House API error getting charges: {}", e.getMessage());
+            throw new CompaniesHouseApiException("Companies House API error: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to get company charges: {}", e.getMessage());
-            return Collections.emptyList();
+            throw new CompaniesHouseApiException("Failed to get company charges: " + e.getMessage(), e);
         }
     }
 
@@ -190,6 +280,12 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
 
         if (isDemoMode()) {
             return mockGetCompanyInsolvency(companyNumber);
+        }
+
+        // Check if Companies House is reachable
+        if (!networkMonitor.isCompaniesHouseReachable()) {
+            log.warn("Companies House service is not reachable. Cannot get insolvency data for: {}", companyNumber);
+            throw new CompaniesHouseOfflineException("Companies House service is unavailable. Cannot get insolvency data for company: " + companyNumber);
         }
 
         try {
@@ -206,12 +302,15 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
                     .companyNumber(companyNumber)
                     .insolvencyCases(Collections.emptyMap())
                     .build();
+        } catch (ResourceAccessException e) {
+            log.error("Network error getting insolvency data: {}", e.getMessage());
+            throw new CompaniesHouseOfflineException("Network error getting insolvency data. Please try again when connectivity is restored.", e);
+        } catch (HttpClientErrorException e) {
+            log.error("Companies House API error getting insolvency: {}", e.getMessage());
+            throw new CompaniesHouseApiException("Companies House API error: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Failed to get insolvency data: {}", e.getMessage());
-            return CompanySearchResult.builder()
-                    .companyNumber(companyNumber)
-                    .insolvencyCases(Collections.emptyMap())
-                    .build();
+            throw new CompaniesHouseApiException("Failed to get insolvency data: " + e.getMessage(), e);
         }
     }
 
@@ -593,5 +692,43 @@ public class CompaniesHouseServiceImpl implements CompaniesHouseService {
         private AddressDto registeredOfficeAddress;
         private List<String> sicCodes;
         private boolean hasInsolvency;
+    }
+
+    // ==================== Custom Exceptions ====================
+
+    /**
+     * Exception for Companies House service being offline/unavailable.
+     */
+    public static class CompaniesHouseOfflineException extends RuntimeException {
+        public CompaniesHouseOfflineException(String message) {
+            super(message);
+        }
+        public CompaniesHouseOfflineException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * Exception for Companies House API errors.
+     */
+    public static class CompaniesHouseApiException extends RuntimeException {
+        public CompaniesHouseApiException(String message) {
+            super(message);
+        }
+        public CompaniesHouseApiException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * Exception for company not found in Companies House.
+     */
+    public static class CompaniesHouseNotFoundException extends RuntimeException {
+        public CompaniesHouseNotFoundException(String message) {
+            super(message);
+        }
+        public CompaniesHouseNotFoundException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

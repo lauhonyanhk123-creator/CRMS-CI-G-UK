@@ -5,6 +5,7 @@ import com.crms.domain.contract.entity.Contract;
 import com.crms.domain.contract.entity.PayLessNotice;
 import com.crms.domain.contract.entity.PaymentNotice;
 import com.crms.domain.contract.enums.ApplicationStatus;
+import com.crms.domain.contract.enums.DeadlineStatus;
 import com.crms.domain.contract.repository.ApplicationForPaymentRepository;
 import com.crms.domain.contract.repository.ContractRepository;
 import com.crms.domain.contract.repository.PayLessNoticeRepository;
@@ -89,6 +90,7 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
                 .valueOfWorks(request.getValueOfWorks())
                 .retention(request.getRetention())
                 .status(ApplicationStatus.DRAFT)
+                .reverseCharge(calculateReverseCharge(contract))
                 .build();
 
         application.calculateGrossValue();
@@ -274,7 +276,82 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
         return periodEnd.plusDays(30);
     }
 
+    /**
+     * Calculates the pay-less notice s.111 deadline.
+     * Under s.111 of the Housing Grants, Construction and Regeneration Act 1996,
+     * the pay-less notice deadline is 5 days before the application date/submitted date.
+     * 
+     * @param applicationDate the date the application was submitted
+     * @return the deadline for serving a pay-less notice, or null if no application date
+     */
+    public LocalDate calculatePayLessNoticeDeadline(LocalDate applicationDate) {
+        if (applicationDate == null) {
+            return null;
+        }
+        return applicationDate.minusDays(5);
+    }
+
+    /**
+     * Calculates the deadline status based on the pay-less notice deadline.
+     * 
+     * @param deadline the pay-less notice deadline
+     * @return the current deadline status
+     */
+    public DeadlineStatus calculateDeadlineStatus(LocalDate deadline) {
+        if (deadline == null) {
+            return DeadlineStatus.NO_DEADLINE;
+        }
+        
+        LocalDate today = LocalDate.now();
+        long daysRemaining = ChronoUnit.DAYS.between(today, deadline);
+        
+        if (daysRemaining < 0) {
+            return DeadlineStatus.DEADLINE_PASSED;
+        } else if (daysRemaining <= 2) {
+            return DeadlineStatus.DEADLINE_APPROACHING;
+        } else {
+            return DeadlineStatus.DEADLINE_ACTIVE;
+        }
+    }
+
+    /**
+     * Calculates VAT reverse charge flag based on UK construction industry rules.
+     * Reverse charge applies when:
+     * - Subcontractor is VAT registered (has vatNumber)
+     * - Contract value exceeds the VAT threshold (currently £85,000 for 2025/26)
+     */
+    private Boolean calculateReverseCharge(Contract contract) {
+        if (contract == null) {
+            return false;
+        }
+
+        // Get the subcontractor from the tender/client relationship
+        // In this system, the subcontractor is typically linked via tender
+        if (contract.getTender() != null && contract.getTender().getClient() != null) {
+            var client = contract.getTender().getClient();
+            String vatNumber = client.getVatNumber();
+
+            // Check if subcontractor is VAT registered
+            boolean isVatRegistered = vatNumber != null && !vatNumber.isBlank();
+
+            // Check if contract value exceeds VAT threshold
+            // UK VAT reverse charge threshold for construction is £85,000 (2025/26)
+            BigDecimal vatThreshold = new BigDecimal("85000");
+            BigDecimal contractValue = contract.getContractValue();
+            boolean exceedsThreshold = contractValue != null && contractValue.compareTo(vatThreshold) >= 0;
+
+            return isVatRegistered && exceedsThreshold;
+        }
+
+        return false;
+    }
+
     private ApplicationResponse mapToResponse(ApplicationForPayment application) {
+        // Calculate pay-less notice s.111 deadline based on submitted date
+        LocalDate submittedDate = application.getSubmittedDate();
+        LocalDate payLessNoticeDeadline = calculatePayLessNoticeDeadline(submittedDate);
+        DeadlineStatus deadlineStatus = calculateDeadlineStatus(payLessNoticeDeadline);
+        
         return ApplicationResponse.builder()
                 .id(application.getId())
                 .applicationRef(application.getApplicationRef())
@@ -291,6 +368,9 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
                 .submittedDate(application.getSubmittedDate())
                 .paidDate(application.getPaidDate())
                 .payerRef(application.getPayerRef())
+                .reverseCharge(application.getReverseCharge())
+                .payLessNoticeDeadline(payLessNoticeDeadline)
+                .deadlineStatus(deadlineStatus)
                 .build();
     }
 }

@@ -32,6 +32,7 @@ public class SiteServiceImpl implements SiteService {
     private final CompanyRepository companyRepository;
     
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<SiteResponse> findAll(Map<String, Object> params) {
         int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
         int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
@@ -63,6 +64,7 @@ public class SiteServiceImpl implements SiteService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public SiteResponse findById(Long id) {
         Site site = siteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Site", id));

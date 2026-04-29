@@ -93,6 +93,7 @@ public class WipJournalServiceImpl implements WipJournalService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public WipReportResponse getWipReportById(Long reportId) {
         WipReport report = wipReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("WipReport", reportId));
@@ -100,6 +101,7 @@ public class WipJournalServiceImpl implements WipJournalService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<WipReportResponse> getWipReportHistory(Long contractId, int page, int size) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));
@@ -121,6 +123,7 @@ public class WipJournalServiceImpl implements WipJournalService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<WipReportResponse> getWipReportsByDate(LocalDate reportDate) {
         List<WipReport> reports = wipReportRepository.findByContractIdOrderByReportDateDesc(null);
 

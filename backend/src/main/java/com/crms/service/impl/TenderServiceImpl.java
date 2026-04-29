@@ -41,6 +41,7 @@ public class TenderServiceImpl implements TenderService {
     private final ContractRepository contractRepository;
     
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<TenderResponse> findAll(Map<String, Object> params) {
         int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
         int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
@@ -73,6 +74,7 @@ public class TenderServiceImpl implements TenderService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public TenderResponse findById(Long id) {
         Tender tender = tenderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tender", id));

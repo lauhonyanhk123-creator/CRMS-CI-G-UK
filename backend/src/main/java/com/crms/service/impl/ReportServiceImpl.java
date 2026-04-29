@@ -25,6 +25,8 @@ import com.crms.domain.subcontractor.entity.CISReturn;
 import com.crms.domain.subcontractor.repository.CISReturnRepository;
 import com.crms.domain.tender.entity.Tender;
 import com.crms.domain.tender.repository.TenderRepository;
+import com.crms.domain.operative.repository.TimesheetRepository;
+import com.crms.dto.response.CITBLevyReport;
 
 @Slf4j
 @Service
@@ -35,6 +37,7 @@ public class ReportServiceImpl implements ReportService {
     private final ContractRepository contractRepository;
     private final CISReturnRepository cisReturnRepository;
     private final TenderRepository tenderRepository;
+    private final TimesheetRepository timesheetRepository;
 
     @Override
     public List<CVRItem> getCVR(Long contractId, String period) {
@@ -198,5 +201,97 @@ public class ReportServiceImpl implements ReportService {
         }
         
         return new ArrayList<>(pipelineByStage.values());
+    }
+
+    private static final BigDecimal CITB_LEVY_RATE = new BigDecimal("0.005"); // 0.5%
+
+    @Override
+    public Object getCITBLevy(String period) {
+        log.info("Generating CITB Levy report for period {}", period);
+        
+        try {
+            // Parse period - expected format: YYYY-MM or YYYY-QN
+            LocalDate periodStart;
+            LocalDate periodEnd;
+            
+            if (period.contains("Q")) {
+                // Quarterly format: YYYY-Q1, YYYY-Q2, etc.
+                String[] parts = period.split("-Q");
+                int year = Integer.parseInt(parts[0]);
+                int quarter = Integer.parseInt(parts[1]);
+                periodStart = LocalDate.of(year, (quarter - 1) * 3 + 1, 1);
+                periodEnd = periodStart.plusMonths(3).minusDays(1);
+            } else {
+                // Monthly format: YYYY-MM - use the entire month
+                LocalDate parsed = LocalDate.parse(period + "-01");
+                periodStart = parsed.withDayOfMonth(1);
+                periodEnd = parsed.withDayOfMonth(parsed.lengthOfMonth());
+            }
+
+            List<CITBLevyReport> reports = new ArrayList<>();
+            List<Contract> contracts = contractRepository.findAll();
+
+            for (Contract contract : contracts) {
+                CITBLevyReport report = calculateCITBLevyForContract(contract, periodStart, periodEnd);
+                reports.add(report);
+            }
+
+            return reports;
+        } catch (Exception e) {
+            log.error("Error generating CITB Levy report for period {}: {}", period, e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    private CITBLevyReport calculateCITBLevyForContract(Contract contract, LocalDate periodStart, LocalDate periodEnd) {
+        Long siteId = contract.getSite() != null ? contract.getSite().getId() : null;
+        
+        // Try to get live wage data from timesheets
+        BigDecimal operativeWages = BigDecimal.ZERO;
+        boolean usedLiveWageData = false;
+        
+        if (siteId != null) {
+            try {
+                BigDecimal wages = timesheetRepository.calculateTotalWagesBySiteAndPeriod(siteId, periodStart, periodEnd);
+                if (wages != null && wages.compareTo(BigDecimal.ZERO) > 0) {
+                    operativeWages = wages;
+                    usedLiveWageData = true;
+                }
+            } catch (Exception e) {
+                log.warn("Could not retrieve timesheet data for site {}: {}", siteId, e.getMessage());
+            }
+        }
+
+        // Get contract labour value as fallback
+        BigDecimal contractLabourValue = contract.getLabourValue() != null ? contract.getLabourValue() : BigDecimal.ZERO;
+
+        // Determine which labour value to use
+        BigDecimal labourCostsUsed;
+        if (usedLiveWageData) {
+            labourCostsUsed = operativeWages;
+        } else {
+            // Fallback to contract labour value (pro-rated if needed based on period)
+            labourCostsUsed = contractLabourValue;
+        }
+
+        // Calculate CITB Levy = 0.5% of labour costs
+        BigDecimal citbLevy = labourCostsUsed.multiply(CITB_LEVY_RATE)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return CITBLevyReport.builder()
+                .contractId(contract.getId())
+                .contractRef(contract.getContractRef())
+                .contractTitle(contract.getTitle())
+                .periodStart(periodStart)
+                .periodEnd(periodEnd)
+                .operativeWages(operativeWages)
+                .contractLabourValue(contractLabourValue)
+                .labourCostsUsed(labourCostsUsed)
+                .usedLiveWageData(usedLiveWageData)
+                .qualifyingLabourCosts(labourCostsUsed)
+                .levyRate(CITB_LEVY_RATE)
+                .citbLevy(citbLevy)
+                .contractValue(contract.getContractValue())
+                .build();
     }
 }

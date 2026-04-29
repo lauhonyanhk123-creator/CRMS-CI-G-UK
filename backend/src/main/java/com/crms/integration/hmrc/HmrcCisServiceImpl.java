@@ -1,16 +1,20 @@
 package com.crms.integration.hmrc;
 
+import com.crms.integration.cache.IntegrationCacheService;
 import com.crms.integration.config.IntegrationProperties;
 import com.crms.integration.dto.HmrcCisDeductionRateResponse;
 import com.crms.integration.dto.HmrcCisSubmitResponse;
 import com.crms.integration.dto.HmrcCisSubmitResponse.SubmissionStatus;
 import com.crms.integration.dto.HmrcCisVerificationResponse;
 import com.crms.integration.dto.HmrcCisVerificationResponse.CisVerificationResult;
+import com.crms.integration.monitoring.NetworkMonitor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -18,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * HMRC CIS (Construction Industry Scheme) Service implementation.
@@ -30,8 +35,13 @@ public class HmrcCisServiceImpl implements HmrcCisService {
 
     private final RestTemplate hmrcRestTemplate;
     private final IntegrationProperties properties;
+    private final NetworkMonitor networkMonitor;
+    private final IntegrationCacheService cacheService;
 
-    private HmrcOAuth2Token cachedToken;
+    private volatile HmrcOAuth2Token cachedToken;
+    private final AtomicInteger tokenRefreshAttempts = new AtomicInteger(0);
+    private static final int MAX_TOKEN_REFRESH_ATTEMPTS = 3;
+    private static final int RETRY_DELAY_MS = 1000;
 
     // Demo mode data - simulates HMRC responses
     private static final Map<String, DemoVerificationData> DEMO_VERIFICATIONS = new HashMap<>();
@@ -79,27 +89,73 @@ public class HmrcCisServiceImpl implements HmrcCisService {
             return mockVerifySubcontractor(utr);
         }
 
-        try {
-            String accessToken = getAccessToken();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // HMRC CIS verification endpoint
-            String url = properties.getHmrc().getBaseUrl() +
-                    "/organisations/constructive-industry-scheme/subcontractors/" + utr + "/verification";
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<Map> response = hmrcRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
-
-            return mapToVerificationResponse(response.getBody());
-        } catch (HttpClientErrorException e) {
-            log.error("HMRC API error during verification: {}", e.getMessage());
-            return createErrorVerification(utr, "HMRC_API_ERROR: " + e.getMessage());
-        } catch (Exception e) {
-            log.error("Failed to verify subcontractor: {}", e.getMessage());
-            return createErrorVerification(utr, "VERIFICATION_FAILED: " + e.getMessage());
+        // Check if HMRC is reachable
+        if (!networkMonitor.isHmrcReachable()) {
+            log.warn("HMRC service is not reachable. Attempting to use cached data for UTR: {}", utr);
+            HmrcCisVerificationResponse cached = cacheService.getCachedCisVerification(utr);
+            if (cached != null) {
+                log.info("Returning cached CIS verification for UTR: {}. Note: Data may be stale.", utr);
+                return HmrcCisVerificationResponse.builder()
+                        .verificationRef(cached.getVerificationRef())
+                        .utr(cached.getUtr())
+                        .companyName(cached.getCompanyName())
+                        .result(cached.getResult())
+                        .deductionRate(cached.getDeductionRate())
+                        .verifiedAt(cached.getVerifiedAt())
+                        .expiresAt(cached.getExpiresAt())
+                        .offlineData(true)
+                        .build();
+            }
+            throw new HmrcOfflineException("HMRC service is unavailable and no cached data exists for UTR: " + utr);
         }
+
+        try {
+            return executeWithTokenRefresh(() -> {
+                String accessToken = getValidAccessToken();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setBearerAuth(accessToken);
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                // HMRC CIS verification endpoint
+                String url = properties.getHmrc().getBaseUrl() +
+                        "/organisations/constructive-industry-scheme/subcontractors/" + utr + "/verification";
+
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+                ResponseEntity<Map> response = hmrcRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+
+                HmrcCisVerificationResponse verificationResponse = mapToVerificationResponse(response.getBody());
+                // Cache successful response
+                cacheService.cacheCisVerification(utr, verificationResponse);
+                return verificationResponse;
+            }, utr, "verify");
+        } catch (ResourceAccessException e) {
+            log.warn("Network error connecting to HMRC: {}. Attempting cached data.", e.getMessage());
+            return handleNetworkErrorWithCache(utr, e);
+        } catch (HmrcAuthenticationException | HmrcApiException e) {
+            log.error("HMRC API error for verification: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Handle network error by attempting to return cached data.
+     */
+    private HmrcCisVerificationResponse handleNetworkErrorWithCache(String utr, ResourceAccessException e) {
+        HmrcCisVerificationResponse cached = cacheService.getCachedCisVerification(utr);
+        if (cached != null) {
+            log.warn("Returning stale cached CIS verification due to network error. UTR: {}", utr);
+            return HmrcCisVerificationResponse.builder()
+                    .verificationRef(cached.getVerificationRef())
+                    .utr(cached.getUtr())
+                    .companyName(cached.getCompanyName())
+                    .result(cached.getResult())
+                    .deductionRate(cached.getDeductionRate())
+                    .verifiedAt(cached.getVerifiedAt())
+                    .expiresAt(cached.getExpiresAt())
+                    .offlineData(true)
+                    .build();
+        }
+        throw new HmrcOfflineException("Network error and no cached data available for UTR: " + utr, e);
     }
 
     @Override
@@ -110,24 +166,69 @@ public class HmrcCisServiceImpl implements HmrcCisService {
             return mockGetDeductionPercentage(supplierUtr, contractorUtr);
         }
 
-        try {
-            String accessToken = getAccessToken();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            String url = properties.getHmrc().getBaseUrl() +
-                    "/organisations/constructive-industry-scheme/contractors/" + contractorUtr +
-                    "/subcontractors/" + supplierUtr + "/deduction-rate";
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<Map> response = hmrcRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
-
-            return mapToDeductionResponse(response.getBody(), supplierUtr, contractorUtr);
-        } catch (Exception e) {
-            log.error("Failed to get deduction percentage: {}", e.getMessage());
-            return createErrorDeductionResponse(supplierUtr, contractorUtr, e.getMessage());
+        // Check if HMRC is reachable
+        if (!networkMonitor.isHmrcReachable()) {
+            log.warn("HMRC service is not reachable. Attempting to use cached data for {}/{}", supplierUtr, contractorUtr);
+            HmrcCisDeductionRateResponse cached = cacheService.getCachedCisDeductionRate(supplierUtr, contractorUtr);
+            if (cached != null) {
+                log.info("Returning cached CIS deduction rate. Note: Data may be stale.");
+                return HmrcCisDeductionRateResponse.builder()
+                        .supplierUtr(cached.getSupplierUtr())
+                        .contractorUtr(cached.getContractorUtr())
+                        .deductionRate(cached.getDeductionRate())
+                        .rateType(cached.getRateType())
+                        .applicable(cached.isApplicable())
+                        .calculationBasis(cached.getCalculationBasis() + " [OFFLINE DATA]")
+                        .build();
+            }
+            throw new HmrcOfflineException("HMRC service is unavailable and no cached deduction rate for " + supplierUtr + "/" + contractorUtr);
         }
+
+        try {
+            return executeWithTokenRefresh(() -> {
+                String accessToken = getValidAccessToken();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setBearerAuth(accessToken);
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                String url = properties.getHmrc().getBaseUrl() +
+                        "/organisations/constructive-industry-scheme/contractors/" + contractorUtr +
+                        "/subcontractors/" + supplierUtr + "/deduction-rate";
+
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+                ResponseEntity<Map> response = hmrcRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+
+                HmrcCisDeductionRateResponse deductionResponse = mapToDeductionResponse(response.getBody(), supplierUtr, contractorUtr);
+                // Cache successful response
+                cacheService.cacheCisDeductionRate(supplierUtr, contractorUtr, deductionResponse);
+                return deductionResponse;
+            }, supplierUtr + "/" + contractorUtr, "deduction");
+        } catch (ResourceAccessException e) {
+            log.warn("Network error connecting to HMRC: {}. Attempting cached data.", e.getMessage());
+            return handleNetworkErrorWithCache(supplierUtr, contractorUtr, e);
+        } catch (HmrcAuthenticationException | HmrcApiException e) {
+            log.error("HMRC API error for deduction rate: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Handle network error for deduction rate by attempting to return cached data.
+     */
+    private HmrcCisDeductionRateResponse handleNetworkErrorWithCache(String supplierUtr, String contractorUtr, ResourceAccessException e) {
+        HmrcCisDeductionRateResponse cached = cacheService.getCachedCisDeductionRate(supplierUtr, contractorUtr);
+        if (cached != null) {
+            log.warn("Returning stale cached CIS deduction rate due to network error. {}/{}", supplierUtr, contractorUtr);
+            return HmrcCisDeductionRateResponse.builder()
+                    .supplierUtr(cached.getSupplierUtr())
+                    .contractorUtr(cached.getContractorUtr())
+                    .deductionRate(cached.getDeductionRate())
+                    .rateType(cached.getRateType())
+                    .applicable(cached.isApplicable())
+                    .calculationBasis(cached.getCalculationBasis() + " [OFFLINE - STALE DATA]")
+                    .build();
+        }
+        throw new HmrcOfflineException("Network error and no cached deduction rate for " + supplierUtr + "/" + contractorUtr, e);
     }
 
     @Override
@@ -138,26 +239,34 @@ public class HmrcCisServiceImpl implements HmrcCisService {
             return mockSubmitMonthlyReturn(cisReturn);
         }
 
+        // Check if HMRC is reachable
+        if (!networkMonitor.isHmrcReachable()) {
+            log.error("Cannot submit CIS return - HMRC service is unavailable");
+            throw new HmrcOfflineException("HMRC service is unavailable. Cannot submit CIS return for month: " + cisReturn.getTaxMonth());
+        }
+
         try {
-            String accessToken = getAccessToken();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            return executeWithTokenRefresh(() -> {
+                String accessToken = getValidAccessToken();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setBearerAuth(accessToken);
+                headers.setContentType(MediaType.APPLICATION_JSON);
 
-            String url = properties.getHmrc().getBaseUrl() +
-                    "/organisations/constructive-industry-scheme/contractors/" + cisReturn.getContractorUtr() +
-                    "/monthly-returns";
+                String url = properties.getHmrc().getBaseUrl() +
+                        "/organisations/constructive-industry-scheme/contractors/" + cisReturn.getContractorUtr() +
+                        "/monthly-returns";
 
-            HttpEntity<CisReturnDto> entity = new HttpEntity<>(cisReturn, headers);
-            ResponseEntity<Map> response = hmrcRestTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+                HttpEntity<CisReturnDto> entity = new HttpEntity<>(cisReturn, headers);
+                ResponseEntity<Map> response = hmrcRestTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
 
-            return mapToSubmitResponse(response.getBody());
-        } catch (HttpClientErrorException e) {
-            log.error("HMRC API error during submission: {}", e.getMessage());
-            return createErrorSubmitResponse(e.getMessage());
-        } catch (Exception e) {
-            log.error("Failed to submit CIS return: {}", e.getMessage());
-            return createErrorSubmitResponse(e.getMessage());
+                return mapToSubmitResponse(response.getBody());
+            }, cisReturn.getContractorUtr(), "submit");
+        } catch (ResourceAccessException e) {
+            log.error("Network error submitting CIS return: {}. Submissions cannot be completed offline.", e.getMessage());
+            throw new HmrcOfflineException("Network error submitting CIS return. Please try again when connectivity is restored.", e);
+        } catch (HmrcAuthenticationException | HmrcApiException e) {
+            log.error("HMRC API error submitting CIS return: {}", e.getMessage());
+            throw e;
         }
     }
 
@@ -184,37 +293,231 @@ public class HmrcCisServiceImpl implements HmrcCisService {
 
     // ==================== OAuth2 Authentication ====================
 
-    private synchronized String getAccessToken() {
-        if (cachedToken != null && !cachedToken.isExpired()) {
-            return cachedToken.getAccessToken();
+    /**
+     * Get a valid access token, refreshing if necessary.
+     * Uses proactive refresh to ensure the token is valid before making API calls.
+     * 
+     * @return a valid access token
+     */
+    private String getValidAccessToken() {
+        HmrcOAuth2Token currentToken = cachedToken;
+        
+        // Check if token needs proactive refresh (before it expires)
+        if (currentToken != null && !currentToken.isExpired(properties.getHmrc().getTokenRefreshBufferSeconds())) {
+            log.debug("Using cached token, {} seconds until refresh needed", 
+                    currentToken.getRemainingSeconds() - properties.getHmrc().getTokenRefreshBufferSeconds());
+            return currentToken.getAccessToken();
+        }
+        
+        // Token is missing, expired, or about to expire - refresh it
+        return refreshAccessToken();
+    }
+
+    /**
+     * Synchronized method to refresh the OAuth2 access token.
+     * Handles concurrent requests by ensuring only one thread refreshes the token.
+     * 
+     * @return a new valid access token
+     */
+    private synchronized String refreshAccessToken() {
+        // Double-check pattern: another thread may have refreshed while we waited
+        HmrcOAuth2Token currentToken = cachedToken;
+        if (currentToken != null && !currentToken.isExpired(properties.getHmrc().getTokenRefreshBufferSeconds())) {
+            log.debug("Token was refreshed by another thread");
+            return currentToken.getAccessToken();
         }
 
         log.info("Obtaining new OAuth2 access token from HMRC");
+        tokenRefreshAttempts.set(0);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        String body = "grant_type=client_credentials" +
-                "&client_id=" + properties.getHmrc().getClientId() +
-                "&client_secret=" + properties.getHmrc().getClientSecret() +
-                "&scope=" + "read:constructive-industry-scheme write:constructive-industry-scheme";
+            String body = "grant_type=client_credentials" +
+                    "&client_id=" + properties.getHmrc().getClientId() +
+                    "&client_secret=" + properties.getHmrc().getClientSecret() +
+                    "&scope=" + "read:constructive-industry-scheme write:constructive-industry-scheme";
 
-        HttpEntity<String> entity = new HttpEntity<>(body, headers);
-        ResponseEntity<Map> response = hmrcRestTemplate.postForEntity(
-                "https://api.service.hmrc.gov.uk/oauth/token",
-                entity,
-                Map.class
-        );
+            HttpEntity<String> entity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map> response = hmrcRestTemplate.postForEntity(
+                    "https://api.service.hmrc.gov.uk/oauth/token",
+                    entity,
+                    Map.class
+            );
 
-        Map<String, Object> tokenData = response.getBody();
-        cachedToken = HmrcOAuth2Token.builder()
-                .accessToken((String) tokenData.get("access_token"))
-                .tokenType((String) tokenData.getOrDefault("token_type", "Bearer"))
-                .expiresIn(((Number) tokenData.get("expires_in")).longValue())
-                .issuedAt(Instant.now())
-                .build();
+            Map<String, Object> tokenData = response.getBody();
+            
+            if (tokenData == null || !tokenData.containsKey("access_token")) {
+                throw new IllegalStateException("Invalid token response from HMRC: missing access_token");
+            }
 
-        return cachedToken.getAccessToken();
+            HmrcOAuth2Token newToken = HmrcOAuth2Token.builder()
+                    .accessToken((String) tokenData.get("access_token"))
+                    .tokenType((String) tokenData.getOrDefault("token_type", "Bearer"))
+                    .expiresIn(((Number) tokenData.get("expires_in")).longValue())
+                    .issuedAt(Instant.now())
+                    .build();
+
+            cachedToken = newToken;
+            log.info("Successfully obtained new OAuth2 token, expires in {} seconds", newToken.getExpiresIn());
+            
+            return newToken.getAccessToken();
+            
+        } catch (HttpClientErrorException e) {
+            log.error("HMRC OAuth2 authentication failed: {} - {}", e.getStatusCode(), e.getMessage());
+            throw new HmrcAuthenticationException("OAuth2 authentication failed: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Failed to obtain OAuth2 token: {}", e.getMessage());
+            throw new HmrcAuthenticationException("Failed to obtain OAuth2 token: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Execute an HMRC API call with automatic token refresh on 401 errors.
+     * Implements retry logic with exponential backoff.
+     * 
+     * @param operation the API operation to execute
+     * @param identifier identifier for logging (e.g., UTR)
+     * @param operationType type of operation for logging
+     * @return the result of the operation
+     */
+    private <T> T executeWithTokenRefresh(TokenOperation<T> operation, String identifier, String operationType) {
+        int attempts = 0;
+        int maxAttempts = MAX_TOKEN_REFRESH_ATTEMPTS;
+        
+        while (attempts < maxAttempts) {
+            attempts++;
+            try {
+                return operation.execute();
+                
+            } catch (HttpClientErrorException e) {
+                // Handle 401 Unauthorized - token may have expired
+                if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                    log.warn("Received 401 Unauthorized for {} operation ({}). Attempt {}/{}", 
+                            operationType, identifier, attempts, maxAttempts);
+                    
+                    if (attempts < maxAttempts) {
+                        // Invalidate cached token and force refresh
+                        cachedToken = null;
+                        log.info("Invalidating cached token and forcing refresh");
+                        
+                        // Brief delay before retry
+                        try {
+                            Thread.sleep(RETRY_DELAY_MS * attempts);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
+                        continue;
+                    }
+                    
+                    log.error("Token refresh exhausted after {} attempts for {} operation", maxAttempts, operationType);
+                    throw new HmrcAuthenticationException(
+                            "Token refresh exhausted after " + maxAttempts + " attempts: " + e.getMessage(), e);
+                }
+                
+                // Other client errors (4xx) - don't retry
+                log.error("HMRC API client error for {} operation: {} - {}", 
+                        operationType, e.getStatusCode(), e.getMessage());
+                throw e;
+                
+            } catch (HmrcAuthenticationException e) {
+                // Authentication errors should bubble up
+                log.error("HMRC authentication error for {} operation: {}", operationType, e.getMessage());
+                throw e;
+                
+            } catch (HttpServerErrorException e) {
+                // 5xx errors - may be temporary, retry with backoff
+                log.warn("HMRC API server error for {} operation: {} - {}. Attempt {}/{}", 
+                        operationType, e.getStatusCode(), e.getMessage(), attempts, maxAttempts);
+                
+                if (attempts < maxAttempts) {
+                    try {
+                        Thread.sleep(RETRY_DELAY_MS * attempts * 2);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                    continue;
+                }
+                
+                log.error("Server error retry exhausted after {} attempts for {} operation", maxAttempts, operationType);
+                throw new HmrcApiException("HMRC API server error after " + maxAttempts + " attempts: " + e.getMessage(), e);
+                
+            } catch (ResourceAccessException e) {
+                // Network errors - retry with backoff
+                log.warn("Network error for {} operation: {}. Attempt {}/{}", 
+                        operationType, e.getMessage(), attempts, maxAttempts);
+                
+                if (attempts < maxAttempts) {
+                    try {
+                        Thread.sleep(RETRY_DELAY_MS * attempts);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                    continue;
+                }
+                
+                log.error("Network error retry exhausted after {} attempts for {} operation", maxAttempts, operationType);
+                throw new HmrcApiException("Network error after " + maxAttempts + " attempts: " + e.getMessage(), e);
+            }
+        }
+        
+        // Should not reach here, but return error response if we do
+        throw new HmrcApiException("Operation failed after " + maxAttempts + " attempts");
+    }
+
+    @FunctionalInterface
+    private interface TokenOperation<T> {
+        T execute();
+    }
+
+    // ==================== Custom Exceptions ====================
+
+    /**
+     * Exception for HMRC authentication failures.
+     */
+    public static class HmrcAuthenticationException extends RuntimeException {
+        public HmrcAuthenticationException(String message) {
+            super(message);
+        }
+        public HmrcAuthenticationException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * Exception for HMRC API errors.
+     */
+    public static class HmrcApiException extends RuntimeException {
+        public HmrcApiException(String message) {
+            super(message);
+        }
+        public HmrcApiException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * Exception for HMRC service being offline/unavailable.
+     * Used for graceful degradation - thrown when service is unavailable
+     * and no cached data exists.
+     */
+    public static class HmrcOfflineException extends RuntimeException {
+        private final boolean hasCachedData;
+        
+        public HmrcOfflineException(String message) {
+            super(message);
+            this.hasCachedData = false;
+        }
+        
+        public HmrcOfflineException(String message, Throwable cause) {
+            super(message, cause);
+            this.hasCachedData = false;
+        }
+        
+        public boolean hasCachedData() {
+            return hasCachedData;
+        }
     }
 
     // ==================== Mock/Demo Methods ====================

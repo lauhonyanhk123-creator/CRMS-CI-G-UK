@@ -20,22 +20,26 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
 
     List<Contract> findByStatus(ContractStatus status);
 
-    @Query("SELECT c FROM Contract c WHERE c.client.id = :clientId")
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.client.id = :clientId")
     List<Contract> findByClientId(@Param("clientId") Long clientId);
 
-    @Query("SELECT c FROM Contract c WHERE c.site.id = :siteId")
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.site.id = :siteId")
     List<Contract> findBySiteId(@Param("siteId") Long siteId);
 
-    @Query("SELECT c FROM Contract c WHERE c.defectsEndDate <= :date AND c.status = 'COMPLETED'")
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.defectsEndDate <= :date AND c.status = 'COMPLETED'")
     List<Contract> findDefectsPeriodEnding(@Param("date") LocalDate date);
 
     boolean existsByContractRef(String contractRef);
 
-    @Query("SELECT c FROM Contract c WHERE c.site.id = :siteId")
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.site.id = :siteId")
     Page<Contract> findBySiteId(@Param("siteId") Long siteId, Pageable pageable);
 
-    Page<Contract> findByStatus(ContractStatus status, Pageable pageable);
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.status = :status")
+    Page<Contract> findByStatus(@Param("status") ContractStatus status, Pageable pageable);
 
-    @Query("SELECT c FROM Contract c WHERE c.client.id = :clientId")
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.client.id = :clientId")
     Page<Contract> findByClientId(@Param("clientId") Long clientId, Pageable pageable);
+    
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site")
+    Page<Contract> findAll(Pageable pageable);
 }

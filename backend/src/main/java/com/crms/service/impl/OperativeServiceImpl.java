@@ -4,13 +4,18 @@ import com.crms.domain.company.entity.Company;
 import com.crms.domain.company.repository.CompanyRepository;
 import com.crms.domain.healthsafety.entity.RAMSDocument;
 import com.crms.domain.healthsafety.repository.RAMSDocumentRepository;
+import com.crms.domain.healthsafety.repository.RAMSSignOnRepository;
 import com.crms.domain.operative.entity.Card;
+import com.crms.domain.operative.entity.Induction;
 import com.crms.domain.operative.entity.Operative;
 import com.crms.domain.operative.entity.Qualification;
 import com.crms.domain.operative.enums.CardType;
 import com.crms.domain.operative.enums.OperativeStatus;
+import com.crms.domain.operative.enums.QualificationType;
 import com.crms.domain.operative.repository.CardRepository;
+import com.crms.domain.operative.repository.InductionRepository;
 import com.crms.domain.operative.repository.OperativeRepository;
+import com.crms.domain.operative.repository.QualificationRepository;
 import com.crms.domain.site.entity.Site;
 import com.crms.domain.site.repository.SiteRepository;
 import com.crms.dto.request.OperativeRequest;
@@ -43,8 +48,12 @@ public class OperativeServiceImpl implements OperativeService {
     private final CardRepository cardRepository;
     private final SiteRepository siteRepository;
     private final RAMSDocumentRepository ramsRepository;
+    private final RAMSSignOnRepository ramsSignOnRepository;
+    private final InductionRepository inductionRepository;
+    private final QualificationRepository qualificationRepository;
     
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<OperativeResponse> findAll(Map<String, Object> params) {
         int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
         int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
@@ -74,6 +83,7 @@ public class OperativeServiceImpl implements OperativeService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public OperativeResponse findById(Long id) {
         Operative operative = operativeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Operative", id));
@@ -148,51 +158,114 @@ public class OperativeServiceImpl implements OperativeService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public SubbieGateStatus smartCheckCard(Long operativeId, Long cardId) {
         Operative operative = operativeRepository.findById(operativeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Operative", operativeId));
-        
+
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card", cardId));
-        
-        // Stub for CSCS Smart Check API integration
+
         log.info("Smart checking card {} for operative {}", cardId, operativeId);
-        
-        boolean isValid = card.getExpiryDate() != null && 
-                         card.getExpiryDate().isAfter(LocalDate.now());
-        
+
+        // CSCS/CPCS card must be valid — this is the hard gate requirement
+        boolean isCardValid = card.getExpiryDate() != null
+                && card.getExpiryDate().isAfter(LocalDate.now())
+                && (card.getCardType() == CardType.CSCS || card.getCardType() == CardType.CPCS);
+
+        // RAMS: operative must have a currently-valid RAMS sign-on record
+        boolean hasRams = !ramsSignOnRepository.findByOperativeId(operativeId).isEmpty()
+                && ramsSignOnRepository.findByOperativeId(operativeId).stream()
+                        .anyMatch(r -> r.isValid());
+
+        // Induction: operative must have a valid induction record for any site
+        boolean hasInduction = !inductionRepository.findByOperativeId(operativeId).isEmpty()
+                && inductionRepository.findByOperativeId(operativeId).stream()
+                        .anyMatch(Induction::isValid);
+
+        // Plant ticket: operative must hold a valid plant operation qualification
+        // Recognised types: NPORS, CPCS, CPCS_BLUE, CITY_AND_GUILDS
+        boolean hasPlantTicket = qualificationRepository.findByOperativeId(operativeId).stream()
+                .anyMatch(q -> q.isValid() && (q.getQualificationType() == QualificationType.NPORS
+                        || q.getQualificationType() == QualificationType.CPCS
+                        || q.getQualificationType() == QualificationType.CPCS_BLUE
+                        || q.getQualificationType() == QualificationType.CITY_AND_GUILDS));
+
+        // Gate opens only when CSCS/CPCS card is valid
+        // RAMS, induction, and plant ticket generate advisory warnings but do not block entry
+        boolean gateOpen = isCardValid;
+
+        String statusMessage;
+        if (!isCardValid) {
+            statusMessage = "CSCS/CPCS card missing or expired — gate locked";
+        } else if (!hasRams) {
+            statusMessage = "RAMS sign-on required for this site";
+        } else if (!hasInduction) {
+            statusMessage = "Site induction required";
+        } else if (!hasPlantTicket) {
+            statusMessage = "Plant ticket recommended — contact supervisor";
+        } else {
+            statusMessage = "All checks passed — gate open";
+        }
+
         return SubbieGateStatus.builder()
                 .operativeId(operativeId)
                 .isHMRCVerified(operative.getHmrcVerified())
-                .isCSCSValid(isValid && card.getCardType() == CardType.CSCS)
-                .isRAMSValid(true) // Would check RAMS completion
-                .isInductionValid(true) // Would check induction status
-                .isPlantTicketValid(true) // Would check plant tickets
-                .isGateOpen(isValid)
-                .statusMessage(isValid ? "All checks passed" : "Card validation failed")
+                .isCSCSValid(isCardValid)
+                .isRAMSValid(hasRams)
+                .isInductionValid(hasInduction)
+                .isPlantTicketValid(hasPlantTicket)
+                .isGateOpen(gateOpen)
+                .statusMessage(statusMessage)
                 .build();
     }
-    
+
     @Override
+    @Transactional(readOnly = true)
     public SubbieGateStatus getSubbieGateStatus(Long operativeId) {
         Operative operative = operativeRepository.findById(operativeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Operative", operativeId));
-        
+
         boolean hasValidCard = operative.getCards().stream()
-                .anyMatch(c -> c.getExpiryDate() != null && c.getExpiryDate().isAfter(LocalDate.now()));
-        
+                .anyMatch(c -> c.getExpiryDate() != null && c.getExpiryDate().isAfter(LocalDate.now())
+                        && (c.getCardType() == CardType.CSCS || c.getCardType() == CardType.CPCS));
+
+        boolean hasRams = ramsSignOnRepository.findByOperativeId(operativeId).stream()
+                .anyMatch(RAMSSignOn::isValid);
+
+        boolean hasInduction = inductionRepository.findByOperativeId(operativeId).stream()
+                .anyMatch(Induction::isValid);
+
+        boolean hasPlantTicket = qualificationRepository.findByOperativeId(operativeId).stream()
+                .anyMatch(q -> q.isValid() && (q.getQualificationType() == QualificationType.NPORS
+                        || q.getQualificationType() == QualificationType.CPCS
+                        || q.getQualificationType() == QualificationType.CPCS_BLUE));
+
+        String statusMessage;
+        if (!hasValidCard) {
+            statusMessage = "Card validation required — CSCS/CPCS card missing or expired";
+        } else if (!hasRams) {
+            statusMessage = "RAMS sign-on required";
+        } else if (!hasInduction) {
+            statusMessage = "Site induction required";
+        } else if (!hasPlantTicket) {
+            statusMessage = "Plant ticket recommended for plant operations";
+        } else {
+            statusMessage = "Gate Open — all checks passed";
+        }
+
         return SubbieGateStatus.builder()
                 .operativeId(operativeId)
                 .isHMRCVerified(operative.getHmrcVerified())
                 .isCSCSValid(hasValidCard)
-                .isRAMSValid(true)
-                .isInductionValid(true)
-                .isPlantTicketValid(true)
+                .isRAMSValid(hasRams)
+                .isInductionValid(hasInduction)
+                .isPlantTicketValid(hasPlantTicket)
                 .isGateOpen(hasValidCard)
-                .statusMessage(hasValidCard ? "Gate Open" : "Card validation required")
+                .statusMessage(statusMessage)
                 .build();
     }
-    
+
     @Override
     @Transactional
     public void delete(Long id) {

@@ -1,5 +1,6 @@
 package com.crms.dto.response;
 
+import com.crms.domain.contract.enums.DeadlineStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,4 +30,9 @@ public class ApplicationResponse {
     private LocalDate submittedDate;
     private LocalDate paidDate;
     private String payerRef;
+    private Boolean reverseCharge;
+    
+    // Pay-less notice s.111 deadline fields
+    private LocalDate payLessNoticeDeadline;
+    private DeadlineStatus deadlineStatus;
 }

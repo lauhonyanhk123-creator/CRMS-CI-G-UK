@@ -17,21 +17,26 @@ public interface TenderRepository extends JpaRepository<Tender, Long> {
 
     Optional<Tender> findByTenderRef(String tenderRef);
 
-    List<Tender> findByStatus(TenderStatus status);
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.status = :status")
+    List<Tender> findByStatus(@Param("status") TenderStatus status);
 
-    Page<Tender> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+    Page<Tender> findByTitleContainingIgnoreCase(@Param("title") String title, Pageable pageable);
 
-    @Query("SELECT t FROM Tender t WHERE t.client.id = :clientId")
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.client.id = :clientId")
     List<Tender> findByClientId(@Param("clientId") Long clientId);
 
-    @Query("SELECT t FROM Tender t WHERE t.client.id = :clientId")
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.client.id = :clientId")
     Page<Tender> findByClientId(@Param("clientId") Long clientId, Pageable pageable);
 
-    @Query("SELECT t FROM Tender t WHERE t.site.id = :siteId")
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.site.id = :siteId")
     List<Tender> findBySiteId(@Param("siteId") Long siteId);
 
-    @Query("SELECT t FROM Tender t WHERE t.site.id = :siteId")
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.site.id = :siteId")
     Page<Tender> findBySiteId(@Param("siteId") Long siteId, Pageable pageable);
+    
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site")
+    Page<Tender> findAll(Pageable pageable);
 
     boolean existsByTenderRef(String tenderRef);
 }

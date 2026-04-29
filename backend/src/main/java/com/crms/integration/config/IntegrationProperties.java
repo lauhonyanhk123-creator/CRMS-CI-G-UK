@@ -27,6 +27,9 @@ public class IntegrationProperties {
         private String vatRate = "20.0";
         private String landfillTaxStandard = "126.15";
         private String landfillTaxInert = "4.05";
+        // Token refresh configuration
+        private int tokenRefreshBufferSeconds = 300; // 5 minutes - proactive refresh before expiry
+        private int tokenExpiryBufferSeconds = 60;
     }
 
     @Data

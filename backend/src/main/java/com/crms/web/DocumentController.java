@@ -1,20 +1,22 @@
 package com.crms.web;
 
+import com.crms.dto.request.DocumentRequest;
 import com.crms.dto.response.ApiResponse;
 import com.crms.dto.response.PageResponse;
 import com.crms.service.DocumentService;
+import com.crms.service.MinioStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.io.InputStream;
 
 @RestController
 @RequestMapping("/api/v1/documents")
@@ -24,6 +26,7 @@ import java.util.List;
 public class DocumentController {
     
     private final DocumentService documentService;
+    private final MinioStorageService minioStorageService;
     
     @GetMapping
     @Operation(summary = "List documents", description = "Get paginated list of documents with optional filters")
@@ -46,7 +49,13 @@ public class DocumentController {
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String metadata) {
         
-        Object request = new Object();
+        DocumentRequest request = DocumentRequest.builder()
+                .type(type)
+                .entityId(entityId)
+                .entityType(entityType)
+                .metadata(metadata)
+                .build();
+        
         Object response = documentService.upload(file, request);
         return ResponseEntity.ok(ApiResponse.success("Document uploaded successfully", response));
     }
@@ -61,14 +70,40 @@ public class DocumentController {
     @GetMapping("/{id}/content")
     @Operation(summary = "Download document", description = "Download document content")
     public ResponseEntity<Resource> download(@PathVariable Long id) {
-        // Would retrieve document from storage and return as Resource
-        return ResponseEntity.notFound().build();
+        // Get document metadata and storage path
+        Object documentMeta = documentService.findById(id);
+        
+        if (documentMeta == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        try {
+            // Extract bucket and objectId from document metadata
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> docMap = (java.util.Map<String, Object>) documentMeta;
+            String bucket = minioStorageService.getDocumentsBucket();
+            String objectId = (String) docMap.getOrDefault("objectId", "documents/" + id);
+            
+            // Get content type from document or default
+            String contentType = (String) docMap.getOrDefault("contentType", "application/octal-stream");
+            String filename = (String) docMap.getOrDefault("originalFilename", "document");
+            
+            // Get file from MinIO
+            InputStream inputStream = minioStorageService.downloadFile(bucket, objectId);
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .body(new InputStreamResource(inputStream));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     
     @GetMapping("/{id}/versions")
     @Operation(summary = "Get versions", description = "Get document version history")
-    public ResponseEntity<ApiResponse<List<Object>>> getVersions(@PathVariable Long id) {
-        List<Object> versions = documentService.getVersions(id);
+    public ResponseEntity<ApiResponse<java.util.List<Object>>> getVersions(@PathVariable Long id) {
+        java.util.List<Object> versions = documentService.getVersions(id);
         return ResponseEntity.ok(ApiResponse.success(versions));
     }
     

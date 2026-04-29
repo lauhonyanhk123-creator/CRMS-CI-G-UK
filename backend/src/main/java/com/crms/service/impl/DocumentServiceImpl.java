@@ -1,30 +1,18 @@
 package com.crms.service.impl;
 
-import com.crms.dto.response.ApiResponse;
+import com.crms.dto.request.DocumentRequest;
 import com.crms.dto.response.PageResponse;
 import com.crms.exception.ResourceNotFoundException;
 import com.crms.service.DocumentService;
+import com.crms.service.MinioStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.InputStream;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,16 +21,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class DocumentServiceImpl implements DocumentService {
 
+    private final MinioStorageService minioStorageService;
+    
     private final Map<Long, DocumentMetadata> documentStore = new ConcurrentHashMap<>();
     private Long idCounter = 1L;
 
-    @Value("${app.storage.path:./uploads}")
-    private String storagePath;
-
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<Object> findAll(Long entityId, String entityType, String type, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "uploadedAt"));
-
         List<DocumentMetadata> filtered = documentStore.values().stream()
                 .filter(doc -> entityId == null || entityId.equals(doc.getEntityId()))
                 .filter(doc -> entityType == null || entityType.equals(doc.getEntityType()))
@@ -50,8 +36,8 @@ public class DocumentServiceImpl implements DocumentService {
                 .sorted(Comparator.comparing(DocumentMetadata::getUploadedAt).reversed())
                 .toList();
 
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        int start = page * size;
+        int end = Math.min(start + size, filtered.size());
         List<DocumentMetadata> pageContent = start < filtered.size() ? filtered.subList(start, end) : Collections.emptyList();
 
         List<Map<String, Object>> content = pageContent.stream()
@@ -68,6 +54,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Object findById(Long id) {
         DocumentMetadata document = documentStore.get(id);
         if (document == null) {
@@ -84,51 +71,49 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         MultipartFile multipartFile = (MultipartFile) file;
-        Map<String, Object> meta = metadata instanceof Map ? (Map<String, Object>) metadata : new HashMap<>();
+        DocumentRequest request = metadata instanceof DocumentRequest ? (DocumentRequest) metadata : null;
+        
+        String type = request != null ? request.getType() : "GENERAL";
+        Long entityId = request != null ? request.getEntityId() : null;
+        String entityType = request != null ? request.getEntityType() : "";
 
         String originalFilename = multipartFile.getOriginalFilename();
-        String extension = getFileExtension(originalFilename);
-        String storedFilename = UUID.randomUUID().toString() + extension;
-        String type = meta.getOrDefault("type", "GENERAL").toString();
-        Long entityId = meta.containsKey("entityId") ? Long.parseLong(meta.get("entityId").toString()) : null;
-        String entityType = meta.getOrDefault("entityType", "").toString();
+        
+        // Generate object ID for MinIO storage
+        String objectId = minioStorageService.generateObjectId("documents", originalFilename);
+        String bucket = minioStorageService.getDocumentsBucket();
 
         try {
-            Path uploadDir = Paths.get(storagePath);
-            if (!Files.exists(uploadDir)) {
-                Files.createDirectories(uploadDir);
-            }
-
-            Path filePath = uploadDir.resolve(storedFilename);
-            Files.copy(multipartFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            // Upload to MinIO
+            minioStorageService.uploadFile(multipartFile, bucket, objectId);
 
             DocumentMetadata document = DocumentMetadata.builder()
                     .id(idCounter++)
                     .originalFilename(originalFilename)
-                    .storedFilename(storedFilename)
-                    .filePath(filePath.toString())
+                    .objectId(objectId)
+                    .bucket(bucket)
                     .fileSize(multipartFile.getSize())
                     .contentType(multipartFile.getContentType())
                     .type(type)
                     .entityId(entityId)
                     .entityType(entityType)
                     .uploadedAt(LocalDateTime.now())
-                    .uploadedBy(meta.getOrDefault("uploadedBy", "system").toString())
+                    .uploadedBy("system")
                     .build();
 
             documentStore.put(document.getId(), document);
-            log.info("Uploaded document {} -> {}", originalFilename, storedFilename);
+            log.info("Uploaded document {} to MinIO as {}", originalFilename, objectId);
 
             return mapToResponse(document);
-        } catch (IOException e) {
-            log.error("Failed to store file", e);
+        } catch (Exception e) {
+            log.error("Failed to upload file to MinIO", e);
             throw new RuntimeException("Failed to store file: " + e.getMessage());
         }
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Object> getVersions(Long id) {
-        // For this simple implementation, return the document itself as the only version
         DocumentMetadata document = documentStore.get(id);
         if (document == null) {
             throw new ResourceNotFoundException("Document", id);
@@ -151,7 +136,8 @@ public class DocumentServiceImpl implements DocumentService {
         if (document == null) {
             throw new ResourceNotFoundException("Document", id);
         }
-        return "/api/v1/documents/" + id + "/content";
+        // Return pre-signed URL from MinIO
+        return minioStorageService.getDownloadUrl(document.getBucket(), document.getObjectId());
     }
 
     @Override
@@ -163,40 +149,38 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         try {
-            Path filePath = Paths.get(document.getFilePath());
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            log.warn("Could not delete file from disk: {}", e.getMessage());
+            // Delete from MinIO
+            minioStorageService.deleteFile(document.getBucket(), document.getObjectId());
+        } catch (Exception e) {
+            log.warn("Could not delete file from MinIO: {}", e.getMessage());
         }
 
         documentStore.remove(id);
         log.info("Deleted document {}", id);
     }
 
-    public Resource loadFileAsResource(Long id) {
+    /**
+     * Load document as InputStream for streaming response.
+     */
+    public InputStream loadFileAsStream(Long id) {
         DocumentMetadata document = documentStore.get(id);
         if (document == null) {
             throw new ResourceNotFoundException("Document", id);
         }
 
         try {
-            Path filePath = Paths.get(document.getFilePath());
-            Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists() && resource.isReadable()) {
-                return resource;
-            } else {
-                throw new ResourceNotFoundException("Document file not found", id);
-            }
-        } catch (MalformedURLException e) {
+            return minioStorageService.downloadFile(document.getBucket(), document.getObjectId());
+        } catch (Exception e) {
+            log.error("Failed to download file from MinIO", e);
             throw new ResourceNotFoundException("Document file not found", id);
         }
     }
 
-    private String getFileExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return "";
-        }
-        return filename.substring(filename.lastIndexOf("."));
+    /**
+     * Get document metadata for external access.
+     */
+    public DocumentMetadata getDocumentMetadata(Long id) {
+        return documentStore.get(id);
     }
 
     private Map<String, Object> mapToResponse(DocumentMetadata document) {
@@ -208,6 +192,8 @@ public class DocumentServiceImpl implements DocumentService {
         map.put("type", document.getType());
         map.put("entityId", document.getEntityId());
         map.put("entityType", document.getEntityType());
+        map.put("objectId", document.getObjectId());
+        map.put("bucket", document.getBucket());
         map.put("uploadedAt", document.getUploadedAt());
         map.put("uploadedBy", document.getUploadedBy());
         map.put("downloadUrl", "/api/v1/documents/" + document.getId() + "/content");
@@ -218,11 +204,11 @@ public class DocumentServiceImpl implements DocumentService {
     @lombok.Builder
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
-    private static class DocumentMetadata {
+    public static class DocumentMetadata {
         private Long id;
         private String originalFilename;
-        private String storedFilename;
-        private String filePath;
+        private String objectId;
+        private String bucket;
         private Long fileSize;
         private String contentType;
         private String type;

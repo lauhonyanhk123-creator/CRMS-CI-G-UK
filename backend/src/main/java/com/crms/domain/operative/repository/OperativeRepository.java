@@ -5,6 +5,7 @@ import com.crms.domain.operative.entity.Operative;
 import com.crms.domain.operative.enums.OperativeStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -39,4 +40,15 @@ public interface OperativeRepository extends JpaRepository<Operative, Long> {
     boolean existsByEmployeeRef(String employeeRef);
 
     boolean existsByNiNumber(String niNumber);
+
+    // Fix N+1: Use @EntityGraph to eagerly fetch employer for findAll queries
+    @EntityGraph(attributePaths = {"employer"})
+    Page<Operative> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"employer"})
+    Page<Operative> findByStatus(OperativeStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"employer"})
+    @Override
+    Optional<Operative> findById(Long id);
 }

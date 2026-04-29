@@ -31,6 +31,12 @@ public class CompanySearchResult {
     private List<ChargeDto> charges;
     private Map<String, Object> insolvencyCases;
     
+    /**
+     * Indicates this response was returned from cached data due to service being offline.
+     */
+    @Builder.Default
+    private boolean offlineData = false;
+    
     @Data
     @Builder
     @NoArgsConstructor
