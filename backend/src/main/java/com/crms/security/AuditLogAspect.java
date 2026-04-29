@@ -2,6 +2,7 @@ package com.crms.security;
 
 import com.crms.domain.user.entity.AuditLog;
 import com.crms.domain.user.repository.AuditLogRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -9,6 +10,8 @@ import org.aspectj.lang.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -25,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AuditLogAspect {
 
     private final AuditLogRepository auditLogRepository;
+    private final ObjectMapper objectMapper;
 
     private static final AtomicReference<String> lastHash = new AtomicReference<>(null);
 
@@ -49,39 +53,63 @@ public class AuditLogAspect {
         String username = auth != null ? auth.getName() : "anonymous";
         String method = joinPoint.getSignature().toShortString();
         String args = getArgsSummary(joinPoint.getArgs());
-        
+
         log.info("AUDIT: User '{}' executing '{}' with args: {}", username, method, args);
     }
 
-    @AfterReturning(pointcut = "controllerMethods() && (postMappingMethods() || putMappingMethods() || patchMappingMethods() || deleteMappingMethods())", 
+    @AfterReturning(pointcut = "controllerMethods() && (postMappingMethods() || putMappingMethods() || patchMappingMethods() || deleteMappingMethods())",
                     returning = "result")
     public void auditAfterReturning(JoinPoint joinPoint, Object result) {
-        saveAuditLog(joinPoint, "SUCCESS", null);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        saveAuditLog(joinPoint, "SUCCESS", null, result);
+                    }
+                }
+            );
+        } else {
+            saveAuditLog(joinPoint, "SUCCESS", null, result);
+        }
     }
 
-    @AfterThrowing(pointcut = "controllerMethods() && (postMappingMethods() || putMappingMethods() || patchMappingMethods() || deleteMappingMethods())", 
+    @AfterThrowing(pointcut = "controllerMethods() && (postMappingMethods() || putMappingMethods() || patchMappingMethods() || deleteMappingMethods())",
                    throwing = "exception")
     public void auditAfterThrowing(JoinPoint joinPoint, Throwable exception) {
-        saveAuditLog(joinPoint, "ERROR", exception.getMessage());
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        saveAuditLog(joinPoint, "ERROR", exception.getMessage(), null);
+                    }
+                }
+            );
+        } else {
+            saveAuditLog(joinPoint, "ERROR", exception.getMessage(), null);
+        }
     }
 
-    private void saveAuditLog(JoinPoint joinPoint, String outcome, String errorMessage) {
+    private void saveAuditLog(JoinPoint joinPoint, String outcome, String errorMessage, Object result) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth != null ? auth.getName() : "anonymous";
             String method = joinPoint.getSignature().toShortString();
             String action = getActionFromMethod(method);
-            
+
             String entityType = extractEntityType(joinPoint.getTargetClass().getSimpleName());
             String entityId = extractEntityId(joinPoint.getArgs());
-            
+
             HttpServletRequest request = getCurrentRequest();
             String ipAddress = request != null ? getClientIp(request) : null;
             String userAgent = request != null ? request.getHeader("User-Agent") : null;
-            
-            // Get previous hash from the last saved audit log
+
             String previousHash = getLastHash();
-            
+
+            // Capture afterState from the returned entity
+            String afterState = serializeState(result);
+
             AuditLog auditLog = AuditLog.builder()
                     .userName(username)
                     .action(action)
@@ -90,38 +118,37 @@ public class AuditLogAspect {
                     .ipAddress(ipAddress)
                     .userAgent(userAgent)
                     .previousHash(previousHash)
+                    .afterState(afterState)
                     .timestamp(LocalDateTime.now())
                     .build();
-            
-            // Compute the hash chain
+
             auditLog.computeHash();
-            
-            // Persist and update last hash
+
             auditLogRepository.save(auditLog);
             lastHash.set(auditLog.getSha256());
-            
+
             log.info("AUDIT LOG SAVED: {} {} {} -> hash: {}", action, entityType, entityId, auditLog.getSha256());
-            
+
         } catch (Exception e) {
             log.error("Failed to save audit log: {}", e.getMessage(), e);
         }
     }
 
     private String getActionFromMethod(String methodSignature) {
-        if (methodSignature.contains("create") || methodSignature.contains("save") || methodSignature.contains("add")) {
+        String lower = methodSignature.toLowerCase();
+        if (lower.contains("post") || lower.contains("create") || lower.contains("save") || lower.contains("add")) {
             return "POST";
-        } else if (methodSignature.contains("update") || methodSignature.contains("edit")) {
+        } else if (lower.contains("put") || lower.contains("update") || lower.contains("edit")) {
             return "PUT";
-        } else if (methodSignature.contains("patch")) {
+        } else if (lower.contains("patch")) {
             return "PATCH";
-        } else if (methodSignature.contains("delete") || methodSignature.contains("remove")) {
+        } else if (lower.contains("delete") || lower.contains("remove")) {
             return "DELETE";
         }
         return "UNKNOWN";
     }
 
     private String extractEntityType(String className) {
-        // Remove 'Controller' suffix if present
         if (className.endsWith("Controller")) {
             return className.substring(0, className.length() - 10);
         }
@@ -143,7 +170,6 @@ public class AuditLogAspect {
     }
 
     private synchronized String getLastHash() {
-        // Fetch from DB for thread safety and consistency
         List<AuditLog> logs = auditLogRepository.findTop1ByOrderByTimestampDesc();
         if (!logs.isEmpty()) {
             return logs.get(0).getSha256();
@@ -188,5 +214,16 @@ public class AuditLogAspect {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    private String serializeState(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            return obj.toString();
+        }
     }
 }

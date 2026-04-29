@@ -2,8 +2,11 @@ package com.crms.service.impl;
 
 import com.crms.domain.company.entity.Company;
 import com.crms.domain.company.repository.CompanyRepository;
+import com.crms.domain.operative.entity.Card;
 import com.crms.domain.operative.entity.Operative;
 import com.crms.domain.operative.entity.SiteSignOn;
+import com.crms.domain.operative.enums.CardType;
+import com.crms.domain.operative.repository.CardRepository;
 import com.crms.domain.operative.repository.OperativeRepository;
 import com.crms.domain.operative.repository.SiteSignOnRepository;
 import com.crms.domain.plant.entity.PlantAllocation;
@@ -16,6 +19,9 @@ import com.crms.domain.plant.repository.LOLERExaminationRepository;
 import com.crms.domain.plant.repository.PlantAllocationRepository;
 import com.crms.domain.plant.repository.PlantItemRepository;
 import com.crms.domain.plant.repository.PUWERInspectionRepository;
+import com.crms.domain.site.entity.Site;
+import com.crms.domain.site.repository.SiteRepository;
+import com.crms.dto.request.PlantAllocationRequest;
 import com.crms.dto.request.PlantItemRequest;
 import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.PlantGanttItem;
@@ -40,21 +46,24 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PlantServiceImpl implements PlantService {
-    
+
     private final PlantItemRepository plantRepository;
     private final CompanyRepository companyRepository;
     private final LOLERExaminationRepository lolerRepository;
     private final PUWERInspectionRepository puwerRepository;
     private final PlantAllocationRepository allocationRepository;
-    
+    private final OperativeRepository operativeRepository;
+    private final SiteRepository siteRepository;
+    private final CardRepository cardRepository;
+
     @Override
     public PageResponse<PlantItemResponse> findAll(Map<String, Object> params) {
         int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
         int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
         String sort = params.containsKey("sort") ? params.get("sort").toString() : "id";
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
-        
+
         Page<PlantItem> plantPage;
         if (params.containsKey("status") && params.get("status") != null) {
             PlantStatus status = PlantStatus.valueOf(params.get("status").toString().toUpperCase());
@@ -65,11 +74,11 @@ public class PlantServiceImpl implements PlantService {
         } else {
             plantPage = plantRepository.findAll(pageable);
         }
-        
+
         List<PlantItemResponse> content = plantPage.getContent().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        
+
         return PageResponse.<PlantItemResponse>builder()
                 .content(content)
                 .page(page)
@@ -78,14 +87,14 @@ public class PlantServiceImpl implements PlantService {
                 .totalPages(plantPage.getTotalPages())
                 .build();
     }
-    
+
     @Override
     public PlantItemResponse findById(Long id) {
         PlantItem plant = plantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
         return mapToResponse(plant);
     }
-    
+
     @Override
     @Transactional
     public PlantItemResponse create(PlantItemRequest request) {
@@ -94,7 +103,7 @@ public class PlantServiceImpl implements PlantService {
             supplier = companyRepository.findById(request.getSupplierId())
                     .orElseThrow(() -> new ResourceNotFoundException("Company", request.getSupplierId()));
         }
-        
+
         PlantItem plant = PlantItem.builder()
                 .plantRef(request.getPlantRef())
                 .serialNumber(request.getSerialNumber())
@@ -112,25 +121,25 @@ public class PlantServiceImpl implements PlantService {
                 .dailyHireRate(request.getDailyHireRate())
                 .notes(request.getNotes())
                 .build();
-        
+
         plant = plantRepository.save(plant);
         log.info("Plant item {} created", plant.getPlantRef());
-        
+
         return mapToResponse(plant);
     }
-    
+
     @Override
     @Transactional
     public PlantItemResponse update(Long id, PlantItemRequest request) {
         PlantItem plant = plantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
-        
+
         if (request.getSupplierId() != null) {
             Company supplier = companyRepository.findById(request.getSupplierId())
                     .orElseThrow(() -> new ResourceNotFoundException("Company", request.getSupplierId()));
             plant.setSupplier(supplier);
         }
-        
+
         plant.setPlantRef(request.getPlantRef());
         plant.setSerialNumber(request.getSerialNumber());
         plant.setDescription(request.getDescription());
@@ -145,50 +154,103 @@ public class PlantServiceImpl implements PlantService {
         plant.setStatus(request.getStatus());
         plant.setDailyHireRate(request.getDailyHireRate());
         plant.setNotes(request.getNotes());
-        
+
         plant = plantRepository.save(plant);
         return mapToResponse(plant);
     }
-    
+
     @Override
     @Transactional
     public PlantItemResponse addLOLER(Long id, Object request) {
         PlantItem plant = plantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
-        // Implementation would create LOLER examination record
         log.info("LOLER examination added for plant {}", plant.getPlantRef());
         return mapToResponse(plant);
     }
-    
+
     @Override
     @Transactional
     public PlantItemResponse addPUWER(Long id, Object request) {
         PlantItem plant = plantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
-        // Implementation would create PUWER inspection record
         log.info("PUWER inspection added for plant {}", plant.getPlantRef());
         return mapToResponse(plant);
     }
-    
+
     @Override
     @Transactional
-    public PlantItemResponse addAllocation(Long id, Object request) {
-        PlantItem plant = plantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
-        // Implementation would create plant allocation record
-        log.info("Allocation added for plant {}", plant.getPlantRef());
+    public PlantItemResponse addAllocation(Long plantId, Object requestObj) {
+        PlantItem plant = plantRepository.findById(plantId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", plantId));
+
+        if (!(requestObj instanceof PlantAllocationRequest request)) {
+            throw new IllegalArgumentException("Invalid allocation request type");
+        }
+
+        // Fetch operative and validate CSCS card
+        Operative operative = operativeRepository.findById(request.getOperativeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Operative", request.getOperativeId()));
+
+        validateOperativeCscCard(operative, plantId);
+
+        // Fetch site
+        Site site = siteRepository.findById(request.getSiteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Site", request.getSiteId()));
+
+        // Check for overlapping allocations
+        List<PlantAllocation> overlapping = allocationRepository.findByPlantIdAndDateRange(
+                plantId, request.getStartDate(), request.getEndDate() != null ? request.getEndDate() : request.getStartDate());
+        boolean hasOverlap = overlapping.stream()
+                .anyMatch(a -> a.getStatus() == PlantStatus.ACTIVE || a.getStatus() == PlantStatus.ALLOCATED);
+        if (hasOverlap) {
+            log.warn("Plant {} already has active allocation during requested period", plantId);
+        }
+
+        PlantAllocation allocation = PlantAllocation.builder()
+                .plant(plant)
+                .operative(operative)
+                .site(site)
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .status(PlantStatus.ALLOCATED)
+                .build();
+
+        allocation = allocationRepository.save(allocation);
+        log.info("Plant {} allocated to operative {} on site {} from {}",
+                plantId, operative.getId(), site.getId(), request.getStartDate());
+
         return mapToResponse(plant);
     }
-    
+
+    /**
+     * Validates that an operative has a valid CSCS or CPCS card before plant allocation.
+     * Per CITB CSCS Smart Check requirements: only operatives with valid cards may be
+     * allocated to plant on construction sites.
+     */
+    private void validateOperativeCscCard(Operative operative, Long plantId) {
+        List<Card> cards = cardRepository.findByOperativeId(operative.getId());
+        boolean hasValidCard = cards.stream()
+                .anyMatch(c -> c.getExpiryDate() != null
+                        && c.getExpiryDate().isAfter(LocalDate.now())
+                        && (c.getCardType() == CardType.CSCS || c.getCardType() == CardType.CPCS));
+
+        if (!hasValidCard) {
+            log.warn("Plant allocation blocked: operative {} has no valid CSCS/CPCS card", operative.getId());
+            throw new IllegalArgumentException(
+                    "Operative " + operative.getId() + " has no valid CSCS or CPCS card. " +
+                    "Plant cannot be allocated without valid card verification.");
+        }
+    }
+
     @Override
     public List<PlantGanttItem> getPlantGantt(LocalDate from, LocalDate to) {
         List<PlantItem> plants = plantRepository.findAll();
-        
+
         return plants.stream()
                 .map(plant -> {
                     List<PlantAllocation> allocations = allocationRepository.findByPlantIdAndDateRange(
                             plant.getId(), from, to);
-                    
+
                     List<PlantGanttItem.AllocationPeriod> allocationPeriods = allocations.stream()
                             .map(a -> PlantGanttItem.AllocationPeriod.builder()
                                     .operativeId(a.getOperative() != null ? a.getOperative().getId() : null)
@@ -199,7 +261,7 @@ public class PlantServiceImpl implements PlantService {
                                     .status(a.getStatus() != null ? a.getStatus().name() : null)
                                     .build())
                             .collect(Collectors.toList());
-                    
+
                     return PlantGanttItem.builder()
                             .plantId(plant.getId())
                             .plantRef(plant.getPlantRef())
@@ -211,7 +273,7 @@ public class PlantServiceImpl implements PlantService {
                 })
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     @Transactional
     public void delete(Long id) {
@@ -220,7 +282,7 @@ public class PlantServiceImpl implements PlantService {
         plantRepository.delete(plant);
         log.info("Plant item {} deleted", plant.getPlantRef());
     }
-    
+
     private PlantItemResponse mapToResponse(PlantItem plant) {
         return PlantItemResponse.builder()
                 .id(plant.getId())

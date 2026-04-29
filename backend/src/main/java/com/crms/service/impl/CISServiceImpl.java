@@ -226,7 +226,7 @@ public class CISServiceImpl implements CISService {
             Map<String, Object> statement = new HashMap<>();
             statement.put("subcontractorId", line.getSubcontractor().getId());
             statement.put("subcontractorName", line.getSubcontractor().getName());
-            statement.put("subcontractorUtr", line.getSubcontractor().getUtr());
+            statement.put("subcontractorUtr", line.getSubcontractor().getUtr() != null ? line.getSubcontractor().getUtr() : "N/A");
             statement.put("cisRate", line.getCisRate());
             statement.put("grossPaid", gross);
             statement.put("cisDeduction", deduction);
