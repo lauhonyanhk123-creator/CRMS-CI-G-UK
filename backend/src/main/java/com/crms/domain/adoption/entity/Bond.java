@@ -11,10 +11,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "bonds", indexes = {
-    @Index(name = "idx_bond_number", columnList = "bond_number"),
-    @Index(name = "idx_bond_status", columnList = "status")
-})
+@Table(name = "bonds", 
+    indexes = {
+        @Index(name = "idx_bond_number", columnList = "bond_number"),
+        @Index(name = "idx_bond_status", columnList = "status")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_bond_adoption_case", columnNames = "adoption_case_id")
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor

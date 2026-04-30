@@ -1,16 +1,18 @@
 package com.crms.service;
 
+import com.crms.dto.response.*;
+
 import java.util.Map;
 
 public interface AdoptionService {
     
-    PageResponse<?> findAll(Map<String, Object> params);
+    PageResponse<AdoptionCaseResponse> findAll(Map<String, Object> params);
     
-    Object findById(Long id);
+    AdoptionCaseResponse findById(Long id);
     
-    Object create(Long contractId, Object request);
+    AdoptionCaseResponse create(Long contractId, Object request);
     
-    Object addStage(Long id, Object stage);
+    AdoptionStageCreateResponse addStage(Long id, Object stage);
     
-    Object requestBondRelease(Long id);
+    BondReleaseResponse requestBondRelease(Long id);
 }

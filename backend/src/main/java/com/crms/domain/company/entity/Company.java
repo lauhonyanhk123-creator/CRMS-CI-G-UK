@@ -6,7 +6,7 @@ import com.crms.domain.common.entity.BaseEntity;
 import com.crms.domain.common.entity.SoftDeletable;
 import com.crms.domain.company.enums.CompanyStatus;
 import com.crms.domain.company.enums.CompanyType;
-import com.crms.domain.subcontractor.enums.CisStatus;
+import com.crms.domain.company.enums.CisStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -106,19 +106,19 @@ public class Company extends BaseEntity {
     @Builder.Default
     private CompanyStatus status = CompanyStatus.ACTIVE;
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Contact> contacts = new ArrayList<>();
 
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.site.entity.Site> sites = new ArrayList<>();
 
-    @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.operative.entity.Operative> operatives = new ArrayList<>();
 
-    @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.material.entity.PurchaseOrder> purchaseOrders = new ArrayList<>();
 

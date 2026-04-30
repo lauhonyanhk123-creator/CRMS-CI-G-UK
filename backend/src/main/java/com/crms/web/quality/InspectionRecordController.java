@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class InspectionRecordController {
     private final InspectionRecordService service;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List inspection records", description = "Get paginated list of inspection records")
     public ResponseEntity<ApiResponse<PageResponse<InspectionRecordResponse>>> findAll(
             @RequestParam(required = false) Long scheduleItemId,
@@ -48,6 +50,7 @@ public class InspectionRecordController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get inspection record", description = "Get inspection record by ID")
     public ResponseEntity<ApiResponse<InspectionRecordResponse>> findById(@PathVariable Long id) {
         InspectionRecordResponse response = service.findById(id);
@@ -55,6 +58,7 @@ public class InspectionRecordController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create inspection record", description = "Create a new inspection record")
     public ResponseEntity<ApiResponse<InspectionRecordResponse>> create(@Valid @RequestBody InspectionRecordRequest request) {
         InspectionRecordResponse response = service.create(request);
@@ -62,6 +66,7 @@ public class InspectionRecordController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update inspection record", description = "Update inspection record details")
     public ResponseEntity<ApiResponse<InspectionRecordResponse>> update(
             @PathVariable Long id,
@@ -71,6 +76,7 @@ public class InspectionRecordController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete inspection record", description = "Delete inspection record")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         service.delete(id);

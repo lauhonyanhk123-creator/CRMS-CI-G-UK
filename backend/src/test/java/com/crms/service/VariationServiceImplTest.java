@@ -272,6 +272,40 @@ class VariationServiceImplTest {
     }
 
     // ================================================================
+    // DELETE TESTS
+    // ================================================================
+
+    @Nested
+    @DisplayName("Delete Operation Tests")
+    class DeleteTests {
+
+        @Test
+        @DisplayName("delete() removes variation")
+        void delete_removesVariation() {
+            // Given
+            when(variationRepository.findById(1L)).thenReturn(Optional.of(testVariation));
+            doNothing().when(variationRepository).delete(testVariation);
+
+            // When
+            variationService.delete(1L);
+
+            // Then
+            verify(variationRepository).delete(testVariation);
+        }
+
+        @Test
+        @DisplayName("delete() throws exception when variation not found")
+        void delete_throwsException_whenNotFound() {
+            // Given
+            when(variationRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                variationService.delete(999L));
+        }
+    }
+
+    // ================================================================
     // VARIATION TOTALS CALCULATION TESTS
     // ================================================================
 

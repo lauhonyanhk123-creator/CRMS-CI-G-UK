@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,6 +20,7 @@ public class CISController {
     private final CISService cisService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List CIS returns", description = "Get paginated list of CIS returns")
     public ResponseEntity<ApiResponse<Object>> findAll(
             @RequestParam(required = false) String taxMonth,
@@ -29,6 +31,7 @@ public class CISController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get CIS return", description = "Get CIS return by ID")
     public ResponseEntity<ApiResponse<Object>> findById(@PathVariable Long id) {
         Object response = cisService.findById(id);
@@ -36,6 +39,7 @@ public class CISController {
     }
     
     @PostMapping("/generate/{taxMonth}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Generate return", description = "Generate CIS return for tax month")
     public ResponseEntity<ApiResponse<Object>> generateReturn(@PathVariable String taxMonth) {
         Object response = cisService.generateReturn(taxMonth);
@@ -43,6 +47,7 @@ public class CISController {
     }
     
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Submit return", description = "Submit CIS return to HMRC")
     public ResponseEntity<ApiResponse<Object>> submitReturn(@PathVariable Long id) {
         Object response = cisService.submitReturn(id);
@@ -50,6 +55,7 @@ public class CISController {
     }
     
     @GetMapping("/{id}/payment-deduction-statements")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Payment statements", description = "Get payment deduction statements for return")
     public ResponseEntity<ApiResponse<Object>> getPaymentStatements(@PathVariable Long id) {
         Object response = cisService.generatePaymentStatements(id);

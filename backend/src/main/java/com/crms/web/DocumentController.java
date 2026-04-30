@@ -13,6 +13,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +30,7 @@ public class DocumentController {
     private final MinioStorageService minioStorageService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List documents", description = "Get paginated list of documents with optional filters")
     public ResponseEntity<ApiResponse<PageResponse<Object>>> findAll(
             @RequestParam(required = false) Long entityId,
@@ -41,6 +43,7 @@ public class DocumentController {
     }
     
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Upload document", description = "Upload a new document")
     public ResponseEntity<ApiResponse<Object>> upload(
             @RequestParam("file") MultipartFile file,
@@ -61,6 +64,7 @@ public class DocumentController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get document", description = "Get document metadata")
     public ResponseEntity<ApiResponse<Object>> findById(@PathVariable Long id) {
         Object response = documentService.findById(id);
@@ -68,6 +72,7 @@ public class DocumentController {
     }
     
     @GetMapping("/{id}/content")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Download document", description = "Download document content")
     public ResponseEntity<Resource> download(@PathVariable Long id) {
         // Get document metadata and storage path
@@ -101,6 +106,7 @@ public class DocumentController {
     }
     
     @GetMapping("/{id}/versions")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get versions", description = "Get document version history")
     public ResponseEntity<ApiResponse<java.util.List<Object>>> getVersions(@PathVariable Long id) {
         java.util.List<Object> versions = documentService.getVersions(id);
@@ -108,6 +114,7 @@ public class DocumentController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete document", description = "Delete a document")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         documentService.delete(id);

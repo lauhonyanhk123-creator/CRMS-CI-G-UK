@@ -114,22 +114,22 @@ public class Contract extends BaseEntity {
     @Builder.Default
     private ContractStatus status = ContractStatus.DRAFT;
 
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Variation> variations = new ArrayList<>();
 
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ApplicationForPayment> applicationsForPayment = new ArrayList<>();
 
-    @OneToOne(mappedBy = "contract", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private RetentionLedger retentionLedger;
 
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.adoption.entity.AdoptionCase> adoptionCases = new ArrayList<>();
 
-    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.healthsafety.entity.RAMSDocument> ramsDocuments = new ArrayList<>();
 

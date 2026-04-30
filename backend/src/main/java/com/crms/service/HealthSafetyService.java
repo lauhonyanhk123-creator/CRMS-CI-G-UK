@@ -1,20 +1,21 @@
 package com.crms.service;
 
-import java.util.Map;
+import com.crms.dto.request.*;
+import com.crms.dto.response.*;
 
 public interface HealthSafetyService {
     
-    Object createF10(Long contractId, Object request);
+    F10NotificationResponse createF10(Long contractId, F10CreateRequest request);
     
-    Object createCPP(Long contractId, Object request);
+    ConstructionPhasePlanResponse createCPP(Long contractId, CPPCreateRequest request);
     
-    Object createRAMS(Long contractId, Object request);
+    RAMSDocumentResponse createRAMS(Long contractId, RAMSCreateRequest request);
     
-    Object signRAMS(Long ramsId, Long operativeId, Long siteId);
+    RAMSSignOnResponse signRAMS(Long ramsId, Long operativeId, Long siteId);
     
-    Object createPermit(Object request);
+    PermitToDigResponse createPermit(PermitToDigCreateRequest request);
     
-    Object approvePermit(Long id);
+    PermitToDigResponse approvePermit(Long id);
     
-    Object createIncident(Object request);
+    IncidentReportResponse createIncident(IncidentCreateRequest request);
 }

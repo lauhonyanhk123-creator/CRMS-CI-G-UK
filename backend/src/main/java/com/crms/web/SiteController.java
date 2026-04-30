@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class SiteController {
     private final SiteService siteService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List sites", description = "Get paginated list of sites")
     public ResponseEntity<ApiResponse<PageResponse<SiteResponse>>> findAll(
             @RequestParam(required = false) Long clientId,
@@ -46,6 +48,7 @@ public class SiteController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create site", description = "Create a new site")
     public ResponseEntity<ApiResponse<SiteResponse>> create(@Valid @RequestBody SiteRequest request) {
         SiteResponse response = siteService.create(request);
@@ -53,6 +56,7 @@ public class SiteController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get site", description = "Get site by ID")
     public ResponseEntity<ApiResponse<SiteResponse>> findById(@PathVariable Long id) {
         SiteResponse response = siteService.findById(id);
@@ -60,6 +64,7 @@ public class SiteController {
     }
     
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update site", description = "Update site details")
     public ResponseEntity<ApiResponse<SiteResponse>> update(
             @PathVariable Long id,
@@ -69,6 +74,7 @@ public class SiteController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete site", description = "Delete a site")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         siteService.delete(id);

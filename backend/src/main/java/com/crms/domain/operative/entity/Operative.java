@@ -83,27 +83,27 @@ public class Operative extends BaseEntity {
     @JoinColumn(name = "employer_id")
     private Company employer;
 
-    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Card> cards = new ArrayList<>();
 
-    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Qualification> qualifications = new ArrayList<>();
 
-    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Induction> inductions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<SiteSignOn> siteSignOns = new ArrayList<>();
 
-    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Timesheet> timesheets = new ArrayList<>();
 
-    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "operative", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.plant.entity.DailyPreUseCheck> dailyPlantChecks = new ArrayList<>();
 

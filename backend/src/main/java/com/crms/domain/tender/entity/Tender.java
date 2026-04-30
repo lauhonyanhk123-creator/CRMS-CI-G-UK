@@ -85,15 +85,15 @@ public class Tender extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<BoQItem> boqItems = new ArrayList<>();
 
-    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<TenderDocument> tenderDocuments = new ArrayList<>();
 
-    @OneToOne(mappedBy = "tender")
+    @OneToOne(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true)
     private Contract contract;
 
     public boolean isWon() {

@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ public class PermitToDigController {
     private final PermitToDigService permitToDigService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List permits", description = "Get paginated list of permits to dig")
     public ResponseEntity<ApiResponse<PageResponse<PermitToDigResponse>>> findAll(
             @RequestParam(required = false) Long siteId,
@@ -45,6 +47,7 @@ public class PermitToDigController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create permit", description = "Create a new permit to dig")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> create(
             @Valid @RequestBody PermitToDigRequest request) {
@@ -53,6 +56,7 @@ public class PermitToDigController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get permit", description = "Get permit by ID")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> findById(@PathVariable Long id) {
         PermitToDigResponse response = permitToDigService.findById(id);
@@ -60,6 +64,7 @@ public class PermitToDigController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update permit", description = "Update permit details")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> update(
             @PathVariable Long id,
@@ -69,6 +74,7 @@ public class PermitToDigController {
     }
 
     @PostMapping("/{id}/submit")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Submit for precheck", description = "Submit permit for precheck")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> submitForPrecheck(@PathVariable Long id) {
         PermitToDigResponse response = permitToDigService.submitForPrecheck(id);
@@ -76,6 +82,7 @@ public class PermitToDigController {
     }
 
     @PostMapping("/{id}/precheck")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Precheck", description = "Approve precheck")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> precheck(@PathVariable Long id) {
         PermitToDigResponse response = permitToDigService.precheck(id);
@@ -83,6 +90,7 @@ public class PermitToDigController {
     }
 
     @PostMapping("/{id}/reject")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Reject precheck", description = "Reject precheck with reason")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> rejectPrecheck(
             @PathVariable Long id,
@@ -92,6 +100,7 @@ public class PermitToDigController {
     }
 
     @PostMapping("/{id}/issue")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Issue permit", description = "Issue permit")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> issue(@PathVariable Long id) {
         PermitToDigResponse response = permitToDigService.issue(id);
@@ -99,6 +108,7 @@ public class PermitToDigController {
     }
 
     @PostMapping("/{id}/start")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Start work", description = "Start work on permit")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> startWork(@PathVariable Long id) {
         PermitToDigResponse response = permitToDigService.startWork(id);
@@ -106,6 +116,7 @@ public class PermitToDigController {
     }
 
     @PostMapping("/{id}/complete")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Complete permit", description = "Mark permit as completed")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> complete(@PathVariable Long id) {
         PermitToDigResponse response = permitToDigService.complete(id);
@@ -113,6 +124,7 @@ public class PermitToDigController {
     }
 
     @PostMapping("/{id}/cancel")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cancel permit", description = "Cancel permit with reason")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> cancel(
             @PathVariable Long id,
@@ -122,6 +134,7 @@ public class PermitToDigController {
     }
 
     @PostMapping("/{id}/extend")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Extend permit", description = "Extend permit end date")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> extend(
             @PathVariable Long id,
@@ -131,6 +144,7 @@ public class PermitToDigController {
     }
 
     @GetMapping("/site/{siteId}/active")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Active by site", description = "Get active permit for site")
     public ResponseEntity<ApiResponse<PermitToDigResponse>> findActiveBySite(@PathVariable Long siteId) {
         PermitToDigResponse response = permitToDigService.findActiveBySiteId(siteId);

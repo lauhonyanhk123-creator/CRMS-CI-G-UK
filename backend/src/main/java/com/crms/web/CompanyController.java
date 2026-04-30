@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -30,6 +31,7 @@ public class CompanyController {
     private final CompanyService companyService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List companies", description = "Get paginated list of companies")
     public ResponseEntity<ApiResponse<PageResponse<CompanyResponse>>> findAll(
             @RequestParam(required = false) String type,
@@ -50,6 +52,7 @@ public class CompanyController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create company", description = "Create a new company")
     public ResponseEntity<ApiResponse<CompanyResponse>> create(@Valid @RequestBody CompanyRequest request) {
         CompanyResponse response = companyService.create(request);
@@ -57,6 +60,7 @@ public class CompanyController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get company", description = "Get company by ID")
     public ResponseEntity<ApiResponse<CompanyResponse>> findById(@PathVariable Long id) {
         CompanyResponse response = companyService.findById(id);
@@ -64,6 +68,7 @@ public class CompanyController {
     }
     
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update company", description = "Update company details")
     public ResponseEntity<ApiResponse<CompanyResponse>> update(
             @PathVariable Long id,
@@ -73,6 +78,7 @@ public class CompanyController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete company", description = "Delete a company")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         companyService.delete(id);
@@ -80,6 +86,7 @@ public class CompanyController {
     }
     
     @PostMapping("/{id}/companies-house-refresh")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Refresh from Companies House", description = "Refresh company data from Companies House API")
     public ResponseEntity<ApiResponse<CompanyResponse>> refreshCompaniesHouse(@PathVariable Long id) {
         CompanyResponse response = companyService.refreshCompaniesHouse(id);
@@ -87,6 +94,7 @@ public class CompanyController {
     }
     
     @PostMapping("/{id}/cis-verify")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Verify CIS", description = "Verify company CIS status with HMRC")
     public ResponseEntity<ApiResponse<CISVerificationResponse>> verifyCIS(@PathVariable Long id) {
         CISVerificationResponse response = companyService.verifyCIS(id);
@@ -94,6 +102,7 @@ public class CompanyController {
     }
     
     @GetMapping("/{id}/subbie-gate-status")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get subbie gate status", description = "Get gate entry status for subcontractor")
     public ResponseEntity<ApiResponse<SubbieGateStatus>> getSubbieGateStatus(@PathVariable Long id) {
         SubbieGateStatus response = companyService.getSubbieGateStatus(id);

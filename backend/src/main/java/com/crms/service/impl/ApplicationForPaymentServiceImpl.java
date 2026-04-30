@@ -10,6 +10,9 @@ import com.crms.domain.contract.repository.ApplicationForPaymentRepository;
 import com.crms.domain.contract.repository.ContractRepository;
 import com.crms.domain.contract.repository.PayLessNoticeRepository;
 import com.crms.domain.contract.repository.PaymentNoticeRepository;
+import com.crms.domain.company.entity.Company;
+import com.crms.domain.company.enums.CisStatus;
+import com.crms.domain.company.repository.CompanyRepository;
 import com.crms.dto.request.ApplicationForPaymentRequest;
 import com.crms.dto.request.PayLessNoticeRequest;
 import com.crms.dto.request.PaymentNoticeRequest;
@@ -42,6 +45,7 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
     private final ContractRepository contractRepository;
     private final PaymentNoticeRepository paymentNoticeRepository;
     private final PayLessNoticeRepository payLessNoticeRepository;
+    private final CompanyRepository companyRepository;
 
     @Override
     public PageResponse<ApplicationResponse> findByContract(Long contractId) {
@@ -93,6 +97,14 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
                 .reverseCharge(calculateReverseCharge(contract))
                 .build();
 
+        // ================================================================
+        // C) Calculate Pay-Less Notice Deadline on Create
+        // Under s.111 of the Housing Grants, Construction and Regeneration Act 1996
+        // The deadline is set to 5 days after the application period end
+        // ================================================================
+        application.setPayLessNoticeDeadline(
+            request.getApplicationPeriodEnd().plusDays(5));  // 5 days after period end per s.111
+
         application.calculateGrossValue();
         application = applicationRepository.save(application);
 
@@ -108,6 +120,31 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
 
         if (application.getStatus() != ApplicationStatus.DRAFT) {
             throw new ValidationException("Only DRAFT applications can be submitted");
+        }
+
+        // ================================================================
+        // A) CIS Verification Gate - Check all subcontractors are verified
+        // ================================================================
+        Contract contract = application.getContract();
+        List<Company> subcontractors = companyRepository.findByContractId(contract.getId());
+        for (Company sub : subcontractors) {
+            if (sub.getCisStatus() != CisStatus.VERIFIED) {
+                throw new ValidationException(
+                    "Subcontractor '" + sub.getName() + "' is not CIS verified. " +
+                    "CIS deductions cannot be applied until HMRC verification is complete.");
+            }
+        }
+
+        // ================================================================
+        // B) Pay-Less Notice Deadline Enforcement (s.111)
+        // Under s.111 of the Housing Grants, Construction and Regeneration Act 1996
+        // ================================================================
+        if (application.getPayLessNoticeDeadline() != null) {
+            if (application.getPayLessNoticeDeadline().isBefore(LocalDate.now())) {
+                throw new ValidationException(
+                    "Pay-less notice deadline has passed (" + application.getPayLessNoticeDeadline() + 
+                    "). This application cannot be submitted under s.111 of the Construction Act 1996.");
+            }
         }
 
         application.setStatus(ApplicationStatus.SUBMITTED);

@@ -7,6 +7,7 @@ import com.crms.dto.response.RAMSTemplateResponse;
 import com.crms.dto.response.PageResponse;
 import com.crms.exception.ResourceNotFoundException;
 import com.crms.service.RAMSTemplateService;
+import com.crms.util.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,9 +31,9 @@ public class RAMSTemplateServiceImpl implements RAMSTemplateService {
 
     @Override
     public PageResponse<RAMSTemplateResponse> findAll(Map<String, Object> params) {
-        int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
-        int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
-        String sort = params.containsKey("sort") ? params.get("sort").toString() : "id";
+        int page = PaginationHelper.getPage(params);
+        int size = PaginationHelper.getSize(params);
+        String sort = PaginationHelper.getSort(params, "id");
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
         Page<RAMSTemplate> templatePage = ramsTemplateRepository.findAll(pageable);

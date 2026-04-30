@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -27,6 +28,7 @@ public class ITPTemplateController {
     private final ITPTemplateService service;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List ITP templates", description = "Get paginated list of ITP templates")
     public ResponseEntity<ApiResponse<PageResponse<ITPTemplateResponse>>> findAll(
             @RequestParam(required = false) String status,
@@ -49,6 +51,7 @@ public class ITPTemplateController {
     }
 
     @GetMapping("/categories")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get categories", description = "Get list of distinct template categories")
     public ResponseEntity<ApiResponse<List<String>>> getCategories(
             @RequestParam(required = false) String tradeCategory) {
@@ -57,6 +60,7 @@ public class ITPTemplateController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get ITP template", description = "Get ITP template by ID")
     public ResponseEntity<ApiResponse<ITPTemplateResponse>> findById(@PathVariable Long id) {
         ITPTemplateResponse response = service.findById(id);
@@ -64,6 +68,7 @@ public class ITPTemplateController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create ITP template", description = "Create a new ITP template")
     public ResponseEntity<ApiResponse<ITPTemplateResponse>> create(@Valid @RequestBody ITPTemplateRequest request) {
         ITPTemplateResponse response = service.create(request);
@@ -71,6 +76,7 @@ public class ITPTemplateController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update ITP template", description = "Update ITP template details")
     public ResponseEntity<ApiResponse<ITPTemplateResponse>> update(
             @PathVariable Long id,
@@ -80,6 +86,7 @@ public class ITPTemplateController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete ITP template", description = "Delete ITP template")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         service.delete(id);
@@ -87,6 +94,7 @@ public class ITPTemplateController {
     }
 
     @PostMapping("/{id}/copy")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Copy ITP template", description = "Create a copy of an existing template")
     public ResponseEntity<ApiResponse<ITPTemplateResponse>> copyTemplate(@PathVariable Long id) {
         ITPTemplateResponse response = service.copyTemplate(id);

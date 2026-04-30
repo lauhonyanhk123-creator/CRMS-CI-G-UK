@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -25,6 +26,7 @@ public class BondController {
     private final BondService bondService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List bonds", description = "Get paginated list of bonds")
     public ResponseEntity<ApiResponse<PageResponse<BondResponse>>> findAll(
             @RequestParam(required = false) String status,
@@ -43,6 +45,7 @@ public class BondController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get bond", description = "Get bond by ID")
     public ResponseEntity<ApiResponse<BondResponse>> findById(@PathVariable Long id) {
         BondResponse response = bondService.findById(id);
@@ -50,6 +53,7 @@ public class BondController {
     }
     
     @GetMapping("/number/{bondNumber}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get bond by number", description = "Get bond by bond number")
     public ResponseEntity<ApiResponse<BondResponse>> findByBondNumber(@PathVariable String bondNumber) {
         BondResponse response = bondService.findByBondNumber(bondNumber);
@@ -57,6 +61,7 @@ public class BondController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create bond", description = "Create new bond for adoption case")
     public ResponseEntity<ApiResponse<BondResponse>> create(
             @RequestParam Long adoptionCaseId,
@@ -66,6 +71,7 @@ public class BondController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update bond", description = "Update bond details")
     public ResponseEntity<ApiResponse<BondResponse>> update(
             @PathVariable Long id,
@@ -75,6 +81,7 @@ public class BondController {
     }
     
     @PostMapping("/{id}/release")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Release bond", description = "Release bond")
     public ResponseEntity<ApiResponse<BondResponse>> releaseBond(
             @PathVariable Long id,
@@ -84,6 +91,7 @@ public class BondController {
     }
     
     @PostMapping("/{id}/partial-release")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Partial release", description = "Partially release bond")
     public ResponseEntity<ApiResponse<BondResponse>> partialRelease(
             @PathVariable Long id,
@@ -93,6 +101,7 @@ public class BondController {
     }
     
     @PostMapping("/{id}/called")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Mark as called", description = "Mark bond as called")
     public ResponseEntity<ApiResponse<BondResponse>> markAsCalled(
             @PathVariable Long id,
@@ -102,6 +111,7 @@ public class BondController {
     }
     
     @GetMapping("/expiring")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Expiring bonds", description = "Get bonds expiring within specified days")
     public ResponseEntity<ApiResponse<PageResponse<BondResponse>>> findExpiringBonds(
             @RequestParam(defaultValue = "30") int days) {
@@ -110,6 +120,7 @@ public class BondController {
     }
     
     @GetMapping("/expired")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Expired bonds", description = "Get expired active bonds")
     public ResponseEntity<ApiResponse<PageResponse<BondResponse>>> findExpiredBonds() {
         PageResponse<BondResponse> response = bondService.findExpiredBonds();
