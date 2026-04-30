@@ -13,6 +13,7 @@ import Plant from './pages/Plant';
 import Subcontractors from './pages/Subcontractors';
 import Reports from './pages/Reports';
 import Materials from './pages/Materials';
+import Payments from './pages/Payments';
 
 function ProtectedRoute({ children }) {
   return useAuthStore.getState().token ? children : <Navigate to="/login" />;
@@ -39,6 +40,10 @@ export default function App() {
           <Route path="health-safety" element={<HealthSafety />} />
           <Route path="operatives" element={<Operatives />} />
           <Route path="plant" element={<Plant />} />
+          <Route path="subcontractors" element={<Subcontractors />} />
+          <Route path="materials" element={<Materials />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="payments" element={<Payments />} />
         </Route>
       </Routes>
     </BrowserRouter>

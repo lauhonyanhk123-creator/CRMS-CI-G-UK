@@ -13,6 +13,7 @@ const navItems = [
   { to: '/subcontractors', label: 'Subcontractors', icon: '🏗️' },
   { to: '/materials', label: 'Materials', icon: '🧱' },
   { to: '/reports', label: 'Reports', icon: '📊' },
+  { to: '/payments', label: 'Payments', icon: '💷' },
 ];
 
 export default function Layout() {
