@@ -8,6 +8,8 @@ import Sites from './pages/Sites';
 import Companies from './pages/Companies';
 import Tenders from './pages/Tenders';
 import HealthSafety from './pages/HealthSafety';
+import Operatives from './pages/Operatives';
+import Plant from './pages/Plant';
 
 function ProtectedRoute({ children }) {
   return useAuthStore.getState().token ? children : <Navigate to="/login" />;
@@ -32,6 +34,8 @@ export default function App() {
           <Route path="companies" element={<Companies />} />
           <Route path="tenders" element={<Tenders />} />
           <Route path="health-safety" element={<HealthSafety />} />
+          <Route path="operatives" element={<Operatives />} />
+          <Route path="plant" element={<Plant />} />
         </Route>
       </Routes>
     </BrowserRouter>

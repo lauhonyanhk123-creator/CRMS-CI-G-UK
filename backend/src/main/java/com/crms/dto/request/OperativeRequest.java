@@ -52,4 +52,6 @@ public class OperativeRequest {
     private OperativeStatus status;
     
     private Long employerId;
+
+    private Boolean hmrcVerified;
 }

@@ -65,6 +65,10 @@ public class Operative extends BaseEntity {
     @Column(name = "bank_account_number")
     private String bankAccountNumber;
 
+    @Column(name = "hmrc_verified")
+    @Builder.Default
+    private Boolean hmrcVerified = false;
+
     @Column(name = "hourly_rate", precision = 8, scale = 2)
     @Builder.Default
     private BigDecimal hourlyRate = BigDecimal.ZERO;

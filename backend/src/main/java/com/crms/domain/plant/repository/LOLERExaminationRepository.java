@@ -16,7 +16,7 @@ public interface LOLERExaminationRepository extends JpaRepository<LOLERExaminati
     List<LOLERExamination> findByPlantId(Long plantId);
 
     @Query("SELECT l FROM LOLERExamination l WHERE l.plant.id = :plantId ORDER BY l.examinationDate DESC")
-    List<LOLERExamination> findByPlantIdOrderByDateDesc(@Param("plantId") Long plantId);
+    List<LOLERExamination> findByPlantIdOrderByExaminationDateDesc(@Param("plantId") Long plantId);
 
     @Query("SELECT l FROM LOLERExamination l WHERE l.nextDueDate <= :date")
     List<LOLERExamination> findDueExaminations(@Param("date") LocalDate date);
