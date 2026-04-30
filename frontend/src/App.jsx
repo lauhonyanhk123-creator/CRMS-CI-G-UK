@@ -10,6 +10,9 @@ import Tenders from './pages/Tenders';
 import HealthSafety from './pages/HealthSafety';
 import Operatives from './pages/Operatives';
 import Plant from './pages/Plant';
+import Subcontractors from './pages/Subcontractors';
+import Reports from './pages/Reports';
+import Materials from './pages/Materials';
 
 function ProtectedRoute({ children }) {
   return useAuthStore.getState().token ? children : <Navigate to="/login" />;
