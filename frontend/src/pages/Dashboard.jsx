@@ -49,8 +49,8 @@ export default function Dashboard() {
     async function load() {
       try {
         const [summaryRes, recentRes, expiringRes] = await Promise.all([
-          axios.get(`${API}/dashboard/summary`).catch(() => ({ data: {} })),
-          axios.get(`${API}/dashboard/recent-activity?limit=5`).catch(() => ({ data: [] })),
+          axios.get(`${API}/dashboard/stats`).catch(() => ({ data: {} })),
+          axios.get(`${API}/dashboard/activity-feed?limit=5`).catch(() => ({ data: [] })),
           axios.get(`${API}/dashboard/expiring-items?days=90`).catch(() => ({ data: {} })),
         ]);
         setStats(summaryRes.data.data || summaryRes.data || {});

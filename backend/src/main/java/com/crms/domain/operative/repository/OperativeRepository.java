@@ -51,4 +51,8 @@ public interface OperativeRepository extends JpaRepository<Operative, Long> {
     @EntityGraph(attributePaths = {"employer"})
     @Override
     Optional<Operative> findById(Long id);
+
+    @EntityGraph(attributePaths = {"employer"})
+    @Query("SELECT o FROM Operative o WHERE LOWER(o.firstName) LIKE LOWER(CONCAT('%',:q,'%')) OR LOWER(o.lastName) LIKE LOWER(CONCAT('%',:q,'%')) OR LOWER(o.employeeRef) LIKE LOWER(CONCAT('%',:q,'%'))")
+    Page<Operative> searchByNameOrRef(@Param("q") String query, Pageable pageable);
 }

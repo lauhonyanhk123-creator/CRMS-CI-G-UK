@@ -27,4 +27,5 @@ public class OperativeResponse {
     private String status;
     private Long employerId;
     private String employerName;
+    private Boolean hmrcVerified;
 }

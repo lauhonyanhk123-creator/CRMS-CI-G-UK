@@ -16,4 +16,7 @@ public interface PUWERInspectionRepository extends JpaRepository<PUWERInspection
 
     @Query("SELECT p FROM PUWERInspection p WHERE p.nextDueDate <= :date")
     List<PUWERInspection> findDueInspections(@Param("date") LocalDate date);
+
+    @Query("SELECT p FROM PUWERInspection p WHERE p.plant.id = :plantId ORDER BY p.inspectionDate DESC")
+    List<PUWERInspection> findByPlantIdOrderByInspectionDateDesc(@Param("plantId") Long plantId);
 }

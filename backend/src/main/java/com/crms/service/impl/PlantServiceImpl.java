@@ -4,29 +4,30 @@ import com.crms.domain.company.entity.Company;
 import com.crms.domain.company.repository.CompanyRepository;
 import com.crms.domain.operative.entity.Card;
 import com.crms.domain.operative.entity.Operative;
-import com.crms.domain.operative.entity.SiteSignOn;
 import com.crms.domain.operative.enums.CardType;
 import com.crms.domain.operative.repository.CardRepository;
 import com.crms.domain.operative.repository.OperativeRepository;
-import com.crms.domain.operative.repository.SiteSignOnRepository;
-import com.crms.domain.plant.entity.PlantAllocation;
-import com.crms.domain.plant.enums.AllocationStatus;
-import com.crms.domain.plant.enums.PlantCategory;
-import com.crms.domain.plant.enums.PlantStatus;
 import com.crms.domain.plant.entity.LOLERExamination;
+import com.crms.domain.plant.entity.PlantAllocation;
 import com.crms.domain.plant.entity.PlantItem;
 import com.crms.domain.plant.entity.PUWERInspection;
+import com.crms.domain.plant.enums.AllocationStatus;
+import com.crms.domain.plant.enums.PlantStatus;
 import com.crms.domain.plant.repository.LOLERExaminationRepository;
 import com.crms.domain.plant.repository.PlantAllocationRepository;
 import com.crms.domain.plant.repository.PlantItemRepository;
 import com.crms.domain.plant.repository.PUWERInspectionRepository;
 import com.crms.domain.site.entity.Site;
 import com.crms.domain.site.repository.SiteRepository;
+import com.crms.dto.request.LOLERRequest;
 import com.crms.dto.request.PlantAllocationRequest;
 import com.crms.dto.request.PlantItemRequest;
+import com.crms.dto.request.PUWERRequest;
+import com.crms.dto.response.LOLERResponse;
 import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.PlantGanttItem;
 import com.crms.dto.response.PlantItemResponse;
+import com.crms.dto.response.PUWERResponse;
 import com.crms.exception.ResourceNotFoundException;
 import com.crms.service.PlantService;
 import com.crms.util.PaginationHelper;
@@ -59,6 +60,7 @@ public class PlantServiceImpl implements PlantService {
     private final CardRepository cardRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<PlantItemResponse> findAll(Map<String, Object> params) {
         int page = PaginationHelper.getPage(params);
         int size = PaginationHelper.getSize(params);
@@ -67,12 +69,16 @@ public class PlantServiceImpl implements PlantService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
 
         Page<PlantItem> plantPage;
+        String search = params.getOrDefault("search", "").toString().trim();
+
         if (params.containsKey("status") && params.get("status") != null) {
             PlantStatus status = PlantStatus.valueOf(params.get("status").toString().toUpperCase());
             plantPage = plantRepository.findByStatus(status, pageable);
         } else if (params.containsKey("category") && params.get("category") != null) {
-            PlantCategory category = PlantCategory.valueOf(params.get("category").toString().toUpperCase());
-            plantPage = plantRepository.findByCategory(category, pageable);
+            plantPage = plantRepository.findByCategory(
+                    com.crms.domain.plant.enums.PlantCategory.valueOf(params.get("category").toString().toUpperCase()), pageable);
+        } else if (!search.isEmpty()) {
+            plantPage = plantRepository.searchByRefOrDescription(search, pageable);
         } else {
             plantPage = plantRepository.findAll(pageable);
         }
@@ -91,6 +97,7 @@ public class PlantServiceImpl implements PlantService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PlantItemResponse findById(Long id) {
         PlantItem plant = plantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
@@ -119,7 +126,7 @@ public class PlantServiceImpl implements PlantService {
                 .supplier(supplier)
                 .telematicsId(request.getTelematicsId())
                 .quickHitchType(request.getQuickHitchType())
-                .status(request.getStatus())
+                .status(request.getStatus() != null ? request.getStatus() : PlantStatus.AVAILABLE)
                 .dailyHireRate(request.getDailyHireRate())
                 .notes(request.getNotes())
                 .build();
@@ -153,7 +160,9 @@ public class PlantServiceImpl implements PlantService {
         plant.setHireStatus(request.getHireStatus());
         plant.setTelematicsId(request.getTelematicsId());
         plant.setQuickHitchType(request.getQuickHitchType());
-        plant.setStatus(request.getStatus());
+        if (request.getStatus() != null) {
+            plant.setStatus(request.getStatus());
+        }
         plant.setDailyHireRate(request.getDailyHireRate());
         plant.setNotes(request.getNotes());
 
@@ -161,47 +170,93 @@ public class PlantServiceImpl implements PlantService {
         return mapToResponse(plant);
     }
 
+    // LOLER Examinations
     @Override
     @Transactional
-    public PlantItemResponse addLOLER(Long id, Object request) {
-        PlantItem plant = plantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
-        log.info("LOLER examination added for plant {}", plant.getPlantRef());
-        return mapToResponse(plant);
-    }
-
-    @Override
-    @Transactional
-    public PlantItemResponse addPUWER(Long id, Object request) {
-        PlantItem plant = plantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", id));
-        log.info("PUWER inspection added for plant {}", plant.getPlantRef());
-        return mapToResponse(plant);
-    }
-
-    @Override
-    @Transactional
-    public PlantItemResponse addAllocation(Long plantId, Object requestObj) {
+    public LOLERResponse addLOLER(Long plantId, LOLERRequest request) {
         PlantItem plant = plantRepository.findById(plantId)
                 .orElseThrow(() -> new ResourceNotFoundException("PlantItem", plantId));
 
-        if (!(requestObj instanceof PlantAllocationRequest request)) {
-            throw new IllegalArgumentException("Invalid allocation request type");
-        }
+        LOLERExamination loler = LOLERExamination.builder()
+                .plant(plant)
+                .examinationDate(request.getExaminationDate())
+                .nextDueDate(request.getNextDueDate())
+                .examiner(request.getExaminer())
+                .examinerCompany(request.getExaminerCompany())
+                .result(request.getResult())
+                .reportRef(request.getReportRef())
+                .notes(request.getNotes())
+                .documentRef(request.getDocumentRef())
+                .build();
 
-        // Fetch operative and validate CSCS card
+        loler = lolerRepository.save(loler);
+        log.info("LOLER examination {} recorded for plant {}", loler.getId(), plantId);
+        return mapToLOLERResponse(loler);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LOLERResponse> getLOLERHistory(Long plantId) {
+        plantRepository.findById(plantId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", plantId));
+        return lolerRepository.findByPlantIdOrderByExaminationDateDesc(plantId).stream()
+                .map(this::mapToLOLERResponse)
+                .collect(Collectors.toList());
+    }
+
+    // PUWER Inspections
+    @Override
+    @Transactional
+    public PUWERResponse addPUWER(Long plantId, PUWERRequest request) {
+        PlantItem plant = plantRepository.findById(plantId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", plantId));
+
+        PUWERInspection puwer = PUWERInspection.builder()
+                .plant(plant)
+                .inspectionDate(request.getInspectionDate())
+                .nextDueDate(request.getNextDueDate())
+                .inspector(request.getInspector())
+                .inspectorCompany(request.getInspectorCompany())
+                .result(request.getResult())
+                .reportRef(request.getReportRef())
+                .notes(request.getNotes())
+                .documentRef(request.getDocumentRef())
+                .build();
+
+        puwer = puwerRepository.save(puwer);
+        log.info("PUWER inspection {} recorded for plant {}", puwer.getId(), plantId);
+        return mapToPUWERResponse(puwer);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PUWERResponse> getPUWERHistory(Long plantId) {
+        plantRepository.findById(plantId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", plantId));
+        return puwerRepository.findByPlantIdOrderByInspectionDateDesc(plantId).stream()
+                .map(this::mapToPUWERResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Allocations
+    @Override
+    @Transactional
+    public PlantItemResponse addAllocation(Long plantId, PlantAllocationRequest request) {
+        PlantItem plant = plantRepository.findById(plantId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", plantId));
+
         Operative operative = operativeRepository.findById(request.getOperativeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Operative", request.getOperativeId()));
 
         validateOperativeCscCard(operative, plantId);
 
-        // Fetch site
         Site site = siteRepository.findById(request.getSiteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Site", request.getSiteId()));
 
-        // Check for overlapping allocations
+        // Check for overlapping active allocations
         List<PlantAllocation> overlapping = allocationRepository.findByPlantIdAndDateRange(
-                plantId, request.getStartDate(), request.getEndDate() != null ? request.getEndDate() : request.getStartDate());
+                plantId, request.getStartDate(),
+                request.getEndDate() != null ? request.getEndDate() : request.getStartDate());
         boolean hasOverlap = overlapping.stream()
                 .anyMatch(a -> a.getStatus() == AllocationStatus.ACTIVE || a.getStatus() == AllocationStatus.ALLOCATED);
         if (hasOverlap) {
@@ -214,7 +269,7 @@ public class PlantServiceImpl implements PlantService {
                 .site(site)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
-                .status(PlantStatus.ALLOCATED)
+                .status(request.getStatus() != null ? request.getStatus() : AllocationStatus.ALLOCATED)
                 .build();
 
         allocation = allocationRepository.save(allocation);
@@ -224,11 +279,18 @@ public class PlantServiceImpl implements PlantService {
         return mapToResponse(plant);
     }
 
-    /**
-     * Validates that an operative has a valid CSCS or CPCS card before plant allocation.
-     * Per CITB CSCS Smart Check requirements: only operatives with valid cards may be
-     * allocated to plant on construction sites.
-     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<PlantItemResponse> getAllocations(Long plantId) {
+        plantRepository.findById(plantId)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantItem", plantId));
+        return allocationRepository.findByPlantId(plantId).stream()
+                .map(a -> PlantItemResponse.builder()
+                        .id(plantId)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     private void validateOperativeCscCard(Operative operative, Long plantId) {
         List<Card> cards = cardRepository.findByOperativeId(operative.getId());
         boolean hasValidCard = cards.stream()
@@ -245,6 +307,7 @@ public class PlantServiceImpl implements PlantService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PlantGanttItem> getPlantGantt(LocalDate from, LocalDate to) {
         List<PlantItem> plants = plantRepository.findAll();
 
@@ -304,6 +367,40 @@ public class PlantServiceImpl implements PlantService {
                 .status(plant.getStatus() != null ? plant.getStatus().name() : null)
                 .dailyHireRate(plant.getDailyHireRate())
                 .notes(plant.getNotes())
+                .build();
+    }
+
+    private LOLERResponse mapToLOLERResponse(LOLERExamination loler) {
+        return LOLERResponse.builder()
+                .id(loler.getId())
+                .plantId(loler.getPlant().getId())
+                .examinationDate(loler.getExaminationDate() != null ? loler.getExaminationDate().toString() : null)
+                .nextDueDate(loler.getNextDueDate() != null ? loler.getNextDueDate().toString() : null)
+                .examiner(loler.getExaminer())
+                .examinerCompany(loler.getExaminerCompany())
+                .result(loler.getResult() != null ? loler.getResult().name() : null)
+                .reportRef(loler.getReportRef())
+                .notes(loler.getNotes())
+                .documentRef(loler.getDocumentRef())
+                .isDue(loler.isDue())
+                .isDueSoon(loler.isDueSoon(30))
+                .build();
+    }
+
+    private PUWERResponse mapToPUWERResponse(PUWERInspection puwer) {
+        return PUWERResponse.builder()
+                .id(puwer.getId())
+                .plantId(puwer.getPlant().getId())
+                .inspectionDate(puwer.getInspectionDate() != null ? puwer.getInspectionDate().toString() : null)
+                .nextDueDate(puwer.getNextDueDate() != null ? puwer.getNextDueDate().toString() : null)
+                .inspector(puwer.getInspector())
+                .inspectorCompany(puwer.getInspectorCompany())
+                .result(puwer.getResult() != null ? puwer.getResult().name() : null)
+                .reportRef(puwer.getReportRef())
+                .notes(puwer.getNotes())
+                .documentRef(puwer.getDocumentRef())
+                .isDue(puwer.isDue())
+                .isDueSoon(puwer.isDueSoon(30))
                 .build();
     }
 }

@@ -29,6 +29,9 @@ public interface PlantItemRepository extends JpaRepository<PlantItem, Long> {
 
     Page<PlantItem> findByDescriptionContainingIgnoreCase(String description, Pageable pageable);
 
+    @Query("SELECT p FROM PlantItem p WHERE LOWER(p.plantRef) LIKE LOWER(CONCAT('%',:search,'%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%',:search,'%'))")
+    Page<PlantItem> searchByRefOrDescription(@Param("search") String search, Pageable pageable);
+
     @Query("SELECT p FROM PlantItem p WHERE p.status = 'AVAILABLE' AND p.category = :category")
     List<PlantItem> findAvailableByCategory(@Param("category") PlantCategory category);
 

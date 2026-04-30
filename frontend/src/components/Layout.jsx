@@ -8,6 +8,11 @@ const navItems = [
   { to: '/companies', label: 'Companies', icon: '🏢' },
   { to: '/tenders', label: 'Tenders', icon: '📋' },
   { to: '/health-safety', label: 'Health & Safety', icon: '🦺' },
+  { to: '/operatives', label: 'Operatives', icon: '👷' },
+  { to: '/plant', label: 'Plant & Equipment', icon: '🚜' },
+  { to: '/subcontractors', label: 'Subcontractors', icon: '🏗️' },
+  { to: '/materials', label: 'Materials', icon: '🧱' },
+  { to: '/reports', label: 'Reports', icon: '📊' },
 ];
 
 export default function Layout() {
