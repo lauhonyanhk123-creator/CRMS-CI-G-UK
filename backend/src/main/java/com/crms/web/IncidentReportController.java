@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -25,6 +26,7 @@ public class IncidentReportController {
     private final IncidentReportService incidentReportService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List incidents", description = "Get paginated list of incident reports")
     public ResponseEntity<ApiResponse<PageResponse<IncidentReportResponse>>> findAll(
             @RequestParam(required = false) Long siteId,
@@ -43,6 +45,7 @@ public class IncidentReportController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create incident report", description = "Create a new incident report")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> create(
             @Valid @RequestBody IncidentReportRequest request) {
@@ -51,6 +54,7 @@ public class IncidentReportController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get incident report", description = "Get incident report by ID")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> findById(@PathVariable Long id) {
         IncidentReportResponse response = incidentReportService.findById(id);
@@ -58,6 +62,7 @@ public class IncidentReportController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update incident report", description = "Update incident report details")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> update(
             @PathVariable Long id,
@@ -67,6 +72,7 @@ public class IncidentReportController {
     }
 
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Submit incident", description = "Submit incident report")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> submit(@PathVariable Long id) {
         IncidentReportResponse response = incidentReportService.submit(id);
@@ -74,6 +80,7 @@ public class IncidentReportController {
     }
 
     @PostMapping("/{id}/investigate")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Start investigation", description = "Start investigating incident")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> investigate(
             @PathVariable Long id,
@@ -83,6 +90,7 @@ public class IncidentReportController {
     }
 
     @PostMapping("/{id}/close")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Close incident", description = "Close incident report")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> close(@PathVariable Long id) {
         IncidentReportResponse response = incidentReportService.close(id);
@@ -90,6 +98,7 @@ public class IncidentReportController {
     }
 
     @PostMapping("/{id}/riddor")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Submit RIDDOR", description = "Submit RIDDOR report to HSE")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> submitRIDDOR(
             @PathVariable Long id,
@@ -99,6 +108,7 @@ public class IncidentReportController {
     }
 
     @PostMapping("/{id}/mor")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Submit MOR", description = "Submit Method of Record")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> submitMOR(
             @PathVariable Long id,
@@ -109,6 +119,7 @@ public class IncidentReportController {
     }
 
     @PostMapping("/{id}/mor/sign")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Sign MOR", description = "Sign Method of Record")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> signMOR(
             @PathVariable Long id,
@@ -118,6 +129,7 @@ public class IncidentReportController {
     }
 
     @PostMapping("/{id}/mor/verify")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Verify MOR", description = "Verify Method of Record")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> verifyMOR(
             @PathVariable Long id,
@@ -127,6 +139,7 @@ public class IncidentReportController {
     }
 
     @GetMapping("/site/{siteId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "By site", description = "Get incidents by site")
     public ResponseEntity<ApiResponse<PageResponse<IncidentReportResponse>>> findBySite(@PathVariable Long siteId) {
         PageResponse<IncidentReportResponse> response = incidentReportService.findBySiteId(siteId);
@@ -134,6 +147,7 @@ public class IncidentReportController {
     }
 
     @GetMapping("/riddor-reportable")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "RIDDOR reportable", description = "Get RIDDOR reportable open incidents")
     public ResponseEntity<ApiResponse<PageResponse<IncidentReportResponse>>> findRIDDORReportable() {
         PageResponse<IncidentReportResponse> response = incidentReportService.findRIDDORReportable();

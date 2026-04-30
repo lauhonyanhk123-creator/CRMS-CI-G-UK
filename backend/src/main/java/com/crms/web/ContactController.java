@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -25,6 +26,7 @@ public class ContactController {
     private final ContactService contactService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List contacts", description = "Get paginated list of contacts")
     public ResponseEntity<ApiResponse<PageResponse<ContactResponse>>> findAll(
             @RequestParam(required = false) Long companyId,
@@ -43,6 +45,7 @@ public class ContactController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create contact", description = "Create a new contact")
     public ResponseEntity<ApiResponse<ContactResponse>> create(@Valid @RequestBody ContactRequest request) {
         ContactResponse response = contactService.create(request);
@@ -50,6 +53,7 @@ public class ContactController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get contact", description = "Get contact by ID")
     public ResponseEntity<ApiResponse<ContactResponse>> findById(@PathVariable Long id) {
         ContactResponse response = contactService.findById(id);
@@ -57,6 +61,7 @@ public class ContactController {
     }
     
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update contact", description = "Update contact details")
     public ResponseEntity<ApiResponse<ContactResponse>> update(
             @PathVariable Long id,
@@ -66,6 +71,7 @@ public class ContactController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete contact", description = "Delete a contact")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         contactService.delete(id);

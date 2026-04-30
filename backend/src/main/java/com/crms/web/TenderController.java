@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class TenderController {
     private final TenderService tenderService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List tenders", description = "Get paginated list of tenders")
     public ResponseEntity<ApiResponse<PageResponse<TenderResponse>>> findAll(
             @RequestParam(required = false) String status,
@@ -48,6 +50,7 @@ public class TenderController {
     }
     
     @GetMapping("/client/{clientId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get tenders by client", description = "Get all tenders for a client")
     public ResponseEntity<ApiResponse<PageResponse<TenderResponse>>> getTendersByClient(
             @PathVariable Long clientId,
@@ -66,6 +69,7 @@ public class TenderController {
     }
     
     @GetMapping("/site/{siteId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get tenders by site", description = "Get all tenders for a site")
     public ResponseEntity<ApiResponse<PageResponse<TenderResponse>>> getTendersBySite(
             @PathVariable Long siteId,
@@ -84,6 +88,7 @@ public class TenderController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create tender", description = "Create a new tender")
     public ResponseEntity<ApiResponse<TenderResponse>> create(@Valid @RequestBody TenderRequest request) {
         TenderResponse response = tenderService.create(request);
@@ -91,6 +96,7 @@ public class TenderController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete tender", description = "Delete a tender")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         tenderService.delete(id);
@@ -98,6 +104,7 @@ public class TenderController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get tender", description = "Get tender by ID")
     public ResponseEntity<ApiResponse<TenderResponse>> findById(@PathVariable Long id) {
         TenderResponse response = tenderService.findById(id);
@@ -105,6 +112,7 @@ public class TenderController {
     }
     
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update tender", description = "Update tender details")
     public ResponseEntity<ApiResponse<TenderResponse>> update(
             @PathVariable Long id,
@@ -114,6 +122,7 @@ public class TenderController {
     }
     
     @PostMapping("/{id}/win")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Win tender", description = "Mark tender as won and create contract")
     public ResponseEntity<ApiResponse<ContractResponse>> win(@PathVariable Long id) {
         ContractResponse response = tenderService.win(id);
@@ -121,6 +130,7 @@ public class TenderController {
     }
     
     @PostMapping("/{id}/lose")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lose tender", description = "Mark tender as lost")
     public ResponseEntity<ApiResponse<Void>> lose(
             @PathVariable Long id,

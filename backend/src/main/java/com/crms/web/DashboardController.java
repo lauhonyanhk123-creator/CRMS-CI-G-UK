@@ -188,6 +188,7 @@ public class DashboardController {
     }
 
     @GetMapping("/activity-feed")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Recent activity feed", description = "Last N audit log entries for the activity stream")
     public ResponseEntity<List<Map<String, Object>>> getActivityFeed(
             @RequestParam(defaultValue = "50") int limit) {
@@ -212,6 +213,7 @@ public class DashboardController {
     }
 
     @GetMapping("/expiring-items")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Expiring items requiring action", description = "Items expiring within 90 days across all domains")
     public ResponseEntity<Map<String, Object>> getExpiringItems(
             @RequestParam(defaultValue = "90") int days) {
@@ -311,6 +313,7 @@ public class DashboardController {
     }
 
     @GetMapping("/pipeline-summary")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Tender pipeline funnel", description = "Win/loss funnel across tender statuses")
     public ResponseEntity<Map<String, Object>> getPipelineSummary() {
         List<Tender> tenders = tenderRepository.findAll();
@@ -344,6 +347,7 @@ public class DashboardController {
     }
 
     @GetMapping("/contract-summary")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Contract status summary")
     public ResponseEntity<Map<String, Object>> getContractSummary() {
         List<Contract> contracts = contractRepository.findAll();
@@ -366,6 +370,7 @@ public class DashboardController {
     }
 
     @GetMapping("/cashflow-forecast")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cash flow forecast", description = "Forecast of incoming payments from approved applications for payment")
     public ResponseEntity<Map<String, Object>> getCashflowForecast(
             @RequestParam(defaultValue = "12") int monthsAhead) {
@@ -425,6 +430,7 @@ public class DashboardController {
     }
 
     @GetMapping("/retention-schedule")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Retention schedule", description = "Retention held and upcoming release dates")
     public ResponseEntity<List<Map<String, Object>>> getRetentionSchedule() {
         List<Contract> contracts = contractRepository.findAll().stream()
@@ -453,6 +459,7 @@ public class DashboardController {
     }
 
     @GetMapping("/health-safety-stats")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "H&S statistics", description = "RIDDOR stats, AFR, near-miss ratio over N months")
     public ResponseEntity<Map<String, Object>> getHealthSafetyStats(
             @RequestParam(defaultValue = "12") int months) {
@@ -505,6 +512,7 @@ public class DashboardController {
     }
 
     @GetMapping("/plant-utilisation")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Plant utilisation", description = "Plant allocation vs available over N days")
     public ResponseEntity<Map<String, Object>> getPlantUtilisation(
             @RequestParam(defaultValue = "30") int days) {
@@ -545,6 +553,7 @@ public class DashboardController {
     }
 
     @GetMapping("/cis-deductions-summary")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "CIS deductions summary", description = "Monthly CIS deductions for the current tax year")
     public ResponseEntity<Map<String, Object>> getCisSummary() {
         int year = LocalDate.now().getYear();

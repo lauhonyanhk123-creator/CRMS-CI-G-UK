@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ public class ReportController {
     private final ReportService reportService;
     
     @GetMapping("/cvr")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "CVR Report", description = "Get Cost Value Reconciliation report")
     public ResponseEntity<ApiResponse<List<CVRItem>>> getCVR(
             @RequestParam Long contract,
@@ -34,6 +36,7 @@ public class ReportController {
     }
     
     @GetMapping("/cashflow")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cashflow Report", description = "Get cashflow forecast report")
     public ResponseEntity<ApiResponse<Object>> getCashflow(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -43,6 +46,7 @@ public class ReportController {
     }
     
     @GetMapping("/retention-schedule")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Retention Schedule", description = "Get retention schedule report")
     public ResponseEntity<ApiResponse<Object>> getRetentionSchedule() {
         Object response = reportService.getRetention();
@@ -50,6 +54,7 @@ public class ReportController {
     }
     
     @GetMapping("/cis-summary")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "CIS Summary", description = "Get CIS monthly summary")
     public ResponseEntity<ApiResponse<Object>> getCISSummary(
             @RequestParam(required = false) String taxMonth) {
@@ -58,6 +63,7 @@ public class ReportController {
     }
     
     @GetMapping("/plant-utilization")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Plant Utilization", description = "Get plant utilization report")
     public ResponseEntity<ApiResponse<Object>> getPlantUtilization(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -70,6 +76,7 @@ public class ReportController {
     }
     
     @GetMapping("/tender-pipeline")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Tender Pipeline", description = "Get tender pipeline report")
     public ResponseEntity<ApiResponse<Object>> getTenderPipeline() {
         Object response = reportService.getTenderPipeline();

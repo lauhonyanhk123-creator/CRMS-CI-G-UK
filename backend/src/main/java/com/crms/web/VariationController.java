@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +24,7 @@ public class VariationController {
     private final VariationService variationService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List variations", description = "Get variations by contract")
     public ResponseEntity<ApiResponse<PageResponse<VariationResponse>>> findByContract(
             @RequestParam Long contractId) {
@@ -31,6 +33,7 @@ public class VariationController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create variation", description = "Create new variation")
     public ResponseEntity<ApiResponse<VariationResponse>> create(
             @RequestParam Long contractId,
@@ -40,6 +43,7 @@ public class VariationController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get variation", description = "Get variation by ID")
     public ResponseEntity<ApiResponse<VariationResponse>> findById(@PathVariable Long id) {
         VariationResponse response = variationService.findById(id);
@@ -47,6 +51,7 @@ public class VariationController {
     }
     
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update variation", description = "Update variation")
     public ResponseEntity<ApiResponse<VariationResponse>> update(
             @PathVariable Long id,
@@ -56,6 +61,7 @@ public class VariationController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete variation", description = "Delete a variation")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         variationService.delete(id);

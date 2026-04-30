@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -30,6 +31,7 @@ public class ContractController {
     private final VariationService variationService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List contracts", description = "Get paginated list of contracts")
     public ResponseEntity<ApiResponse<PageResponse<ContractResponse>>> findAll(
             @RequestParam(required = false) String status,
@@ -52,6 +54,7 @@ public class ContractController {
     }
     
     @GetMapping("/site/{siteId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get contracts by site", description = "Get all contracts for a site")
     public ResponseEntity<ApiResponse<PageResponse<ContractResponse>>> getContractsBySite(
             @PathVariable Long siteId,
@@ -70,6 +73,7 @@ public class ContractController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create contract", description = "Create a new contract")
     public ResponseEntity<ApiResponse<ContractResponse>> create(@Valid @RequestBody ContractRequest request) {
         ContractResponse response = contractService.create(request);
@@ -77,6 +81,7 @@ public class ContractController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get contract", description = "Get contract by ID")
     public ResponseEntity<ApiResponse<ContractResponse>> findById(@PathVariable Long id) {
         ContractResponse response = contractService.findById(id);
@@ -84,6 +89,7 @@ public class ContractController {
     }
     
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update contract", description = "Update contract details")
     public ResponseEntity<ApiResponse<ContractResponse>> update(
             @PathVariable Long id,
@@ -93,6 +99,7 @@ public class ContractController {
     }
     
     @GetMapping("/{id}/retention-ledger")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get retention ledger", description = "Get retention ledger for contract")
     public ResponseEntity<ApiResponse<RetentionLedgerResponse>> getRetentionLedger(@PathVariable Long id) {
         RetentionLedgerResponse response = contractService.getRetentionLedger(id);
@@ -100,6 +107,7 @@ public class ContractController {
     }
     
     @GetMapping("/{id}/variations")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List variations", description = "Get list of variations for contract")
     public ResponseEntity<ApiResponse<PageResponse<VariationResponse>>> getVariations(@PathVariable Long id) {
         PageResponse<VariationResponse> response = variationService.findByContract(id);
@@ -107,6 +115,7 @@ public class ContractController {
     }
     
     @PostMapping("/{id}/applications")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create application", description = "Create application for payment")
     public ResponseEntity<ApiResponse<ApplicationResponse>> createApplication(
             @PathVariable Long id,
@@ -116,6 +125,7 @@ public class ContractController {
     }
     
     @GetMapping("/{id}/applications")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List applications", description = "Get applications for contract")
     public ResponseEntity<ApiResponse<PageResponse<ApplicationResponse>>> getApplications(@PathVariable Long id) {
         PageResponse<ApplicationResponse> response = applicationService.findByContract(id);
@@ -123,6 +133,7 @@ public class ContractController {
     }
     
     @GetMapping("/{id}/adoption-cases")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List adoption cases", description = "Get adoption cases for contract")
     public ResponseEntity<ApiResponse<Object>> getAdoptionCases(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(null));

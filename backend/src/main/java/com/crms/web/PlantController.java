@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -30,6 +31,7 @@ public class PlantController {
     private final PlantService plantService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List plant items", description = "Get paginated list of plant items")
     public ResponseEntity<ApiResponse<PageResponse<PlantItemResponse>>> findAll(
             @RequestParam(required = false) String status,
@@ -50,6 +52,7 @@ public class PlantController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create plant item", description = "Create new plant item")
     public ResponseEntity<ApiResponse<PlantItemResponse>> create(@Valid @RequestBody PlantItemRequest request) {
         PlantItemResponse response = plantService.create(request);
@@ -57,6 +60,7 @@ public class PlantController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get plant item", description = "Get plant item by ID")
     public ResponseEntity<ApiResponse<PlantItemResponse>> findById(@PathVariable Long id) {
         PlantItemResponse response = plantService.findById(id);
@@ -64,6 +68,7 @@ public class PlantController {
     }
     
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update plant item", description = "Update plant item details")
     public ResponseEntity<ApiResponse<PlantItemResponse>> update(
             @PathVariable Long id,
@@ -73,6 +78,7 @@ public class PlantController {
     }
     
     @PostMapping("/{id}/loler-examinations")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Add LOLER examination", description = "Record LOLER examination for plant item")
     public ResponseEntity<ApiResponse<PlantItemResponse>> addLOLER(
             @PathVariable Long id,
@@ -82,6 +88,7 @@ public class PlantController {
     }
     
     @PostMapping("/{id}/puwer-inspections")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Add PUWER inspection", description = "Record PUWER inspection for plant item")
     public ResponseEntity<ApiResponse<PlantItemResponse>> addPUWER(
             @PathVariable Long id,
@@ -91,6 +98,7 @@ public class PlantController {
     }
     
     @PostMapping("/{id}/allocations")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Add allocation", description = "Allocate plant item to operative")
     public ResponseEntity<ApiResponse<PlantItemResponse>> addAllocation(
             @PathVariable Long id,
@@ -100,6 +108,7 @@ public class PlantController {
     }
     
     @GetMapping("/gantt")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get plant Gantt", description = "Get plant allocation Gantt chart data")
     public ResponseEntity<ApiResponse<List<PlantGanttItem>>> getPlantGantt(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -109,6 +118,7 @@ public class PlantController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete plant item", description = "Delete a plant item")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         plantService.delete(id);

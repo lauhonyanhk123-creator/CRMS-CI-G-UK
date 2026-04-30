@@ -4,7 +4,6 @@ import com.crms.domain.adoption.entity.AdoptionCase;
 import com.crms.domain.adoption.entity.AdoptionStage;
 import com.crms.domain.adoption.entity.Bond;
 import com.crms.domain.adoption.enums.AdoptionStatus;
-import com.crms.domain.adoption.enums.BondType;
 import com.crms.domain.adoption.repository.AdoptionCaseRepository;
 import com.crms.domain.adoption.repository.AdoptionStageRepository;
 import com.crms.domain.adoption.repository.BondRepository;
@@ -12,10 +11,11 @@ import com.crms.domain.company.entity.Company;
 import com.crms.domain.company.repository.CompanyRepository;
 import com.crms.domain.contract.entity.Contract;
 import com.crms.domain.contract.repository.ContractRepository;
-import com.crms.dto.response.PageResponse;
+import com.crms.dto.response.*;
 import com.crms.exception.ResourceNotFoundException;
 import com.crms.exception.ValidationException;
 import com.crms.service.AdoptionService;
+import com.crms.util.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -44,10 +43,10 @@ public class AdoptionServiceImpl implements AdoptionService {
     private final CompanyRepository companyRepository;
 
     @Override
-    public PageResponse<?> findAll(Map<String, Object> params) {
-        int page = params.containsKey("page") ? Integer.parseInt(params.get("page").toString()) : 0;
-        int size = params.containsKey("size") ? Integer.parseInt(params.get("size").toString()) : 20;
-        String sort = params.containsKey("sort") ? params.get("sort").toString() : "createdAt";
+    public PageResponse<AdoptionCaseResponse> findAll(Map<String, Object> params) {
+        int page = PaginationHelper.getPage(params);
+        int size = PaginationHelper.getSize(params);
+        String sort = PaginationHelper.getSort(params, "createdAt");
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, sort));
 
@@ -62,11 +61,11 @@ public class AdoptionServiceImpl implements AdoptionService {
             casePage = adoptionCaseRepository.findAll(pageable);
         }
 
-        List<Map<String, Object>> content = casePage.getContent().stream()
-                .map(this::mapCaseToMap)
+        List<AdoptionCaseResponse> content = casePage.getContent().stream()
+                .map(AdoptionCaseResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        return PageResponse.builder()
+        return PageResponse.<AdoptionCaseResponse>builder()
                 .content(content)
                 .page(page)
                 .size(size)
@@ -76,15 +75,15 @@ public class AdoptionServiceImpl implements AdoptionService {
     }
 
     @Override
-    public Object findById(Long id) {
+    public AdoptionCaseResponse findById(Long id) {
         AdoptionCase adoptionCase = adoptionCaseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AdoptionCase", id));
-        return mapCaseToMap(adoptionCase);
+        return AdoptionCaseResponse.fromEntityWithDetails(adoptionCase);
     }
 
     @Override
     @Transactional
-    public Object create(Long contractId, Object request) {
+    public AdoptionCaseResponse create(Long contractId, Object request) {
         if (!(request instanceof Map)) {
             throw new ValidationException("Invalid request type");
         }
@@ -133,12 +132,12 @@ public class AdoptionServiceImpl implements AdoptionService {
         adoptionCase = adoptionCaseRepository.save(adoptionCase);
         log.info("Created adoption case {} for contract {}", caseRef, contract.getContractRef());
 
-        return mapCaseToMap(adoptionCase);
+        return AdoptionCaseResponse.fromEntity(adoptionCase);
     }
 
     @Override
     @Transactional
-    public Object addStage(Long id, Object stage) {
+    public AdoptionStageCreateResponse addStage(Long id, Object stage) {
         if (!(stage instanceof Map)) {
             throw new ValidationException("Invalid stage type");
         }
@@ -165,28 +164,19 @@ public class AdoptionServiceImpl implements AdoptionService {
             adoptionStage.setDescription(stageData.get("description").toString());
         }
         if (stageData.containsKey("targetDate")) {
-            adoptionStage.setTargetDate(LocalDate.parse(stageData.get("targetDate").toString()));
+            adoptionStage.setPlannedDate(LocalDate.parse(stageData.get("targetDate").toString()));
         }
 
         adoptionStage = adoptionStageRepository.save(adoptionStage);
 
         log.info("Added stage {} to adoption case {}", stageName, adoptionCase.getCaseRef());
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", adoptionStage.getId());
-        result.put("caseId", adoptionCase.getId());
-        result.put("stageName", adoptionStage.getStageName());
-        result.put("description", adoptionStage.getDescription());
-        result.put("status", adoptionStage.getStatus() != null ? adoptionStage.getStatus().name() : null);
-        result.put("targetDate", adoptionStage.getTargetDate());
-        result.put("completedDate", adoptionStage.getCompletedDate());
-
-        return result;
+        return AdoptionStageCreateResponse.fromEntity(adoptionStage);
     }
 
     @Override
     @Transactional
-    public Object requestBondRelease(Long id) {
+    public BondReleaseResponse requestBondRelease(Long id) {
         AdoptionCase adoptionCase = adoptionCaseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AdoptionCase", id));
 
@@ -200,46 +190,12 @@ public class AdoptionServiceImpl implements AdoptionService {
 
         log.info("Bond release requested for adoption case {}", adoptionCase.getCaseRef());
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", bond.getId());
-        result.put("caseId", adoptionCase.getId());
-        result.put("bondRef", bond.getBondRef());
-        result.put("releaseRequested", bond.getReleaseRequested());
-        result.put("releaseRequestedDate", bond.getReleaseRequestedDate());
-        result.put("status", bond.getStatus().name());
-
-        return result;
+        return BondReleaseResponse.fromEntity(bond);
     }
 
     private String generateCaseRef(com.crms.domain.adoption.enums.AdoptionType adoptionType) {
         String prefix = adoptionType == com.crms.domain.adoption.enums.AdoptionType.SEWER_ADOPTION ? "SA" : "HA";
         String timestamp = String.valueOf(System.currentTimeMillis());
         return prefix + "-" + timestamp;
-    }
-
-    private Map<String, Object> mapCaseToMap(AdoptionCase adoptionCase) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", adoptionCase.getId());
-        map.put("caseRef", adoptionCase.getCaseRef());
-        map.put("adoptionType", adoptionCase.getAdoptionType() != null ? adoptionCase.getAdoptionType().name() : null);
-        map.put("contractId", adoptionCase.getContract() != null ? adoptionCase.getContract().getId() : null);
-        map.put("contractRef", adoptionCase.getContract() != null ? adoptionCase.getContract().getContractRef() : null);
-        map.put("clientId", adoptionCase.getClient() != null ? adoptionCase.getClient().getId() : null);
-        map.put("clientName", adoptionCase.getClient() != null ? adoptionCase.getClient().getName() : null);
-        map.put("localAuthorityId", adoptionCase.getLocalAuthorityOrWaterAuthority() != null ? adoptionCase.getLocalAuthorityOrWaterAuthority().getId() : null);
-        map.put("localAuthorityName", adoptionCase.getLocalAuthorityOrWaterAuthority() != null ? adoptionCase.getLocalAuthorityOrWaterAuthority().getName() : null);
-        map.put("technicalApprovalRef", adoptionCase.getTechnicalApprovalRef());
-        map.put("designCheckFees", adoptionCase.getDesignCheckFees());
-        map.put("supervisionFees", adoptionCase.getSupervisionFees());
-        map.put("commutedSumTotal", adoptionCase.getCommutedSumTotal());
-        map.put("commutedSumPaid", adoptionCase.getCommutedSumPaid());
-        map.put("commutedSumOutstanding", adoptionCase.getCommutedSumOutstanding());
-        map.put("maintenancePeriodMonths", adoptionCase.getMaintenancePeriodMonths());
-        map.put("commencementDate", adoptionCase.getCommencementDate());
-        map.put("maintenanceEndDate", adoptionCase.getMaintenanceEndDate());
-        map.put("status", adoptionCase.getStatus() != null ? adoptionCase.getStatus().name() : null);
-        map.put("createdAt", adoptionCase.getCreatedAt());
-        map.put("updatedAt", adoptionCase.getUpdatedAt());
-        return map;
     }
 }

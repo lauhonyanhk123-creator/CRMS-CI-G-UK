@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ public class CDMRegisterController {
     private final CDMRegisterService cdmRegisterService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List CDM registers", description = "Get paginated list of CDM registers")
     public ResponseEntity<ApiResponse<PageResponse<CDMRegisterResponse>>> findAll(
             @RequestParam(required = false) Long clientId,
@@ -45,6 +47,7 @@ public class CDMRegisterController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create CDM register", description = "Create a new CDM register")
     public ResponseEntity<ApiResponse<CDMRegisterResponse>> create(
             @Valid @RequestBody CDMRegisterRequest request) {
@@ -53,6 +56,7 @@ public class CDMRegisterController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get CDM register", description = "Get CDM register by ID")
     public ResponseEntity<ApiResponse<CDMRegisterResponse>> findById(@PathVariable Long id) {
         CDMRegisterResponse response = cdmRegisterService.findById(id);
@@ -60,6 +64,7 @@ public class CDMRegisterController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update CDM register", description = "Update CDM register details")
     public ResponseEntity<ApiResponse<CDMRegisterResponse>> update(
             @PathVariable Long id,
@@ -69,6 +74,7 @@ public class CDMRegisterController {
     }
 
     @PostMapping("/{id}/submit-hse")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Submit to HSE", description = "Submit CDM notification to HSE")
     public ResponseEntity<ApiResponse<CDMRegisterResponse>> submitToHSE(@PathVariable Long id) {
         CDMRegisterResponse response = cdmRegisterService.submitToHSE(id);
@@ -76,6 +82,7 @@ public class CDMRegisterController {
     }
 
     @PostMapping("/{id}/health-safety-file/create")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create HSF", description = "Create Health and Safety File")
     public ResponseEntity<ApiResponse<CDMRegisterResponse>> createHealthSafetyFile(@PathVariable Long id) {
         CDMRegisterResponse response = cdmRegisterService.createHealthSafetyFile(id);
@@ -83,6 +90,7 @@ public class CDMRegisterController {
     }
 
     @PostMapping("/{id}/health-safety-file/complete")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Complete HSF", description = "Complete Health and Safety File")
     public ResponseEntity<ApiResponse<CDMRegisterResponse>> completeHealthSafetyFile(@PathVariable Long id) {
         CDMRegisterResponse response = cdmRegisterService.completeHealthSafetyFile(id);
@@ -90,6 +98,7 @@ public class CDMRegisterController {
     }
 
     @GetMapping("/by-number/{notificationNumber}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "By notification number", description = "Find by notification number")
     public ResponseEntity<ApiResponse<CDMRegisterResponse>> findByNotificationNumber(
             @PathVariable String notificationNumber) {
@@ -98,6 +107,7 @@ public class CDMRegisterController {
     }
 
     @GetMapping("/client/{clientId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "By client", description = "Get active CDM registers for client")
     public ResponseEntity<ApiResponse<PageResponse<CDMRegisterResponse>>> findByClient(@PathVariable Long clientId) {
         PageResponse<CDMRegisterResponse> response = cdmRegisterService.findActiveByClientId(clientId);
@@ -105,6 +115,7 @@ public class CDMRegisterController {
     }
 
     @GetMapping("/expiring")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Expiring projects", description = "Find projects expiring before date")
     public ResponseEntity<ApiResponse<PageResponse<CDMRegisterResponse>>> findExpiring(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -113,6 +124,7 @@ public class CDMRegisterController {
     }
 
     @GetMapping("/pending-hse")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Pending HSE notification", description = "Find projects pending HSE notification")
     public ResponseEntity<ApiResponse<PageResponse<CDMRegisterResponse>>> findPendingHseNotification() {
         PageResponse<CDMRegisterResponse> response = cdmRegisterService.findPendingHseNotification();

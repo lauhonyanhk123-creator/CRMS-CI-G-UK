@@ -78,23 +78,23 @@ public class PlantItem extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<LOLERExamination> lolerExaminations = new ArrayList<>();
 
-    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PUWERInspection> puwerInspections = new ArrayList<>();
 
-    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<DailyPreUseCheck> dailyPreUseChecks = new ArrayList<>();
 
-    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<HireRecord> hireRecords = new ArrayList<>();
 
-    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PlantAllocation> plantAllocations = new ArrayList<>();
 

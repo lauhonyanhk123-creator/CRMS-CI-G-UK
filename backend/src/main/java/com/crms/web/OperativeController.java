@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class OperativeController {
     private final OperativeService operativeService;
     
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List operatives", description = "Get paginated list of operatives")
     public ResponseEntity<ApiResponse<PageResponse<OperativeResponse>>> findAll(
             @RequestParam(required = false) String status,
@@ -44,6 +46,7 @@ public class OperativeController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create operative", description = "Create new operative")
     public ResponseEntity<ApiResponse<OperativeResponse>> create(@Valid @RequestBody OperativeRequest request) {
         OperativeResponse response = operativeService.create(request);
@@ -51,6 +54,7 @@ public class OperativeController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get operative", description = "Get operative by ID")
     public ResponseEntity<ApiResponse<OperativeResponse>> findById(@PathVariable Long id) {
         OperativeResponse response = operativeService.findById(id);
@@ -58,6 +62,7 @@ public class OperativeController {
     }
     
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update operative", description = "Update operative details")
     public ResponseEntity<ApiResponse<OperativeResponse>> update(
             @PathVariable Long id,
@@ -67,6 +72,7 @@ public class OperativeController {
     }
     
     @PostMapping("/{id}/cards")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Add card", description = "Add CSCS card to operative")
     public ResponseEntity<ApiResponse<OperativeResponse>> addCard(
             @PathVariable Long id,
@@ -76,6 +82,7 @@ public class OperativeController {
     }
     
     @PostMapping("/{id}/cards/{cardId}/cscs-smart-check")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "CSCS Smart Check", description = "Perform CSCS Smart Check on card")
     public ResponseEntity<ApiResponse<SubbieGateStatus>> smartCheckCard(
             @PathVariable Long id,
@@ -85,6 +92,7 @@ public class OperativeController {
     }
     
     @GetMapping("/{id}/subbie-gate-status")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get gate status", description = "Get subbie gate status for operative")
     public ResponseEntity<ApiResponse<SubbieGateStatus>> getSubbieGateStatus(@PathVariable Long id) {
         SubbieGateStatus response = operativeService.getSubbieGateStatus(id);
@@ -92,6 +100,7 @@ public class OperativeController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete operative", description = "Delete an operative")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         operativeService.delete(id);

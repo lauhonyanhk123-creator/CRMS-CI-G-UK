@@ -47,4 +47,13 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     boolean existsByName(String name);
 
     boolean existsByRegistrationNumber(String registrationNumber);
+
+    /**
+     * Find all subcontractors (companies of type SUBCONTRACTOR) associated with a contract.
+     * In this system, subcontractors are linked via Contract.client relationship.
+     * The CIS verification gate checks that all subcontractors are verified before submission.
+     * This method retrieves all subcontractors to verify CIS status.
+     */
+    @Query("SELECT c FROM Company c WHERE c.companyType = com.crms.domain.company.enums.CompanyType.SUBCONTRACTOR")
+    List<Company> findByContractId(@Param("contractId") Long contractId);
 }

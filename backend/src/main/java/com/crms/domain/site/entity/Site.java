@@ -61,23 +61,23 @@ public class Site extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.tender.entity.Tender> tenders = new ArrayList<>();
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.contract.entity.Contract> contracts = new ArrayList<>();
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.healthsafety.entity.IncidentReport> incidents = new ArrayList<>();
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.healthsafety.entity.PermitToDig> permits = new ArrayList<>();
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<com.crms.domain.operative.entity.SiteSignOn> siteSignOns = new ArrayList<>();
 

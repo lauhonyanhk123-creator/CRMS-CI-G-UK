@@ -1,5 +1,15 @@
 package com.crms.service;
 
+import com.crms.domain.contract.entity.Contract;
+import com.crms.domain.contract.repository.ContractRepository;
+import com.crms.domain.healthsafety.entity.*;
+import com.crms.domain.healthsafety.enums.*;
+import com.crms.domain.healthsafety.repository.*;
+import com.crms.domain.operative.entity.Operative;
+import com.crms.domain.operative.repository.OperativeRepository;
+import com.crms.domain.site.entity.Site;
+import com.crms.domain.site.repository.SiteRepository;
+import com.crms.exception.ResourceNotFoundException;
 import com.crms.service.impl.HealthSafetyServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -7,39 +17,135 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for HealthSafetyServiceImpl.
  * Tests cover F10 notification, CPP, RAMS document management, 
- * incident reporting workflow, and RAMS document expiry tracking.
- * 
- * Note: HealthSafetyServiceImpl is currently a stub implementation,
- * so tests verify basic service behavior and document workflow logic.
+ * incident reporting workflow, permits, and RAMS sign-on operations.
  */
 @ExtendWith(MockitoExtension.class)
 class HealthSafetyServiceImplTest {
+
+    @Mock
+    private ContractRepository contractRepository;
+
+    @Mock
+    private SiteRepository siteRepository;
+
+    @Mock
+    private OperativeRepository operativeRepository;
+
+    @Mock
+    private F10NotificationRepository f10NotificationRepository;
+
+    @Mock
+    private ConstructionPhasePlanRepository cppRepository;
+
+    @Mock
+    private RAMSDocumentRepository ramsRepository;
+
+    @Mock
+    private RAMSSignOnRepository ramsSignOnRepository;
+
+    @Mock
+    private PermitToDigRepository permitToDigRepository;
+
+    @Mock
+    private IncidentReportRepository incidentReportRepository;
 
     @InjectMocks
     private HealthSafetyServiceImpl healthSafetyService;
 
     // Test data
-    private Long contractId;
-    private Long siteId;
-    private Long operativeId;
-    private Long ramsId;
+    private Contract testContract;
+    private Site testSite;
+    private Operative testOperative;
+    private F10Notification testF10;
+    private ConstructionPhasePlan testCPP;
+    private RAMSDocument testRAMS;
+    private PermitToDig testPermit;
+    private IncidentReport testIncident;
 
     @BeforeEach
     void setUp() {
-        contractId = 1L;
-        siteId = 1L;
-        operativeId = 1L;
-        ramsId = 1L;
+        testContract = Contract.builder()
+                .id(1L)
+                .contractRef("CRMS-001")
+                .title("Test Contract")
+                .build();
+
+        testSite = Site.builder()
+                .id(1L)
+                .name("Test Site")
+                .build();
+
+        testOperative = Operative.builder()
+                .id(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .build();
+
+        testF10 = F10Notification.builder()
+                .id(1L)
+                .contract(testContract)
+                .notificationNumber("F10-123456")
+                .moreThan30Days(true)
+                .moreThan500PersonDays(false)
+                .constructionStartDate(LocalDate.of(2024, 3, 1))
+                .constructionEndDate(LocalDate.of(2024, 6, 1))
+                .isActive(true)
+                .hdfAcknowledged(false)
+                .build();
+
+        testCPP = ConstructionPhasePlan.builder()
+                .id(1L)
+                .contract(testContract)
+                .planRef("CPP-123456")
+                .version(1)
+                .status(CPPStatus.DRAFT)
+                .description("Construction Phase Plan")
+                .build();
+
+        testRAMS = RAMSDocument.builder()
+                .id(1L)
+                .contract(testContract)
+                .ramsRef("RAMS-123456")
+                .version(1)
+                .status(RamsStatus.DRAFT)
+                .title("Risk Assessment")
+                .build();
+
+        testPermit = PermitToDig.builder()
+                .id(1L)
+                .site(testSite)
+                .permitNumber("PTD-123456")
+                .worksDescription("Excavation works")
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusDays(7))
+                .status(PermitStatus.DRAFT)
+                .build();
+
+        testIncident = IncidentReport.builder()
+                .id(1L)
+                .site(testSite)
+                .reportNumber("INC-123456")
+                .incidentDate(LocalDate.now())
+                .description("Test incident")
+                .type(IncidentType.NEAR_MISS)
+                .severity(IncidentSeverity.MINOR)
+                .status(IncidentStatus.DRAFT)
+                .build();
     }
 
     // ================================================================
@@ -51,38 +157,77 @@ class HealthSafetyServiceImplTest {
     class F10NotificationTests {
 
         @Test
-        @DisplayName("createF10 returns null (stub implementation)")
-        void createF10_returnsNull() {
+        @DisplayName("createF10 creates notification successfully")
+        void createF10_createsNotification() {
             // Given
-            Object request = new Object();
+            Map<String, Object> request = new HashMap<>();
+            request.put("moreThan30Days", "true");
+            request.put("moreThan500PersonDays", "false");
+            request.put("constructionStartDate", "2024-03-01");
+            request.put("constructionEndDate", "2024-06-01");
+
+            when(contractRepository.findById(1L)).thenReturn(Optional.of(testContract));
+            when(f10NotificationRepository.save(any(F10Notification.class))).thenAnswer(invocation -> {
+                F10Notification f = invocation.getArgument(0);
+                f.setId(1L);
+                return f;
+            });
 
             // When
-            Object result = healthSafetyService.createF10(contractId, request);
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.createF10(1L, request);
 
             // Then
-            assertNull(result);
+            assertNotNull(result);
+            assertEquals(1L, result.get("id"));
+            assertNotNull(result.get("notificationNumber"));
+            assertTrue(result.get("notificationNumber").toString().startsWith("F10-"));
+            assertEquals("DRAFT", result.get("status"));
+            verify(f10NotificationRepository).save(any(F10Notification.class));
         }
 
         @Test
-        @DisplayName("F10 notification should be created for contracts over 30 working days")
-        void f10Required_forContractsOver30Days() {
-            // Business rule: F10 is required for construction projects 
-            // lasting more than 30 working days or involving 500+ person-days
-            int projectDurationDays = 45;
-            
-            boolean f10Required = projectDurationDays > 30;
-            
-            assertTrue(f10Required);
+        @DisplayName("createF10 throws exception when contract not found")
+        void createF10_throwsException_whenContractNotFound() {
+            // Given
+            when(contractRepository.findById(999L)).thenReturn(Optional.empty());
+            Map<String, Object> request = new HashMap<>();
+
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.createF10(999L, request));
         }
 
         @Test
-        @DisplayName("F10 notification deadline calculation")
-        void f10NotificationDeadline() {
-            // F10 must be submitted at least 14 days before construction starts
-            LocalDate constructionStartDate = LocalDate.of(2024, 3, 1);
-            LocalDate f10Deadline = constructionStartDate.minusDays(14);
-            
-            assertEquals(LocalDate.of(2024, 2, 16), f10Deadline);
+        @DisplayName("createF10 throws exception for invalid request type")
+        void createF10_throwsException_forInvalidRequestType() {
+            // Given
+            Object invalidRequest = new Object();
+
+            // When/Then
+            assertThrows(IllegalArgumentException.class, () -> 
+                healthSafetyService.createF10(1L, invalidRequest));
+        }
+
+        @Test
+        @DisplayName("createF10 uses default values when not provided")
+        void createF10_usesDefaultValues() {
+            // Given
+            Map<String, Object> request = new HashMap<>(); // Empty request
+
+            when(contractRepository.findById(1L)).thenReturn(Optional.of(testContract));
+            when(f10NotificationRepository.save(any(F10Notification.class))).thenAnswer(invocation -> {
+                F10Notification f = invocation.getArgument(0);
+                f.setId(1L);
+                return f;
+            });
+
+            // When
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.createF10(1L, request);
+
+            // Then
+            assertNotNull(result);
+            verify(f10NotificationRepository).save(argThat(f -> 
+                f.getMoreThan30Days() == false && f.getMoreThan500PersonDays() == false));
         }
     }
 
@@ -95,35 +240,54 @@ class HealthSafetyServiceImplTest {
     class CPPTests {
 
         @Test
-        @DisplayName("createCPP returns null (stub implementation)")
-        void createCPP_returnsNull() {
+        @DisplayName("createCPP creates plan successfully")
+        void createCPP_createsPlan() {
             // Given
-            Object request = new Object();
+            Map<String, Object> request = new HashMap<>();
+            request.put("description", "Construction Phase Plan Description");
+            request.put("startDate", "2024-03-01");
+            request.put("endDate", "2024-06-01");
+
+            when(contractRepository.findById(1L)).thenReturn(Optional.of(testContract));
+            when(cppRepository.save(any(ConstructionPhasePlan.class))).thenAnswer(invocation -> {
+                ConstructionPhasePlan c = invocation.getArgument(0);
+                c.setId(1L);
+                return c;
+            });
 
             // When
-            Object result = healthSafetyService.createCPP(contractId, request);
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.createCPP(1L, request);
 
             // Then
-            assertNull(result);
+            assertNotNull(result);
+            assertEquals(1L, result.get("id"));
+            assertNotNull(result.get("planRef"));
+            assertTrue(result.get("planRef").toString().startsWith("CPP-"));
+            assertEquals("DRAFT", result.get("status"));
+            verify(cppRepository).save(any(ConstructionPhasePlan.class));
         }
 
         @Test
-        @DisplayName("CPP is required for all construction projects")
-        void cppRequiredForAllProjects() {
-            // CDM regulations require CPP for all construction projects
-            boolean isConstructionProject = true;
-            
-            assertTrue(isConstructionProject);
+        @DisplayName("createCPP throws exception when contract not found")
+        void createCPP_throwsException_whenContractNotFound() {
+            // Given
+            when(contractRepository.findById(999L)).thenReturn(Optional.empty());
+            Map<String, Object> request = new HashMap<>();
+
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.createCPP(999L, request));
         }
 
         @Test
-        @DisplayName("CPP should be created before work commences")
-        void cppCreatedBeforeCommencement() {
-            LocalDate workCommencementDate = LocalDate.of(2024, 3, 1);
-            LocalDate cppRequiredDate = workCommencementDate.minusDays(1);
-            
-            assertTrue(cppRequiredDate.isBefore(workCommencementDate) || 
-                       cppRequiredDate.isEqual(workCommencementDate));
+        @DisplayName("createCPP throws exception for invalid request type")
+        void createCPP_throwsException_forInvalidRequestType() {
+            // Given
+            Object invalidRequest = new Object();
+
+            // When/Then
+            assertThrows(IllegalArgumentException.class, () -> 
+                healthSafetyService.createCPP(1L, invalidRequest));
         }
     }
 
@@ -136,100 +300,125 @@ class HealthSafetyServiceImplTest {
     class RAMSDocumentTests {
 
         @Test
-        @DisplayName("createRAMS returns null (stub implementation)")
-        void createRAMS_returnsNull() {
+        @DisplayName("createRAMS creates document successfully")
+        void createRAMS_createsDocument() {
             // Given
-            Object request = new Object();
+            Map<String, Object> request = new HashMap<>();
+            request.put("title", "Risk Assessment for Excavation");
+            request.put("description", "Detailed RAMS description");
+            request.put("validUntil", "2024-12-31");
+
+            when(contractRepository.findById(1L)).thenReturn(Optional.of(testContract));
+            when(ramsRepository.save(any(RAMSDocument.class))).thenAnswer(invocation -> {
+                RAMSDocument r = invocation.getArgument(0);
+                r.setId(1L);
+                return r;
+            });
 
             // When
-            Object result = healthSafetyService.createRAMS(contractId, request);
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.createRAMS(1L, request);
 
             // Then
-            assertNull(result);
+            assertNotNull(result);
+            assertEquals(1L, result.get("id"));
+            assertNotNull(result.get("ramsRef"));
+            assertTrue(result.get("ramsRef").toString().startsWith("RAMS-"));
+            assertEquals("DRAFT", result.get("status"));
+            verify(ramsRepository).save(any(RAMSDocument.class));
         }
 
         @Test
-        @DisplayName("RAMS expiry date should be checked")
-        void ramsExpiryDateCheck() {
-            // RAMS documents should have an expiry date
-            LocalDate issueDate = LocalDate.of(2024, 1, 1);
-            LocalDate expiryDate = issueDate.plusMonths(6);
-            
-            assertEquals(LocalDate.of(2024, 7, 1), expiryDate);
+        @DisplayName("createRAMS throws exception when contract not found")
+        void createRAMS_throwsException_whenContractNotFound() {
+            // Given
+            when(contractRepository.findById(999L)).thenReturn(Optional.empty());
+            Map<String, Object> request = new HashMap<>();
+
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.createRAMS(999L, request));
         }
 
         @Test
-        @DisplayName("RAMS document should be refreshed before expiry")
-        void ramsRefreshBeforeExpiry() {
-            // RAMS should be refreshed 30 days before expiry
-            LocalDate expiryDate = LocalDate.of(2024, 7, 1);
-            LocalDate refreshDate = expiryDate.minusDays(30);
-            
-            assertEquals(LocalDate.of(2024, 6, 1), refreshDate);
-        }
+        @DisplayName("createRAMS throws exception for invalid request type")
+        void createRAMS_throwsException_forInvalidRequestType() {
+            // Given
+            Object invalidRequest = new Object();
 
-        @Test
-        @DisplayName("Expired RAMS should trigger alert")
-        void expiredRAMSTriggersAlert() {
-            LocalDate today = LocalDate.of(2024, 8, 1);
-            LocalDate expiryDate = LocalDate.of(2024, 7, 1);
-            
-            boolean isExpired = today.isAfter(expiryDate);
-            
-            assertTrue(isExpired);
-        }
-
-        @Test
-        @DisplayName("RAMS document should list required signatures")
-        void ramsDocumentListsRequiredSignatures() {
-            // RAMS should be signed by:
-            // 1. Principal Contractor
-            // 2. Site Manager
-            // 3. Operatives working on the task
-            
-            List<String> requiredSignatories = List.of(
-                "Principal Contractor",
-                "Site Manager",
-                "Operatives"
-            );
-            
-            assertEquals(3, requiredSignatories.size());
-            assertTrue(requiredSignatories.contains("Site Manager"));
+            // When/Then
+            assertThrows(IllegalArgumentException.class, () -> 
+                healthSafetyService.createRAMS(1L, invalidRequest));
         }
     }
 
     // ================================================================
-    // RAMS SIGNATURE TESTS
+    // RAMS SIGN-ON TESTS
     // ================================================================
 
     @Nested
-    @DisplayName("RAMS Signature Tests")
-    class RAMSSignatureTests {
+    @DisplayName("RAMS Sign-On Tests")
+    class RAMSSignOnTests {
 
         @Test
-        @DisplayName("signRAMS returns null (stub implementation)")
-        void signRAMS_returnsNull() {
+        @DisplayName("signRAMS creates sign-on record successfully")
+        void signRAMS_createsSignOn() {
+            // Given
+            when(ramsRepository.findById(1L)).thenReturn(Optional.of(testRAMS));
+            when(operativeRepository.findById(1L)).thenReturn(Optional.of(testOperative));
+            when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
+            when(ramsSignOnRepository.save(any(RAMSSignOn.class))).thenAnswer(invocation -> {
+                RAMSSignOn s = invocation.getArgument(0);
+                s.setId(1L);
+                return s;
+            });
+
             // When
-            Object result = healthSafetyService.signRAMS(ramsId, operativeId, siteId);
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.signRAMS(1L, 1L, 1L);
 
             // Then
-            assertNull(result);
+            assertNotNull(result);
+            assertEquals(1L, result.get("id"));
+            assertEquals(1L, result.get("ramsId"));
+            assertEquals(1L, result.get("operativeId"));
+            assertEquals(1L, result.get("siteId"));
+            assertNotNull(result.get("signedAt"));
+            verify(ramsSignOnRepository).save(any(RAMSSignOn.class));
         }
 
         @Test
-        @DisplayName("RAMS signature date should be recorded")
-        void ramsSignatureDateRecorded() {
-            LocalDate signedDate = LocalDate.now();
-            assertNotNull(signedDate);
+        @DisplayName("signRAMS throws exception when RAMS not found")
+        void signRAMS_throwsException_whenRAMSNotFound() {
+            // Given
+            when(ramsRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.signRAMS(999L, 1L, 1L));
         }
 
         @Test
-        @DisplayName("Operative must have valid card to sign RAMS")
-        void operativeMustHaveValidCardToSign() {
-            boolean hasValidCard = true;  // Would check card expiry
-            boolean canSign = hasValidCard;
-            
-            assertTrue(canSign);
+        @DisplayName("signRAMS throws exception when operative not found")
+        void signRAMS_throwsException_whenOperativeNotFound() {
+            // Given
+            when(ramsRepository.findById(1L)).thenReturn(Optional.of(testRAMS));
+            when(operativeRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.signRAMS(1L, 999L, 1L));
+        }
+
+        @Test
+        @DisplayName("signRAMS throws exception when site not found")
+        void signRAMS_throwsException_whenSiteNotFound() {
+            // Given
+            when(ramsRepository.findById(1L)).thenReturn(Optional.of(testRAMS));
+            when(operativeRepository.findById(1L)).thenReturn(Optional.of(testOperative));
+            when(siteRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.signRAMS(1L, 1L, 999L));
         }
     }
 
@@ -242,289 +431,197 @@ class HealthSafetyServiceImplTest {
     class PermitTests {
 
         @Test
-        @DisplayName("createPermit returns null (stub implementation)")
-        void createPermit_returnsNull() {
+        @DisplayName("createPermit creates permit to dig successfully")
+        void createPermit_createsPermitToDig() {
             // Given
-            Object request = new Object();
+            Map<String, Object> request = new HashMap<>();
+            request.put("permitType", "PERMIT_TO_DIG");
+            request.put("siteId", "1");
+            request.put("worksDescription", "Excavation for foundations");
+            request.put("startDate", "2024-03-01");
+            request.put("endDate", "2024-03-15");
+
+            when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
+            when(permitToDigRepository.save(any(PermitToDig.class))).thenAnswer(invocation -> {
+                PermitToDig p = invocation.getArgument(0);
+                p.setId(1L);
+                return p;
+            });
 
             // When
-            Object result = healthSafetyService.createPermit(request);
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.createPermit(request);
 
             // Then
-            assertNull(result);
+            assertNotNull(result);
+            assertEquals(1L, result.get("id"));
+            assertNotNull(result.get("permitNumber"));
+            assertTrue(result.get("permitNumber").toString().startsWith("PTD-"));
+            assertEquals("DRAFT", result.get("status"));
+            verify(permitToDigRepository).save(any(PermitToDig.class));
         }
 
         @Test
-        @DisplayName("approvePermit returns null (stub implementation)")
-        void approvePermit_returnsNull() {
-            // When
-            Object result = healthSafetyService.approvePermit(1L);
-
-            // Then
-            assertNull(result);
-        }
-
-        @Test
-        @DisplayName("Permit types should include hot work, excavation, etc.")
-        void permitTypes() {
-            List<String> permitTypes = List.of(
-                "Hot Work",
-                "Excavation",
-                "Confined Space",
-                "Electrical",
-                "Working at Height"
-            );
-            
-            assertTrue(permitTypes.contains("Hot Work"));
-            assertTrue(permitTypes.contains("Excavation"));
-        }
-
-        @Test
-        @DisplayName("Permits should have expiry time")
-        void permitExpiryTime() {
-            // Permits typically expire at end of shift or specific time
-            int permitValidityHours = 8;  // Typical shift duration
-            
-            assertEquals(8, permitValidityHours);
-        }
-    }
-
-    // ================================================================
-    // INCIDENT REPORTING TESTS
-    // ================================================================
-
-    @Nested
-    @DisplayName("Incident Reporting Tests")
-    class IncidentReportingTests {
-
-        @Test
-        @DisplayName("createIncident returns null (stub implementation)")
-        void createIncident_returnsNull() {
+        @DisplayName("createPermit throws exception for unknown permit type")
+        void createPermit_throwsException_forUnknownPermitType() {
             // Given
-            Object request = new Object();
+            Map<String, Object> request = new HashMap<>();
+            request.put("permitType", "UNKNOWN_TYPE");
+            request.put("siteId", "1");
+
+            // When/Then
+            assertThrows(IllegalArgumentException.class, () -> 
+                healthSafetyService.createPermit(request));
+        }
+
+        @Test
+        @DisplayName("createPermit throws exception when site not found")
+        void createPermit_throwsException_whenSiteNotFound() {
+            // Given
+            Map<String, Object> request = new HashMap<>();
+            request.put("permitType", "PERMIT_TO_DIG");
+            request.put("siteId", "999");
+
+            when(siteRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.createPermit(request));
+        }
+
+        @Test
+        @DisplayName("createPermit throws exception for invalid request type")
+        void createPermit_throwsException_forInvalidRequestType() {
+            // Given
+            Object invalidRequest = new Object();
+
+            // When/Then
+            assertThrows(IllegalArgumentException.class, () -> 
+                healthSafetyService.createPermit(invalidRequest));
+        }
+
+        @Test
+        @DisplayName("approvePermit updates permit status to ISSUED")
+        void approvePermit_updatesStatus() {
+            // Given
+            when(permitToDigRepository.findById(1L)).thenReturn(Optional.of(testPermit));
+            when(permitToDigRepository.save(any(PermitToDig.class))).thenAnswer(invocation -> {
+                PermitToDig p = invocation.getArgument(0);
+                return p;
+            });
 
             // When
-            Object result = healthSafetyService.createIncident(request);
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.approvePermit(1L);
 
             // Then
-            assertNull(result);
+            assertNotNull(result);
+            assertEquals(1L, result.get("id"));
+            assertEquals("ISSUED", result.get("status"));
+            assertNotNull(result.get("issuedDate"));
+            verify(permitToDigRepository).save(any(PermitToDig.class));
         }
 
         @Test
-        @DisplayName("RIDDOR reportable incidents must be reported within time limits")
-        void riddorReportingTimeLimits() {
-            // Over-7-day injury: within 15 days
-            // Over-3-day injury: within 10 days  
-            // Dangerous occurrence: within 10 days
-            // Death/major injury: immediate notification (by phone) + written within 10 days
-            
-            int over7DayInjuryDays = 15;
-            int dangerousOccurrenceDays = 10;
-            
-            assertEquals(15, over7DayInjuryDays);
-            assertEquals(10, dangerousOccurrenceDays);
-        }
+        @DisplayName("approvePermit throws exception when permit not found")
+        void approvePermit_throwsException_whenNotFound() {
+            // Given
+            when(permitToDigRepository.findById(999L)).thenReturn(Optional.empty());
 
-        @Test
-        @DisplayName("Incident severity classification")
-        void incidentSeverityClassification() {
-            // Severity levels:
-            // 1. Near Miss - no injury/damage
-            // 2. Minor - first aid treatment
-            // 3. Lost Time Injury - >3 days absence
-            // 4. Major Injury - RIDDOR reportable
-            // 5. Fatality
-            
-            List<String> severityLevels = List.of(
-                "Near Miss",
-                "Minor",
-                "Lost Time Injury",
-                "Major Injury",
-                "Fatality"
-            );
-            
-            assertEquals(5, severityLevels.size());
-        }
-
-        @Test
-        @DisplayName("Incident report should capture 5 W's")
-        void incidentReportCaptures5Ws() {
-            // What happened
-            // Where it happened
-            // When it happened
-            // Who was involved
-            // Why it happened
-            
-            List<String> fiveWs = List.of(
-                "What",
-                "Where", 
-                "When",
-                "Who",
-                "Why"
-            );
-            
-            assertEquals(5, fiveWs.size());
-        }
-
-        @Test
-        @DisplayName("Root cause analysis should identify contributing factors")
-        void rootCauseAnalysis() {
-            // Contributing factors:
-            // 1. Equipment/Materials
-            // 2. Procedures/Methods
-            // 3. People/Personnel
-            // 4. Environment
-            // 5. Management factors
-            
-            List<String> contributingFactors = List.of(
-                "Equipment/Materials",
-                "Procedures/Methods",
-                "People/Personnel",
-                "Environment",
-                "Management"
-            );
-            
-            assertEquals(5, contributingFactors.size());
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.approvePermit(999L));
         }
     }
 
     // ================================================================
-    // INCIDENT WORKFLOW TESTS
+    // INCIDENT REPORT TESTS
     // ================================================================
 
     @Nested
-    @DisplayName("Incident Workflow Tests")
-    class IncidentWorkflowTests {
+    @DisplayName("Incident Report Tests")
+    class IncidentReportTests {
 
         @Test
-        @DisplayName("Incident workflow: Report -> Investigate -> Corrective Action -> Close")
-        void incidentWorkflowSteps() {
-            List<String> workflowSteps = List.of(
-                "1. Immediate Response",
-                "2. Report Incident",
-                "3. Initial Investigation",
-                "4. Root Cause Analysis",
-                "5. Corrective Actions",
-                "6. Implement Changes",
-                "7. Close Incident"
-            );
-            
-            assertEquals(7, workflowSteps.size());
+        @DisplayName("createIncident creates incident report successfully")
+        void createIncident_createsReport() {
+            // Given
+            Map<String, Object> request = new HashMap<>();
+            request.put("siteId", "1");
+            request.put("incidentDate", "2024-03-01");
+            request.put("description", "Slip and fall incident");
+            request.put("type", "NEAR_MISS");
+            request.put("severity", "MINOR");
+            request.put("locationDescription", "Main entrance");
+
+            when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
+            when(incidentReportRepository.save(any(IncidentReport.class))).thenAnswer(invocation -> {
+                IncidentReport i = invocation.getArgument(0);
+                i.setId(1L);
+                return i;
+            });
+
+            // When
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.createIncident(request);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1L, result.get("id"));
+            assertNotNull(result.get("reportNumber"));
+            assertTrue(result.get("reportNumber").toString().startsWith("INC-"));
+            assertEquals("DRAFT", result.get("status"));
+            verify(incidentReportRepository).save(any(IncidentReport.class));
         }
 
         @Test
-        @DisplayName("Investigation should be completed within 7 days")
-        void investigationTimeLimit() {
-            LocalDate incidentDate = LocalDate.of(2024, 3, 1);
-            LocalDate investigationDeadline = incidentDate.plusDays(7);
-            
-            assertEquals(LocalDate.of(2024, 3, 8), investigationDeadline);
+        @DisplayName("createIncident with operative creates report with operative link")
+        void createIncident_withOperative() {
+            // Given
+            Map<String, Object> request = new HashMap<>();
+            request.put("siteId", "1");
+            request.put("incidentDate", "2024-03-01");
+            request.put("description", "Equipment malfunction");
+            request.put("type", "NEAR_MISS");
+            request.put("severity", "MINOR");
+            request.put("operativeId", "1");
+
+            when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
+            when(operativeRepository.findById(1L)).thenReturn(Optional.of(testOperative));
+            when(incidentReportRepository.save(any(IncidentReport.class))).thenAnswer(invocation -> {
+                IncidentReport i = invocation.getArgument(0);
+                i.setId(1L);
+                return i;
+            });
+
+            // When
+            Map<String, Object> result = (Map<String, Object>) healthSafetyService.createIncident(request);
+
+            // Then
+            assertNotNull(result);
+            verify(incidentReportRepository).save(any(IncidentReport.class));
         }
 
         @Test
-        @DisplayName("Corrective actions should be tracked to completion")
-        void correctiveActionsTracked() {
-            boolean actionsTracked = true;
-            boolean actionsVerified = true;
-            
-            assertTrue(actionsTracked);
-            assertTrue(actionsVerified);
-        }
-    }
+        @DisplayName("createIncident throws exception when site not found")
+        void createIncident_throwsException_whenSiteNotFound() {
+            // Given
+            Map<String, Object> request = new HashMap<>();
+            request.put("siteId", "999");
 
-    // ================================================================
-    // RAMS EXPIRY TRACKING TESTS
-    // ================================================================
+            when(siteRepository.findById(999L)).thenReturn(Optional.empty());
 
-    @Nested
-    @DisplayName("RAMS Expiry Tracking Tests")
-    class RAMSExpiryTrackingTests {
-
-        @Test
-        @DisplayName("Documents expiring within 30 days should be flagged")
-        void documentsWithin30DaysFlagged() {
-            LocalDate today = LocalDate.of(2024, 6, 15);
-            LocalDate expiryDate = LocalDate.of(2024, 7, 1);
-            int daysUntilExpiry = (int) java.time.temporal.ChronoUnit.DAYS.between(today, expiryDate);
-            
-            boolean shouldFlag = daysUntilExpiry <= 30 && daysUntilExpiry > 0;
-            
-            assertEquals(16, daysUntilExpiry);
-            assertTrue(shouldFlag);
+            // When/Then
+            assertThrows(ResourceNotFoundException.class, () -> 
+                healthSafetyService.createIncident(request));
         }
 
         @Test
-        @DisplayName("Documents expired should be flagged as overdue")
-        void expiredDocumentsOverdue() {
-            LocalDate today = LocalDate.of(2024, 8, 1);
-            LocalDate expiryDate = LocalDate.of(2024, 7, 1);
-            
-            boolean isExpired = today.isAfter(expiryDate);
-            
-            assertTrue(isExpired);
-        }
+        @DisplayName("createIncident throws exception for invalid request type")
+        void createIncident_throwsException_forInvalidRequestType() {
+            // Given
+            Object invalidRequest = new Object();
 
-        @Test
-        @DisplayName("Valid RAMS should allow site access")
-        void validRAMSAllowsAccess() {
-            LocalDate today = LocalDate.of(2024, 6, 15);
-            LocalDate expiryDate = LocalDate.of(2024, 7, 1);
-            
-            boolean isValid = !today.isAfter(expiryDate);
-            
-            assertTrue(isValid);
-        }
-
-        @Test
-        @DisplayName("RAMS renewal process timeline")
-        void ramsRenewalTimeline() {
-            // Start review 30 days before expiry
-            LocalDate expiryDate = LocalDate.of(2024, 7, 1);
-            LocalDate reviewStartDate = expiryDate.minusDays(30);
-            LocalDate renewalDate = expiryDate.minusDays(7);  // Final reminder
-            
-            assertEquals(LocalDate.of(2024, 6, 1), reviewStartDate);
-            assertEquals(LocalDate.of(2024, 6, 24), renewalDate);
-        }
-    }
-
-    // ================================================================
-    // COMPLIANCE TESTS
-    // ================================================================
-
-    @Nested
-    @DisplayName("Compliance Tests")
-    class ComplianceTests {
-
-        @Test
-        @DisplayName("H&S documentation retention period")
-        void documentRetentionPeriod() {
-            // H&S records should be kept for minimum 3 years
-            int retentionYears = 3;
-            
-            assertEquals(3, retentionYears);
-        }
-
-        @Test
-        @DisplayName("Training records must be kept up to date")
-        void trainingRecordsUptoDate() {
-            LocalDate lastTrainingDate = LocalDate.of(2024, 1, 15);
-            LocalDate today = LocalDate.of(2024, 6, 15);
-            int monthsSinceTraining = (int) java.time.temporal.ChronoUnit.MONTHS.between(lastTrainingDate, today);
-            
-            boolean trainingCurrent = monthsSinceTraining <= 12;
-            
-            assertEquals(5, monthsSinceTraining);
-            assertTrue(trainingCurrent);
-        }
-
-        @Test
-        @DisplayName("Site inspection frequency")
-        void siteInspectionFrequency() {
-            // Weekly site inspections recommended
-            int weeklyInspections = 1;
-            
-            assertEquals(1, weeklyInspections);
+            // When/Then
+            assertThrows(IllegalArgumentException.class, () -> 
+                healthSafetyService.createIncident(invalidRequest));
         }
     }
 }

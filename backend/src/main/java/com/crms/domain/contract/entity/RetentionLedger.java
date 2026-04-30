@@ -35,9 +35,9 @@ public class RetentionLedger extends BaseEntity {
     @Column(precision = 14, scale = 2)
     private BigDecimal balance;
 
-    @OneToMany(mappedBy = "retentionLedger", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "retentionLedger", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<RetentionMovement> retentionMovements = new ArrayList<>();
+    private List<RetentionMovement> movements = new ArrayList<>();
 
     @PrePersist
     @PreUpdate

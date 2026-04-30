@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class DefectController {
     private final DefectService service;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List defects", description = "Get paginated list of defects")
     public ResponseEntity<ApiResponse<PageResponse<DefectResponse>>> findAll(
             @RequestParam(required = false) Long contractId,
@@ -48,6 +50,7 @@ public class DefectController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get defect", description = "Get defect by ID")
     public ResponseEntity<ApiResponse<DefectResponse>> findById(@PathVariable Long id) {
         DefectResponse response = service.findById(id);
@@ -55,6 +58,7 @@ public class DefectController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create defect", description = "Create a new defect")
     public ResponseEntity<ApiResponse<DefectResponse>> create(@Valid @RequestBody DefectRequest request) {
         DefectResponse response = service.create(request);
@@ -62,6 +66,7 @@ public class DefectController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update defect", description = "Update defect details")
     public ResponseEntity<ApiResponse<DefectResponse>> update(
             @PathVariable Long id,
@@ -71,6 +76,7 @@ public class DefectController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete defect", description = "Delete defect")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         service.delete(id);
@@ -78,6 +84,7 @@ public class DefectController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update defect status", description = "Update defect status")
     public ResponseEntity<ApiResponse<DefectResponse>> updateStatus(
             @PathVariable Long id,
@@ -87,6 +94,7 @@ public class DefectController {
     }
 
     @PatchMapping("/{id}/operative")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Assign operative", description = "Assign operative to defect")
     public ResponseEntity<ApiResponse<DefectResponse>> assignOperative(
             @PathVariable Long id,
@@ -96,6 +104,7 @@ public class DefectController {
     }
 
     @PatchMapping("/{id}/contractor")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Assign contractor", description = "Assign contractor to defect")
     public ResponseEntity<ApiResponse<DefectResponse>> assignContractor(
             @PathVariable Long id,

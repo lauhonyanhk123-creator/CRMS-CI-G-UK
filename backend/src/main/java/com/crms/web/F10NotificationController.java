@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ public class F10NotificationController {
     private final F10NotificationService f10NotificationService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List F10 notifications", description = "Get paginated list of F10 notifications")
     public ResponseEntity<ApiResponse<PageResponse<F10NotificationResponse>>> findAll(
             @RequestParam(required = false) Long contractId,
@@ -43,6 +45,7 @@ public class F10NotificationController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create F10 notification", description = "Create a new F10 notification")
     public ResponseEntity<ApiResponse<F10NotificationResponse>> create(
             @RequestParam Long contractId,
@@ -52,6 +55,7 @@ public class F10NotificationController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get F10 notification", description = "Get F10 notification by ID")
     public ResponseEntity<ApiResponse<F10NotificationResponse>> findById(@PathVariable Long id) {
         F10NotificationResponse response = f10NotificationService.findById(id);
@@ -59,6 +63,7 @@ public class F10NotificationController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update F10 notification", description = "Update F10 notification details")
     public ResponseEntity<ApiResponse<F10NotificationResponse>> update(
             @PathVariable Long id,
@@ -68,6 +73,7 @@ public class F10NotificationController {
     }
 
     @PostMapping("/{id}/submit-hse")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Submit to HSE", description = "Submit notification to HSE")
     public ResponseEntity<ApiResponse<F10NotificationResponse>> submitToHSE(@PathVariable Long id) {
         F10NotificationResponse response = f10NotificationService.submitToHSE(id);
@@ -75,6 +81,7 @@ public class F10NotificationController {
     }
 
     @PostMapping("/{id}/acknowledge-hdf")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Acknowledge HDF", description = "Acknowledge HDF submission")
     public ResponseEntity<ApiResponse<F10NotificationResponse>> acknowledgeHDF(@PathVariable Long id) {
         F10NotificationResponse response = f10NotificationService.acknowledgeHDF(id);
@@ -82,6 +89,7 @@ public class F10NotificationController {
     }
 
     @GetMapping("/contract/{contractId}/active")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Active by contract", description = "Get active F10 for contract")
     public ResponseEntity<ApiResponse<F10NotificationResponse>> findActiveByContract(@PathVariable Long contractId) {
         F10NotificationResponse response = f10NotificationService.findActiveByContractId(contractId);
@@ -89,6 +97,7 @@ public class F10NotificationController {
     }
 
     @GetMapping("/by-number/{notificationNumber}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "By notification number", description = "Find by notification number")
     public ResponseEntity<ApiResponse<F10NotificationResponse>> findByNotificationNumber(
             @PathVariable String notificationNumber) {
@@ -97,6 +106,7 @@ public class F10NotificationController {
     }
 
     @GetMapping("/expiring")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Expiring notifications", description = "Find notifications expiring before date")
     public ResponseEntity<ApiResponse<PageResponse<F10NotificationResponse>>> findExpiring(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {

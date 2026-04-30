@@ -2,7 +2,7 @@ package com.crms.dto.request;
 
 import com.crms.domain.common.entity.Address;
 import com.crms.domain.company.enums.CompanyType;
-import com.crms.domain.subcontractor.enums.CisStatus;
+import com.crms.domain.company.enums.CisStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

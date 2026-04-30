@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class SignOffController {
     private final SignOffService service;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List sign-offs", description = "Get paginated list of sign-offs")
     public ResponseEntity<ApiResponse<PageResponse<SignOffResponse>>> findAll(
             @RequestParam(required = false) Long contractId,
@@ -48,6 +50,7 @@ public class SignOffController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get sign-off", description = "Get sign-off by ID")
     public ResponseEntity<ApiResponse<SignOffResponse>> findById(@PathVariable Long id) {
         SignOffResponse response = service.findById(id);
@@ -55,6 +58,7 @@ public class SignOffController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create sign-off", description = "Create a new sign-off record")
     public ResponseEntity<ApiResponse<SignOffResponse>> create(@Valid @RequestBody SignOffRequest request) {
         SignOffResponse response = service.create(request);
@@ -62,6 +66,7 @@ public class SignOffController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update sign-off", description = "Update sign-off details")
     public ResponseEntity<ApiResponse<SignOffResponse>> update(
             @PathVariable Long id,
@@ -71,6 +76,7 @@ public class SignOffController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete sign-off", description = "Delete sign-off")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         service.delete(id);
@@ -78,6 +84,7 @@ public class SignOffController {
     }
 
     @PostMapping("/{id}/approve")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Approve sign-off", description = "Approve a sign-off with signature")
     public ResponseEntity<ApiResponse<SignOffResponse>> approve(
             @PathVariable Long id,
@@ -87,6 +94,7 @@ public class SignOffController {
     }
 
     @PostMapping("/{id}/refuse")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Refuse sign-off", description = "Refuse a sign-off with conditions")
     public ResponseEntity<ApiResponse<SignOffResponse>> refuse(
             @PathVariable Long id,

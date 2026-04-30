@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class RAMSTemplateController {
     private final RAMSTemplateService ramsTemplateService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List RAMS templates", description = "Get paginated list of RAMS templates")
     public ResponseEntity<ApiResponse<PageResponse<RAMSTemplateResponse>>> findAll(
             @RequestParam(required = false) String trade,
@@ -44,6 +46,7 @@ public class RAMSTemplateController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create RAMS template", description = "Create a new RAMS template")
     public ResponseEntity<ApiResponse<RAMSTemplateResponse>> create(
             @Valid @RequestBody RAMSTemplateRequest request) {
@@ -52,6 +55,7 @@ public class RAMSTemplateController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get RAMS template", description = "Get RAMS template by ID")
     public ResponseEntity<ApiResponse<RAMSTemplateResponse>> findById(@PathVariable Long id) {
         RAMSTemplateResponse response = ramsTemplateService.findById(id);
@@ -59,6 +63,7 @@ public class RAMSTemplateController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update RAMS template", description = "Update RAMS template details")
     public ResponseEntity<ApiResponse<RAMSTemplateResponse>> update(
             @PathVariable Long id,
@@ -68,6 +73,7 @@ public class RAMSTemplateController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete RAMS template", description = "Soft delete RAMS template")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         ramsTemplateService.delete(id);
@@ -75,6 +81,7 @@ public class RAMSTemplateController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List active templates", description = "Get all active RAMS templates")
     public ResponseEntity<ApiResponse<List<RAMSTemplateResponse>>> findActive() {
         List<RAMSTemplateResponse> response = ramsTemplateService.findActive();
@@ -82,6 +89,7 @@ public class RAMSTemplateController {
     }
 
     @GetMapping("/trades")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List trades", description = "Get distinct trade types")
     public ResponseEntity<ApiResponse<List<String>>> findDistinctTrades() {
         List<String> trades = ramsTemplateService.findDistinctTrades();
@@ -89,6 +97,7 @@ public class RAMSTemplateController {
     }
 
     @GetMapping("/by-trade/{trade}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "By trade", description = "Get RAMS templates by trade")
     public ResponseEntity<ApiResponse<List<RAMSTemplateResponse>>> findByTrade(@PathVariable String trade) {
         List<RAMSTemplateResponse> response = ramsTemplateService.findByTrade(trade);
@@ -96,6 +105,7 @@ public class RAMSTemplateController {
     }
 
     @PostMapping("/{id}/copy")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Copy template", description = "Create a copy of existing template")
     public ResponseEntity<ApiResponse<RAMSTemplateResponse>> copyTemplate(
             @PathVariable Long id,

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,6 +25,7 @@ public class ProcurementController {
     // --- Purchase Requisitions ---
 
     @GetMapping("/purchase-requisitions")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List requisitions", description = "Get paginated list of purchase requisitions")
     public ResponseEntity<ApiResponse<Object>> findRequisitions(
             @RequestParam(required = false) String status,
@@ -40,6 +42,7 @@ public class ProcurementController {
     }
 
     @PostMapping("/purchase-requisitions")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create requisition", description = "Create a new purchase requisition")
     public ResponseEntity<ApiResponse<Object>> createRequisition(@RequestBody Object request) {
         Object response = procurementService.createRequisition(request);
@@ -47,6 +50,7 @@ public class ProcurementController {
     }
 
     @PostMapping("/purchase-requisitions/{id}/approve")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Approve requisition")
     public ResponseEntity<ApiResponse<Object>> approveRequisition(@PathVariable Long id) {
         Object response = procurementService.approveRequisition(id);
@@ -54,6 +58,7 @@ public class ProcurementController {
     }
 
     @PostMapping("/purchase-requisitions/{id}/create-po")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create purchase order from requisition")
     public ResponseEntity<ApiResponse<Object>> createPO(@PathVariable Long id) {
         Object response = procurementService.createPO(id);
@@ -63,6 +68,7 @@ public class ProcurementController {
     // --- Purchase Orders ---
 
     @GetMapping("/purchase-orders")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List purchase orders", description = "Get paginated list of purchase orders")
     public ResponseEntity<ApiResponse<PageResponse<?>>> findPurchaseOrders(
             @RequestParam(required = false) String status,
@@ -79,6 +85,7 @@ public class ProcurementController {
     // --- Delivery Notes ---
 
     @GetMapping("/delivery-notes")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List delivery notes")
     public ResponseEntity<ApiResponse<Object>> findDeliveryNotes(
             @RequestParam(required = false) Long orderId) {

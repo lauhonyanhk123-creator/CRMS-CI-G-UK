@@ -1,5 +1,6 @@
 package com.crms.dto.response;
 
+import com.crms.domain.healthsafety.entity.PermitToDig;
 import com.crms.domain.healthsafety.enums.PermitStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,4 +52,42 @@ public class PermitToDigResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public static PermitToDigResponse fromEntity(PermitToDig entity) {
+        return PermitToDigResponse.builder()
+                .id(entity.getId())
+                .siteId(entity.getSite() != null ? entity.getSite().getId() : null)
+                .siteName(entity.getSite() != null ? entity.getSite().getName() : null)
+                .permitNumber(entity.getPermitNumber())
+                .worksDescription(entity.getWorksDescription())
+                .startDate(entity.getStartDate())
+                .endDate(entity.getEndDate())
+                .status(entity.getStatus())
+                .lsbudReference(entity.getLsbudReference())
+                .trialHoleCount(entity.getTrialHoleCount())
+                .trialHolePhotoRef(entity.getTrialHolePhotoRef())
+                .catScanRef(entity.getCatScanRef())
+                .catScanDate(entity.getCatScanDate())
+                .catScanDeviceSerial(entity.getCatScanDeviceSerial())
+                .catScanLastCalibrationDate(entity.getCatScanLastCalibrationDate())
+                .supervisorApprovalRef(entity.getSupervisorApprovalRef())
+                .supervisorApprovalDate(entity.getSupervisorApprovalDate())
+                .documentRef(entity.getDocumentRef())
+                .requestedBy(entity.getRequestedBy())
+                .requestedDate(entity.getRequestedDate())
+                .precheckedBy(entity.getPrecheckedBy())
+                .precheckedDate(entity.getPrecheckedDate())
+                .issuedBy(entity.getIssuedBy())
+                .issuedDate(entity.getIssuedDate())
+                .completedBy(entity.getCompletedBy())
+                .completedDate(entity.getCompletedDate())
+                .cancellationReason(entity.getCancellationReason())
+                .cancelledBy(entity.getCancelledBy())
+                .cancelledDate(entity.getCancelledDate())
+                .extensionCount(entity.getExtensionCount())
+                .lastExtensionDate(entity.getLastExtensionDate())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
 }

@@ -14,10 +14,16 @@ import java.time.LocalDate;
  * Source: https://www.bcis.co.uk/
  */
 @Entity
-@Table(name = "bcis_indices", indexes = {
-    @Index(name = "idx_bcis_year_month", columnList = "year, month"),
-    @Index(name = "idx_bcis_series", columnList = "series")
-})
+@Table(name = "bcis_indices", 
+    indexes = {
+        @Index(name = "idx_bcis_year_month", columnList = "year, month"),
+        @Index(name = "idx_bcis_series", columnList = "series"),
+        @Index(name = "idx_bcis_series_year_month", columnList = "series, year, month", unique = true)
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_bcis_series_year_month", columnNames = {"series", "year", "month"})
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor
