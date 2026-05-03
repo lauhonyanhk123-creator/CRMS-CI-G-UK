@@ -21,6 +21,10 @@ public class PayLessNoticeRequest {
     
     @NotNull(message = "Sum considered due is required")
     private BigDecimal sumConsideredDue;
+
+    private BigDecimal amount;
+
+    private String reason;
     
     @Builder.Default
     private String currency = "GBP";

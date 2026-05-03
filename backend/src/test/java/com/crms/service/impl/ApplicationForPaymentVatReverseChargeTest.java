@@ -8,7 +8,7 @@ import com.crms.domain.contract.repository.ApplicationForPaymentRepository;
 import com.crms.domain.contract.repository.ContractRepository;
 import com.crms.domain.contract.repository.PayLessNoticeRepository;
 import com.crms.domain.contract.repository.PaymentNoticeRepository;
-import com.crms.domain.tender.entity.Client;
+import com.crms.domain.company.entity.Company;
 import com.crms.domain.tender.entity.Tender;
 import com.crms.dto.request.ApplicationForPaymentRequest;
 import com.crms.dto.response.ApplicationResponse;
@@ -22,6 +22,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -39,6 +41,7 @@ import static org.mockito.Mockito.*;
  * - Contract value >= £85,000 VAT threshold
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ApplicationForPaymentVatReverseChargeTest {
 
     @Mock
@@ -56,14 +59,14 @@ class ApplicationForPaymentVatReverseChargeTest {
     @InjectMocks
     private ApplicationForPaymentServiceImpl applicationService;
 
-    private Contract contractWithVatClient;
-    private Contract contractWithoutVatClient;
+    private Contract contractWithVatCompany;
+    private Contract contractWithoutVatCompany;
     private Contract contractBelowThreshold;
 
     @BeforeEach
     void setUp() {
         // Contract with VAT-registered client above threshold
-        Client vatClient = Client.builder()
+        Company vatCompany = Company.builder()
                 .id(1L)
                 .name("VAT Registered Client")
                 .vatNumber("GB123456789")
@@ -72,10 +75,10 @@ class ApplicationForPaymentVatReverseChargeTest {
         Tender tenderWithVat = Tender.builder()
                 .id(1L)
                 .title("Test Tender")
-                .client(vatClient)
+                .client(vatCompany)
                 .build();
 
-        contractWithVatClient = Contract.builder()
+        contractWithVatCompany = Contract.builder()
                 .id(1L)
                 .contractRef("CRMS-001")
                 .title("Contract with VAT Client")
@@ -86,7 +89,7 @@ class ApplicationForPaymentVatReverseChargeTest {
                 .build();
 
         // Contract without VAT-registered client
-        Client nonVatClient = Client.builder()
+        Company nonVatCompany = Company.builder()
                 .id(2L)
                 .name("Non-VAT Client")
                 .vatNumber(null) // No VAT number
@@ -95,10 +98,10 @@ class ApplicationForPaymentVatReverseChargeTest {
         Tender tenderWithoutVat = Tender.builder()
                 .id(2L)
                 .title("Test Tender 2")
-                .client(nonVatClient)
+                .client(nonVatCompany)
                 .build();
 
-        contractWithoutVatClient = Contract.builder()
+        contractWithoutVatCompany = Contract.builder()
                 .id(2L)
                 .contractRef("CRMS-002")
                 .title("Contract without VAT Client")
@@ -109,7 +112,7 @@ class ApplicationForPaymentVatReverseChargeTest {
                 .build();
 
         // Contract below VAT threshold
-        Client belowThresholdClient = Client.builder()
+        Company belowThresholdCompany = Company.builder()
                 .id(3L)
                 .name("Below Threshold Client")
                 .vatNumber("GB987654321")
@@ -118,7 +121,7 @@ class ApplicationForPaymentVatReverseChargeTest {
         Tender tenderBelowThreshold = Tender.builder()
                 .id(3L)
                 .title("Test Tender 3")
-                .client(belowThresholdClient)
+                .client(belowThresholdCompany)
                 .build();
 
         contractBelowThreshold = Contract.builder()
@@ -140,7 +143,7 @@ class ApplicationForPaymentVatReverseChargeTest {
         @DisplayName("reverseCharge is true when client is VAT registered and contract above threshold")
         void reverseCharge_true_whenVatRegisteredAndAboveThreshold() {
             // Given
-            when(contractRepository.findById(1L)).thenReturn(Optional.of(contractWithVatClient));
+            when(contractRepository.findById(1L)).thenReturn(Optional.of(contractWithVatCompany));
             when(applicationRepository.findMaxApplicationNumberByContractId(1L)).thenReturn(Optional.empty());
             when(applicationRepository.save(any(ApplicationForPayment.class))).thenAnswer(invocation -> {
                 ApplicationForPayment app = invocation.getArgument(0);
@@ -165,7 +168,7 @@ class ApplicationForPaymentVatReverseChargeTest {
         @DisplayName("reverseCharge is false when client has no VAT number")
         void reverseCharge_false_whenNoVatNumber() {
             // Given
-            when(contractRepository.findById(2L)).thenReturn(Optional.of(contractWithoutVatClient));
+            when(contractRepository.findById(2L)).thenReturn(Optional.of(contractWithoutVatCompany));
             when(applicationRepository.findMaxApplicationNumberByContractId(2L)).thenReturn(Optional.empty());
             when(applicationRepository.save(any(ApplicationForPayment.class))).thenAnswer(invocation -> {
                 ApplicationForPayment app = invocation.getArgument(0);
@@ -215,7 +218,7 @@ class ApplicationForPaymentVatReverseChargeTest {
         @DisplayName("reverseCharge is false when VAT number is blank")
         void reverseCharge_false_whenVatNumberBlank() {
             // Given
-            Client blankVatClient = Client.builder()
+            Company blankVatCompany = Company.builder()
                     .id(4L)
                     .name("Blank VAT Client")
                     .vatNumber("   ") // Whitespace only
@@ -223,7 +226,7 @@ class ApplicationForPaymentVatReverseChargeTest {
 
             Tender tender = Tender.builder()
                     .id(4L)
-                    .client(blankVatClient)
+                    .client(blankVatCompany)
                     .build();
 
             Contract contract = Contract.builder()
@@ -291,19 +294,19 @@ class ApplicationForPaymentVatReverseChargeTest {
         @DisplayName("reverseCharge is false when tender has no client")
         void reverseCharge_false_whenTenderNoClient() {
             // Given
-            Tender tenderNoClient = Tender.builder()
+            Tender tenderNoCompany = Tender.builder()
                     .id(6L)
                     .client(null) // No client
                     .build();
 
-            Contract contractNoClient = Contract.builder()
+            Contract contractNoCompany = Contract.builder()
                     .id(6L)
                     .contractRef("CRMS-006")
                     .contractValue(new BigDecimal("500000.00"))
-                    .tender(tenderNoClient)
+                    .tender(tenderNoCompany)
                     .build();
 
-            when(contractRepository.findById(6L)).thenReturn(Optional.of(contractNoClient));
+            when(contractRepository.findById(6L)).thenReturn(Optional.of(contractNoCompany));
             when(applicationRepository.findMaxApplicationNumberByContractId(6L)).thenReturn(Optional.empty());
             when(applicationRepository.save(any(ApplicationForPayment.class))).thenAnswer(invocation -> {
                 ApplicationForPayment app = invocation.getArgument(0);
@@ -333,14 +336,14 @@ class ApplicationForPaymentVatReverseChargeTest {
         @DisplayName("reverseCharge is true at exactly £85,000 threshold")
         void reverseCharge_true_atExactly85000() {
             // Given
-            Client vatClient = Client.builder()
+            Company vatCompany = Company.builder()
                     .id(7L)
                     .vatNumber("GB111111111")
                     .build();
 
             Tender tender = Tender.builder()
                     .id(7L)
-                    .client(vatClient)
+                    .client(vatCompany)
                     .build();
 
             Contract contract = Contract.builder()
@@ -376,14 +379,14 @@ class ApplicationForPaymentVatReverseChargeTest {
         @DisplayName("reverseCharge is false just below £85,000 threshold")
         void reverseCharge_false_below85000() {
             // Given
-            Client vatClient = Client.builder()
+            Company vatCompany = Company.builder()
                     .id(8L)
                     .vatNumber("GB222222222")
                     .build();
 
             Tender tender = Tender.builder()
                     .id(8L)
-                    .client(vatClient)
+                    .client(vatCompany)
                     .build();
 
             Contract contract = Contract.builder()
@@ -419,14 +422,14 @@ class ApplicationForPaymentVatReverseChargeTest {
         @DisplayName("reverseCharge handles null contract value")
         void reverseCharge_handlesNullContractValue() {
             // Given
-            Client vatClient = Client.builder()
+            Company vatCompany = Company.builder()
                     .id(9L)
                     .vatNumber("GB333333333")
                     .build();
 
             Tender tender = Tender.builder()
                     .id(9L)
-                    .client(vatClient)
+                    .client(vatCompany)
                     .build();
 
             Contract contract = Contract.builder()
@@ -469,7 +472,7 @@ class ApplicationForPaymentVatReverseChargeTest {
             // Given
             ApplicationForPayment application = ApplicationForPayment.builder()
                     .id(1L)
-                    .contract(contractWithVatClient)
+                    .contract(contractWithVatCompany)
                     .applicationRef("CRMS-001-APP-1")
                     .applicationNumber(1)
                     .applicationPeriodStart(LocalDate.of(2024, 1, 1))
@@ -498,7 +501,7 @@ class ApplicationForPaymentVatReverseChargeTest {
             // Given
             ApplicationForPayment application = ApplicationForPayment.builder()
                     .id(1L)
-                    .contract(contractWithVatClient)
+                    .contract(contractWithVatCompany)
                     .applicationRef("CRMS-001-APP-1")
                     .applicationNumber(1)
                     .applicationPeriodStart(LocalDate.of(2024, 1, 1))

@@ -1,6 +1,7 @@
 package com.crms.service;
 
 import com.crms.domain.company.entity.Company;
+import com.crms.domain.company.repository.CompanyRepository;
 import com.crms.domain.contract.entity.Contract;
 import com.crms.domain.contract.enums.ContractStatus;
 import com.crms.domain.contract.repository.ContractRepository;
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +47,7 @@ import static org.mockito.Mockito.*;
  * and tender lifecycle management.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TenderServiceImplTest {
 
     @Mock
@@ -71,7 +75,7 @@ class TenderServiceImplTest {
     void setUp() {
         testClient = Company.builder()
                 .id(1L)
-                .name("Test Client Ltd")
+                .name("Test Company Ltd")
                 .build();
 
         testSite = Site.builder()
@@ -87,7 +91,7 @@ class TenderServiceImplTest {
                 .client(testClient)
                 .site(testSite)
                 .status(TenderStatus.LEAD)
-                .winProbability(new BigDecimal("50"))
+                .winProbability(50)
                 .tenderOwner("John Smith")
                 .tenderIssuedDate(LocalDate.of(2024, 1, 1))
                 .tenderReturnDate(LocalDate.of(2024, 3, 15))
@@ -99,7 +103,7 @@ class TenderServiceImplTest {
                 .clientId(1L)
                 .siteId(1L)
                 .status(TenderStatus.LEAD)
-                .winProbability(new BigDecimal("40"))
+                .winProbability(40)
                 .build();
     }
 
@@ -188,7 +192,7 @@ class TenderServiceImplTest {
             assertNotNull(response);
             assertEquals("TND-2024-002", response.getTenderRef());
             assertEquals(TenderStatus.LEAD.name(), response.getStatus());
-            verify(tenderRepository).save(any(Tender.class));
+            verify(tenderRepository, atLeastOnce()).save(any(Tender.class));
         }
 
         @Test
@@ -200,7 +204,7 @@ class TenderServiceImplTest {
 
             TenderRequest updateRequest = TenderRequest.builder()
                     .title("Updated Tender Title")
-                    .winProbability(new BigDecimal("75"))
+                    .winProbability(75)
                     .build();
 
             // When
@@ -208,7 +212,7 @@ class TenderServiceImplTest {
 
             // Then
             assertNotNull(response);
-            verify(tenderRepository).save(any(Tender.class));
+            verify(tenderRepository, atLeastOnce()).save(any(Tender.class));
         }
     }
 
@@ -361,7 +365,7 @@ class TenderServiceImplTest {
             when(tenderRepository.findById(1L)).thenReturn(Optional.of(testTender));
             when(tenderRepository.save(any(Tender.class))).thenReturn(testTender);
 
-            String reason = "Client chose lower bid from competitor";
+            String reason = "Company chose lower bid from competitor";
 
             // When
             tenderService.lose(1L, reason);

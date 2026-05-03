@@ -46,7 +46,7 @@ public class SiteServiceImpl implements SiteService {
             Long clientId = Long.parseLong(params.get("clientId").toString());
             sitePage = siteRepository.findByClientId(clientId, pageable);
         } else if (params.containsKey("status") && params.get("status") != null) {
-            sitePage = siteRepository.findByStatus(params.get("status").toString(), pageable);
+            sitePage = siteRepository.findByStatus(com.crms.domain.site.enums.SiteStatus.valueOf(params.get("status").toString()), pageable);
         } else {
             sitePage = siteRepository.findAll(pageable);
         }

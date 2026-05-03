@@ -3,6 +3,7 @@ package com.crms.service.impl;
 import com.crms.domain.company.entity.Company;
 import com.crms.domain.company.repository.CompanyRepository;
 import com.crms.domain.healthsafety.entity.RAMSDocument;
+import com.crms.domain.healthsafety.entity.RAMSSignOn;
 import com.crms.domain.healthsafety.repository.RAMSDocumentRepository;
 import com.crms.domain.healthsafety.repository.RAMSSignOnRepository;
 import com.crms.domain.operative.entity.Card;
@@ -279,13 +280,11 @@ public class OperativeServiceImpl implements OperativeService {
                 && card.getExpiryDate().isAfter(LocalDate.now())
                 && (card.getCardType() == CardType.CSCS || card.getCardType() == CardType.CPCS);
 
-        boolean hasRams = !ramsSignOnRepository.findByOperativeId(operativeId).isEmpty()
-                && ramsSignOnRepository.findByOperativeId(operativeId).stream()
-                        .anyMatch(r -> r.isValid());
+        java.util.List<RAMSSignOn> ramsSignOns = ramsSignOnRepository == null ? java.util.Collections.emptyList() : ramsSignOnRepository.findByOperativeId(operativeId);
+        boolean hasRams = ramsSignOns != null && !ramsSignOns.isEmpty() && ramsSignOns.stream().anyMatch(RAMSSignOn::isValid);
 
-        boolean hasInduction = !inductionRepository.findByOperativeId(operativeId).isEmpty()
-                && inductionRepository.findByOperativeId(operativeId).stream()
-                        .anyMatch(Induction::isValid);
+        java.util.List<Induction> inductions = inductionRepository == null ? java.util.Collections.emptyList() : inductionRepository.findByOperativeId(operativeId);
+        boolean hasInduction = inductions != null && !inductions.isEmpty() && inductions.stream().anyMatch(Induction::isValid);
 
         boolean hasPlantTicket = qualificationRepository.findByOperativeId(operativeId).stream()
                 .anyMatch(q -> q.isValid() && (q.getQualificationType() == QualificationType.NPORS
@@ -305,7 +304,7 @@ public class OperativeServiceImpl implements OperativeService {
         } else if (!hasPlantTicket) {
             statusMessage = "Plant ticket recommended — contact supervisor";
         } else {
-            statusMessage = "All checks passed — gate open";
+            statusMessage = "All checks passed";
         }
 
         return SubbieGateStatus.builder()
@@ -330,11 +329,11 @@ public class OperativeServiceImpl implements OperativeService {
                 .anyMatch(c -> c.getExpiryDate() != null && c.getExpiryDate().isAfter(LocalDate.now())
                         && (c.getCardType() == CardType.CSCS || c.getCardType() == CardType.CPCS));
 
-        boolean hasRams = ramsSignOnRepository.findByOperativeId(operativeId).stream()
-                .anyMatch(RAMSSignOn::isValid);
+        java.util.List<RAMSSignOn> ramsSignOns = ramsSignOnRepository == null ? java.util.Collections.emptyList() : ramsSignOnRepository.findByOperativeId(operativeId);
+        boolean hasRams = ramsSignOns != null && !ramsSignOns.isEmpty() && ramsSignOns.stream().anyMatch(RAMSSignOn::isValid);
 
-        boolean hasInduction = inductionRepository.findByOperativeId(operativeId).stream()
-                .anyMatch(Induction::isValid);
+        java.util.List<Induction> inductions = inductionRepository == null ? java.util.Collections.emptyList() : inductionRepository.findByOperativeId(operativeId);
+        boolean hasInduction = inductions != null && !inductions.isEmpty() && inductions.stream().anyMatch(Induction::isValid);
 
         boolean hasPlantTicket = qualificationRepository.findByOperativeId(operativeId).stream()
                 .anyMatch(q -> q.isValid() && (q.getQualificationType() == QualificationType.NPORS

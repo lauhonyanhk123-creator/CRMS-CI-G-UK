@@ -23,6 +23,9 @@ import java.time.LocalTime;
 @Builder
 public class DeliveryNote extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "delivery_note_ref", nullable = false, unique = true)
     private String deliveryNoteRef;
 
@@ -57,4 +60,26 @@ public class DeliveryNote extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class DeliveryNoteBuilder {
+        public DeliveryNoteBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

@@ -16,6 +16,9 @@ import lombok.*;
 @Builder
 public class RAMSTemplate extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(nullable = false)
     private String title;
 
@@ -41,4 +44,26 @@ public class RAMSTemplate extends BaseEntity {
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class RAMSTemplateBuilder {
+        public RAMSTemplateBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

@@ -19,6 +19,9 @@ import java.math.BigDecimal;
 @Builder
 public class Material extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "material_code", nullable = false, unique = true)
     private String materialCode;
 
@@ -47,4 +50,26 @@ public class Material extends BaseEntity {
     public boolean hasSupplier() {
         return supplier != null;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class MaterialBuilder {
+        public MaterialBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

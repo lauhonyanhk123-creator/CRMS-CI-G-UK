@@ -21,12 +21,18 @@ import java.time.LocalDate;
 @Builder
 public class PermitToDig extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
 
     @Column(name = "permit_number", nullable = false, unique = true)
     private String permitNumber;
+
+    @Column(name = "location_description")
+    private String locationDescription;
 
     @Column(name = "works_description", columnDefinition = "TEXT")
     private String worksDescription;
@@ -118,4 +124,26 @@ public class PermitToDig extends BaseEntity {
         return status == PermitStatus.ISSUED || status == PermitStatus.IN_PROGRESS
                 && !now.isBefore(startDate) && !now.isAfter(endDate);
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PermitToDigBuilder {
+        public PermitToDigBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

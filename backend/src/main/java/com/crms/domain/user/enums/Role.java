@@ -1,6 +1,7 @@
 package com.crms.domain.user.enums;
 
 public enum Role {
+    ROLE_USER,
     ROLE_ADMIN,
     ROLE_OPS_DIRECTOR,
     ROLE_CONTRACTS_MANAGER,
@@ -14,5 +15,10 @@ public enum Role {
     ROLE_BID_MANAGER,
     ROLE_IT_ADMIN,
     ROLE_SUBCONTRACTOR,
-    ROLE_AUDITOR
+    ROLE_AUDITOR,
+    USER;
+
+    public String getName() {
+        return name();
+    }
 }

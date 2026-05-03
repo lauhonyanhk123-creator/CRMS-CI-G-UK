@@ -25,6 +25,9 @@ import java.util.List;
 @Builder
 public class PurchaseRequisition extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "requisition_ref", nullable = false, unique = true)
     private String requisitionRef;
 
@@ -64,4 +67,26 @@ public class PurchaseRequisition extends BaseEntity {
         lines.remove(line);
         line.setRequisition(null);
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PurchaseRequisitionBuilder {
+        public PurchaseRequisitionBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

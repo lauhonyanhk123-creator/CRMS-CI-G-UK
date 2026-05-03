@@ -14,7 +14,10 @@ import java.math.BigDecimal;
 public class TenderResponse {
     
     private Long id;
+    private Long siteId;
+    private String siteName;
     private String tenderRef;
+    private String clientName;
     private String title;
     private String description;
     private String client;
@@ -22,7 +25,16 @@ public class TenderResponse {
     private String clientContact;
     private BigDecimal valueRange;
     private String status;
+    private String contractForm;
+    private String measurementStandard;
     private String probability;
+    private Integer winProbability;
+    private String tenderOwner;
+    private java.time.LocalDate tenderIssuedDate;
+    private java.time.LocalDate tenderReturnDate;
+    private BigDecimal tenderValueSubmitted;
+    private String lossReason;
+    private Long contractId;
     private String closingDate;
     private String returnedDate;
     private String decisionDate;

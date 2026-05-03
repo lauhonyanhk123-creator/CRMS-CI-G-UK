@@ -21,6 +21,9 @@ import java.time.LocalDateTime;
 @Builder
 public class SiteSignOn extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
@@ -66,4 +69,26 @@ public class SiteSignOn extends BaseEntity {
         LocalDateTime end = signOffTime != null ? signOffTime : LocalDateTime.now();
         return java.time.temporal.ChronoUnit.MINUTES.between(signOnTime, end);
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class SiteSignOnBuilder {
+        public SiteSignOnBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

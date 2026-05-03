@@ -3,6 +3,7 @@ package com.crms.service.impl;
 import com.crms.service.MinioStorageService;
 import io.minio.*;
 import io.minio.http.Method;
+import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -118,7 +119,6 @@ public class MinioStorageServiceImpl implements MinioStorageService {
                     .bucket(bucket)
                     .object(objectId)
                     .stream(inputStream, file.getSize(), -1)
-                    .contentType(file.getContentType())
                     .build());
             log.info("Uploaded file (simple): {}/{}", bucket, objectId);
             return objectId;
@@ -181,7 +181,6 @@ public class MinioStorageServiceImpl implements MinioStorageService {
                     .bucket(bucket)
                     .object(objectId)
                     .sources(sources)
-                    .contentType(file.getContentType())
                     .build());
 
             log.info("Completed multipart upload: {}/{} ({} parts)", bucket, objectId, numParts);
@@ -228,7 +227,7 @@ public class MinioStorageServiceImpl implements MinioStorageService {
                             .bucket(bucket)
                             .object(objectId)
                             .stream(stream, fileSize, -1)
-                            .contentType(contentType)
+                            
                             .build());
                 }
                 log.info("Uploaded file from path (simple): {}/{}", bucket, objectId);
@@ -282,7 +281,7 @@ public class MinioStorageServiceImpl implements MinioStorageService {
                 .bucket(bucket)
                 .object(objectId)
                 .sources(sources)
-                .contentType(contentType)
+                
                 .build());
 
         // Cleanup parts
@@ -315,10 +314,8 @@ public class MinioStorageServiceImpl implements MinioStorageService {
             int urlExpiry = expiry != null ? expiry : DOWNLOAD_URL_EXPIRY_MINUTES * 60;
             int expirySeconds = Math.min(urlExpiry, 604800); // Max 7 days per MinIO constraint
 
-            String url = minioClient.getObjectUrl(bucket, objectId);
-            // MinIO getObjectUrl doesn't generate signed URL, use presignedGetObject instead
-            url = minioClient.presignedGetObject(
-                    PresignedGetObjectArgs.builder()
+            String url = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(bucket)
                             .object(objectId)
@@ -358,8 +355,8 @@ public class MinioStorageServiceImpl implements MinioStorageService {
             Map<String, String> reqParams = new HashMap<>();
             reqParams.put("content-type", contentType);
 
-            String url = minioClient.presignedPutObject(
-                    PresignedPutObjectArgs.builder()
+            String url = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
                             .method(Method.PUT)
                             .bucket(bucket)
                             .object(objectId)

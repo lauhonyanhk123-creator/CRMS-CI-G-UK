@@ -18,6 +18,8 @@ public class PurchaseRequisitionRequest {
     
     @NotNull(message = "Site ID is required")
     private Long siteId;
+
+    private Long requestedById;
     
     private Long contractId;
     

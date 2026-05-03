@@ -22,6 +22,9 @@ import java.time.LocalTime;
 @Builder
 public class CubeSample extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "concrete_ticket_id", nullable = false)
     private ConcreteTicket concreteTicket;
@@ -68,4 +71,26 @@ public class CubeSample extends BaseEntity {
     public boolean hasFailed() {
         return result == CubeTestResult.FAIL;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class CubeSampleBuilder {
+        public CubeSampleBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

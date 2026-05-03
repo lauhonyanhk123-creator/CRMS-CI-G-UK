@@ -30,6 +30,9 @@ import java.util.List;
 @Builder
 public class Tender extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "tender_ref", nullable = false, unique = true)
     private String tenderRef;
 
@@ -62,6 +65,15 @@ public class Tender extends BaseEntity {
 
     @Column(name = "value_range", precision = 12, scale = 2)
     private BigDecimal valueRange;
+
+    @Column(name = "target_value")
+    private BigDecimal targetValue;
+
+    @Column(name = "estimated_value")
+    private BigDecimal estimatedValue;
+
+    @Column(name = "submission_date")
+    private LocalDate submissionDate;
 
     @Column(name = "win_probability")
     private Integer winProbability;
@@ -103,4 +115,26 @@ public class Tender extends BaseEntity {
     public boolean isLost() {
         return status == TenderStatus.LOST;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class TenderBuilder {
+        public TenderBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

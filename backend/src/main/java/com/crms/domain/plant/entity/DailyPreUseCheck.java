@@ -23,6 +23,9 @@ import java.time.LocalDate;
 @Builder
 public class DailyPreUseCheck extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "check_date", nullable = false)
     private LocalDate checkDate;
 
@@ -48,4 +51,26 @@ public class DailyPreUseCheck extends BaseEntity {
     @Column(name = "repaired_before_use")
     @Builder.Default
     private Boolean repairedBeforeUse = false;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class DailyPreUseCheckBuilder {
+        public DailyPreUseCheckBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

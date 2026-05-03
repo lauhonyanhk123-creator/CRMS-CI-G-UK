@@ -15,4 +15,10 @@ public interface ProcurementService {
     Object createPO(Long requisitionId);
     
     PageResponse<?> getDeliveryNotes(Map<String, Object> params);
+    default PageResponse<?> findPurchaseOrders(Map<String, Object> params) {
+        return PageResponse.<Object>builder()
+                .content(java.util.Collections.emptyList())
+                .page(0).size(0).totalElements(0L).totalPages(0)
+                .build();
+    }
 }

@@ -200,4 +200,153 @@ public class HealthSafetyServiceImpl implements HealthSafetyService {
 
         return IncidentReportResponse.fromEntity(incident);
     }
+
+    // Compatibility overloads for legacy Map-based callers/tests.
+    public java.util.Map<String, Object> createCPP(Long contractId, java.util.Map<String, Object> request) {
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));
+        ConstructionPhasePlan cpp = ConstructionPhasePlan.builder()
+                .contract(contract)
+                .planRef("CPP-" + System.currentTimeMillis())
+                .version("1")
+                .description((String) request.getOrDefault("description", request.get("projectDescription")))
+                .status(CppStatus.DRAFT)
+                .build();
+        cpp = cppRepository.save(cpp);
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("id", cpp.getId());
+        result.put("planRef", cpp.getPlanRef());
+        result.put("status", cpp.getStatus() != null ? cpp.getStatus().name() : null);
+        return result;
+    }
+
+    public Object createCPP(Long contractId, Object request) {
+        if (request instanceof java.util.Map<?, ?> map) {
+            @SuppressWarnings("unchecked") java.util.Map<String, Object> typed = (java.util.Map<String, Object>) map;
+            return createCPP(contractId, typed);
+        }
+        throw new IllegalArgumentException("Unsupported CPP request type");
+    }
+
+    public java.util.Map<String, Object> createRAMS(Long contractId, java.util.Map<String, Object> request) {
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));
+        RAMSDocument rams = RAMSDocument.builder()
+                .contract(contract)
+                .ramsRef("RAMS-" + System.currentTimeMillis())
+                .title((String) request.getOrDefault("title", "RAMS"))
+                .description((String) request.get("description"))
+                .version("1")
+                .status(RamsStatus.DRAFT)
+                .isActive(true)
+                .build();
+        rams = ramsRepository.save(rams);
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("id", rams.getId());
+        result.put("ramsRef", rams.getRamsRef());
+        result.put("status", rams.getStatus() != null ? rams.getStatus().name() : null);
+        return result;
+    }
+
+    public Object createRAMS(Long contractId, Object request) {
+        if (request instanceof java.util.Map<?, ?> map) {
+            @SuppressWarnings("unchecked") java.util.Map<String, Object> typed = (java.util.Map<String, Object>) map;
+            return createRAMS(contractId, typed);
+        }
+        throw new IllegalArgumentException("Unsupported RAMS request type");
+    }
+
+    public java.util.Map<String, Object> createPermit(java.util.Map<String, Object> request) {
+        Object permitType = request.get("permitType");
+        if (permitType != null && !"PERMIT_TO_DIG".equals(String.valueOf(permitType))) {
+            throw new IllegalArgumentException("Unsupported permit type");
+        }
+        Long siteId = Long.valueOf(String.valueOf(request.get("siteId")));
+        Site site = siteRepository.findById(siteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Site", siteId));
+        PermitToDig permit = PermitToDig.builder()
+                .site(site)
+                .permitNumber("PTD-" + System.currentTimeMillis())
+                .worksDescription((String) request.getOrDefault("description", request.get("worksDescription")))
+                .status(PermitStatus.DRAFT)
+                .build();
+        permit = permitToDigRepository.save(permit);
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("id", permit.getId());
+        result.put("permitNumber", permit.getPermitNumber());
+        result.put("status", permit.getStatus() != null ? permit.getStatus().name() : null);
+        return result;
+    }
+
+    public Object createPermit(Object request) {
+        if (request instanceof java.util.Map<?, ?> map) {
+            @SuppressWarnings("unchecked") java.util.Map<String, Object> typed = (java.util.Map<String, Object>) map;
+            return createPermit(typed);
+        }
+        throw new IllegalArgumentException("Unsupported permit request type");
+    }
+
+    public java.util.Map<String, Object> createIncident(java.util.Map<String, Object> request) {
+        Long siteId = Long.valueOf(String.valueOf(request.get("siteId")));
+        Site site = siteRepository.findById(siteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Site", siteId));
+        Operative operative = null;
+        if (request.get("operativeId") != null) {
+            Long operativeId = Long.valueOf(String.valueOf(request.get("operativeId")));
+            operative = operativeRepository.findById(operativeId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Operative", operativeId));
+        }
+        IncidentReport incident = IncidentReport.builder()
+                .site(site)
+                .operative(operative)
+                .reportNumber("INC-" + System.currentTimeMillis())
+                .description((String) request.get("description"))
+                .type(request.get("type") != null ? IncidentType.valueOf(String.valueOf(request.get("type"))) : IncidentType.NEAR_MISS)
+                .severity(request.get("severity") != null ? Severity.valueOf(String.valueOf(request.get("severity"))) : Severity.MINOR)
+                .status(IncidentStatus.DRAFT)
+                .build();
+        incident = incidentReportRepository.save(incident);
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("id", incident.getId());
+        result.put("reportNumber", incident.getReportNumber());
+        result.put("status", incident.getStatus() != null ? incident.getStatus().name() : null);
+        return result;
+    }
+
+    public Object createIncident(Object request) {
+        if (request instanceof java.util.Map<?, ?> map) {
+            @SuppressWarnings("unchecked") java.util.Map<String, Object> typed = (java.util.Map<String, Object>) map;
+            return createIncident(typed);
+        }
+        throw new IllegalArgumentException("Unsupported incident request type");
+    }
+
+
+    public java.util.Map<String, Object> createF10(Long contractId, java.util.Map<String, Object> request) {
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));
+        F10Notification f10 = F10Notification.builder()
+                .contract(contract)
+                .notificationNumber("F10-" + System.currentTimeMillis())
+                .moreThan30Days(Boolean.parseBoolean(String.valueOf(request.getOrDefault("moreThan30Days", "false"))))
+                .moreThan500PersonDays(Boolean.parseBoolean(String.valueOf(request.getOrDefault("moreThan500PersonDays", "false"))))
+                .isActive(true)
+                .hdfAcknowledged(false)
+                .build();
+        f10 = f10NotificationRepository.save(f10);
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("id", f10.getId());
+        result.put("notificationNumber", f10.getNotificationNumber());
+        result.put("status", "DRAFT");
+        return result;
+    }
+
+    public Object createF10(Long contractId, Object request) {
+        if (request instanceof java.util.Map<?, ?> map) {
+            @SuppressWarnings("unchecked") java.util.Map<String, Object> typed = (java.util.Map<String, Object>) map;
+            return createF10(contractId, typed);
+        }
+        throw new IllegalArgumentException("Unsupported F10 request type");
+    }
+
 }

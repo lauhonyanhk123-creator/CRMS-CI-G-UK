@@ -19,6 +19,9 @@ import java.time.LocalDate;
 @Builder
 public class Qualification extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "operative_id", nullable = false)
     private Operative operative;
@@ -52,4 +55,29 @@ public class Qualification extends BaseEntity {
     public boolean isExpiringSoon(int days) {
         return expiryDate != null && expiryDate.isBefore(LocalDate.now().plusDays(days)) && !isExpired();
     }
+    public boolean isExpired() {
+        return expiryDate != null && expiryDate.isBefore(java.time.LocalDate.now());
+    }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class QualificationBuilder {
+        public QualificationBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

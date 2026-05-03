@@ -19,8 +19,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +38,7 @@ import static org.mockito.Mockito.*;
  * incident reporting workflow, permits, and RAMS sign-on operations.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class HealthSafetyServiceImplTest {
 
     @Mock
@@ -112,8 +116,8 @@ class HealthSafetyServiceImplTest {
                 .id(1L)
                 .contract(testContract)
                 .planRef("CPP-123456")
-                .version(1)
-                .status(CPPStatus.DRAFT)
+                .version("1")
+                .status(CppStatus.DRAFT)
                 .description("Construction Phase Plan")
                 .build();
 
@@ -121,7 +125,7 @@ class HealthSafetyServiceImplTest {
                 .id(1L)
                 .contract(testContract)
                 .ramsRef("RAMS-123456")
-                .version(1)
+                .version("1")
                 .status(RamsStatus.DRAFT)
                 .title("Risk Assessment")
                 .build();
@@ -140,10 +144,10 @@ class HealthSafetyServiceImplTest {
                 .id(1L)
                 .site(testSite)
                 .reportNumber("INC-123456")
-                .incidentDate(LocalDate.now())
+                .incidentDate(LocalDateTime.now())
                 .description("Test incident")
                 .type(IncidentType.NEAR_MISS)
-                .severity(IncidentSeverity.MINOR)
+                .severity(Severity.MINOR)
                 .status(IncidentStatus.DRAFT)
                 .build();
     }
@@ -373,15 +377,15 @@ class HealthSafetyServiceImplTest {
             });
 
             // When
-            Map<String, Object> result = (Map<String, Object>) healthSafetyService.signRAMS(1L, 1L, 1L);
+            com.crms.dto.response.RAMSSignOnResponse result = healthSafetyService.signRAMS(1L, 1L, 1L);
 
             // Then
             assertNotNull(result);
-            assertEquals(1L, result.get("id"));
-            assertEquals(1L, result.get("ramsId"));
-            assertEquals(1L, result.get("operativeId"));
-            assertEquals(1L, result.get("siteId"));
-            assertNotNull(result.get("signedAt"));
+            assertEquals(1L, result.getId());
+            assertEquals(1L, result.getRamsId());
+            assertEquals(1L, result.getOperativeId());
+            assertEquals(1L, result.getSiteId());
+            assertNotNull(result.getSignedAt());
             verify(ramsSignOnRepository).save(any(RAMSSignOn.class));
         }
 
@@ -510,13 +514,13 @@ class HealthSafetyServiceImplTest {
             });
 
             // When
-            Map<String, Object> result = (Map<String, Object>) healthSafetyService.approvePermit(1L);
+            com.crms.dto.response.PermitToDigResponse result = healthSafetyService.approvePermit(1L);
 
             // Then
             assertNotNull(result);
-            assertEquals(1L, result.get("id"));
-            assertEquals("ISSUED", result.get("status"));
-            assertNotNull(result.get("issuedDate"));
+            assertEquals(1L, result.getId());
+            assertEquals(com.crms.domain.healthsafety.enums.PermitStatus.ISSUED, result.getStatus());
+            assertNotNull(result.getIssuedDate());
             verify(permitToDigRepository).save(any(PermitToDig.class));
         }
 

@@ -42,7 +42,7 @@ public class CompanyServiceImpl implements CompanyService {
         
         Page<Company> companyPage;
         if (params.containsKey("type") && params.get("type") != null) {
-            companyPage = companyRepository.findByCompanyType(params.get("type").toString(), pageable);
+            companyPage = companyRepository.findByCompanyType(com.crms.domain.company.enums.CompanyType.valueOf(params.get("type").toString()), pageable);
         } else {
             companyPage = companyRepository.findAll(pageable);
         }
@@ -158,7 +158,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .companyId(id)
                 .companyName(company.getName())
                 .verificationStatus(company.getCisStatus() != null ? company.getCisStatus().name() : "UNKNOWN")
-                .hmrcDeductionRate(company.getHmrcDeductionRate() != null ? company.getHmrcDeductionRate().toString() : "N/A")
+                .hmrcDeductionRate(company.getHmrcDeductionRate())
                 .reference(company.getHmrcVerificationRef())
                 .verifiedAt(java.time.LocalDateTime.now().toString())
                 .message("CIS verification completed")

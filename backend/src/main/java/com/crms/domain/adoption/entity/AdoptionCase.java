@@ -25,6 +25,9 @@ import java.util.List;
 @Builder
 public class AdoptionCase extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "case_ref", nullable = false, unique = true)
     private String caseRef;
 
@@ -89,4 +92,26 @@ public class AdoptionCase extends BaseEntity {
         BigDecimal paid = commutedSumPaid != null ? commutedSumPaid : BigDecimal.ZERO;
         return commutedSumTotal.subtract(paid);
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class AdoptionCaseBuilder {
+        public AdoptionCaseBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

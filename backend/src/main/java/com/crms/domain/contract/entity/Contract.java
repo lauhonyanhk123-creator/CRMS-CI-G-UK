@@ -29,6 +29,9 @@ import java.util.List;
 @Builder
 public class Contract extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "contract_ref", nullable = false, unique = true)
     private String contractRef;
 
@@ -138,7 +141,7 @@ public class Contract extends BaseEntity {
 
     public BigDecimal calculateRetention(BigDecimal value) {
         if (retentionPercent == null) return BigDecimal.ZERO;
-        return value.multiply(retentionPercent).divide(new BigDecimal("100"));
+        return value.multiply(retentionPercent).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
     }
 
     public LocalDate calculateDefectsEndDate() {
@@ -147,4 +150,26 @@ public class Contract extends BaseEntity {
         }
         return defectsEndDate;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class ContractBuilder {
+        public ContractBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

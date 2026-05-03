@@ -403,4 +403,12 @@ public class PlantServiceImpl implements PlantService {
                 .isDueSoon(puwer.isDueSoon(30))
                 .build();
     }
+
+    public Object addAllocation(Long plantId, Object request) {
+        if (request instanceof PlantAllocationRequest typed) {
+            return addAllocation(plantId, typed);
+        }
+        throw new IllegalArgumentException("Invalid allocation request type");
+    }
+
 }

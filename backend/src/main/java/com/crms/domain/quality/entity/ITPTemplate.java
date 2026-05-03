@@ -22,6 +22,9 @@ import java.util.List;
 @Builder
 public class ITPTemplate extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(nullable = false)
     private String name;
 
@@ -57,4 +60,26 @@ public class ITPTemplate extends BaseEntity {
         items.remove(item);
         item.setTemplate(null);
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class ITPTemplateBuilder {
+        public ITPTemplateBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

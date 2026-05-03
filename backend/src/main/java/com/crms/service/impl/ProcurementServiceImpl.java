@@ -81,7 +81,7 @@ public class ProcurementServiceImpl implements ProcurementService {
                 .collect(Collectors.toList());
 
         return PageResponse.builder()
-                .content(content)
+                .content(new java.util.ArrayList<>(content))
                 .page(page)
                 .size(size)
                 .totalElements(requisitionPage.getTotalElements())
@@ -100,7 +100,7 @@ public class ProcurementServiceImpl implements ProcurementService {
         Site site = siteRepository.findById(req.getSiteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Site", req.getSiteId()));
 
-        User requestedBy = userRepository.findById(req.getRequestedById())
+        User requestedBy = userRepository.findById(new java.util.UUID(0L, req.getRequestedById()))
                 .orElseThrow(() -> new ResourceNotFoundException("User", req.getRequestedById()));
 
         String requisitionRef = generateRequisitionRef();
@@ -199,7 +199,7 @@ public class ProcurementServiceImpl implements ProcurementService {
                 .collect(Collectors.toList());
 
         return PageResponse.builder()
-                .content(content)
+                .content(new java.util.ArrayList<>(content))
                 .page(page)
                 .size(size)
                 .totalElements(deliveryNotePage.getTotalElements())

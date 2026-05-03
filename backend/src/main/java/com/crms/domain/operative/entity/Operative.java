@@ -26,6 +26,9 @@ import java.util.List;
 @Builder
 public class Operative extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "employee_ref", nullable = false, unique = true)
     private String employeeRef;
 
@@ -122,4 +125,31 @@ public class Operative extends BaseEntity {
     public boolean hasRightToWork() {
         return rightToWorkExpiry == null || rightToWorkExpiry.isAfter(LocalDate.now());
     }
+    public String getName() {
+        String first = firstName == null ? "" : firstName;
+        String last = lastName == null ? "" : lastName;
+        return (first + " " + last).trim();
+    }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class OperativeBuilder {
+        public OperativeBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

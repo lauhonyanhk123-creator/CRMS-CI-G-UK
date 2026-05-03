@@ -20,6 +20,8 @@ public class ApplicationForPaymentRequest {
     
     @NotNull(message = "Application period end is required")
     private LocalDate applicationPeriodEnd;
+
+    private LocalDate dueDate;
     
     @NotNull(message = "Value of works is required")
     private BigDecimal valueOfWorks;

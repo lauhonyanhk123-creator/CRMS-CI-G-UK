@@ -17,6 +17,7 @@ public interface CISVerificationRepository extends JpaRepository<CISVerification
     Optional<CISVerification> findByVerificationRef(String verificationRef);
 
     List<CISVerification> findByCompanyId(Long companyId);
+    List<CISVerification> findByStatus(CisVerificationStatus status);
 
     @Query("SELECT c FROM CISVerification c WHERE c.company.id = :companyId AND c.status = :status")
     List<CISVerification> findByCompanyIdAndStatus(@Param("companyId") Long companyId, @Param("status") CisVerificationStatus status);

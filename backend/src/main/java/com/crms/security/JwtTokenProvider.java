@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -104,4 +105,29 @@ public class JwtTokenProvider {
         }
         return false;
     }
+    public long getExpirationTime() {
+        return jwtConfig.getExpiration();
+    }
+
+    public String getUsernameFromToken(String token) {
+        return extractUsername(token);
+    }
+
+    public String generateToken(String username) {
+        return generateToken(new HashMap<>(), User.withUsername(username).password("").authorities("USER").build());
+    }
+
+    public String generateRefreshToken(String username) {
+        return generateRefreshToken(User.withUsername(username).password("").authorities("USER").build());
+    }
+
+    public String generateToken(Map<String, Object> extraClaims, String username) {
+        return generateToken(extraClaims, User.withUsername(username).password("").authorities("USER").build());
+    }
+    public String generateToken(String username, java.util.Set<com.crms.domain.user.enums.Role> roles) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", roles == null ? java.util.Collections.emptyList() : roles.stream().map(Enum::name).toList());
+        return generateToken(claims, username);
+    }
+
 }

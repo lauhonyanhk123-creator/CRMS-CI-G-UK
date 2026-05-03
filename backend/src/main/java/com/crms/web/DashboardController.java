@@ -149,7 +149,7 @@ public class DashboardController {
         BigDecimal cisDeductionsMTD = cisReturnRepository.findAll().stream()
                 .filter(r -> r.getSubmissionDate() != null)
                 .filter(r -> {
-                    LocalDate subDate = r.getSubmissionDate().toLocalDate();
+                    LocalDate subDate = r.getSubmissionDate();
                     return !subDate.isBefore(monthStart) && !subDate.isAfter(monthEnd);
                 })
                 .map(r -> r.getTotalDeduction() != null ? r.getTotalDeduction() : BigDecimal.ZERO)
@@ -199,11 +199,11 @@ public class DashboardController {
         List<Map<String, Object>> feed = logs.stream().map(log -> {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("id", log.getId());
-            item.put("user", log.getUser() != null ? log.getUser().getUsername() : "System");
+            item.put("user", log.getUserName() != null ? log.getUserName() : "System");
             item.put("action", log.getAction());
             item.put("entityType", log.getEntityType());
             item.put("entityId", log.getEntityId());
-            item.put("details", log.getDetails());
+            item.put("details", log.getAfterState());
             item.put("timestamp", log.getTimestamp().toString());
             item.put("ipAddress", log.getIpAddress());
             return item;
@@ -819,6 +819,7 @@ public class DashboardController {
                 .filter(i -> i.getStatus() != IncidentStatus.CLOSED)
                 .count();
 
+        LocalDate now = LocalDate.now();
         int ramsExp30 = ramsRepository.findExpiringDocuments(now.plusDays(30)).size();
         int f10Active = (int) f10Repository.findAll().stream().filter(F10Notification::getIsActive).count();
 

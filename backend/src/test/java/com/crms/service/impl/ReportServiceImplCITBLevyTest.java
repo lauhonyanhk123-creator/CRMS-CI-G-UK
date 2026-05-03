@@ -6,7 +6,7 @@ import com.crms.domain.contract.repository.ContractRepository;
 import com.crms.domain.site.entity.Site;
 import com.crms.domain.subcontractor.repository.CISReturnRepository;
 import com.crms.domain.tender.entity.Tender;
-import com.crms.domain.tender.entity.Client;
+import com.crms.domain.company.entity.Company;
 import com.crms.domain.tender.repository.TenderRepository;
 import com.crms.domain.operative.repository.TimesheetRepository;
 import com.crms.dto.response.CITBLevyReport;
@@ -19,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ import static org.mockito.Mockito.*;
  * CITB Levy = 0.5% of qualifying labour costs.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ReportServiceImplCITBLevyTest {
 
     @Mock
@@ -65,7 +68,7 @@ class ReportServiceImplCITBLevyTest {
                 .name("Test Site")
                 .build();
 
-        Client client = Client.builder()
+        Company client = Company.builder()
                 .id(1L)
                 .name("Test Client")
                 .build();

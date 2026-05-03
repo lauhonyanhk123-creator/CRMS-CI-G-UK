@@ -163,7 +163,6 @@ public class TenderServiceImpl implements TenderService {
         }
         
         tender.setStatus(TenderStatus.AWARDED);
-        tenderRepository.save(tender);
         
         Contract contract = Contract.builder()
                 .contractRef("C-" + tender.getTenderRef())

@@ -33,7 +33,7 @@
         <jasperreports.version>6.21.3</jasperreports.version>
         <flyway.version>10.10.0</flyway.version>
         <opencsv.version>5.9</opencsv.version>
-        <argon2.version>0.0.9</argon2.version>
+        <argon2.version>1.8.4</argon2.version>
     </properties>
 
     <dependencies>
@@ -84,7 +84,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-configuration-processor</artifactId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
             <version>3.3.0</version>
             <optional>true</optional>
         </dependency>

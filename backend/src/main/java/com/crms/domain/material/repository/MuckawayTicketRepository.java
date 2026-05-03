@@ -1,5 +1,6 @@
 package com.crms.domain.material.repository;
 
+import java.util.Optional;
 import com.crms.domain.material.entity.MuckawayTicket;
 import com.crms.domain.material.enums.WasteType;
 import org.springframework.data.jpa.repository.JpaRepository;

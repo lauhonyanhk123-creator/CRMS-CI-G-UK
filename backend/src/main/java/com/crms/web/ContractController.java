@@ -1,5 +1,6 @@
 package com.crms.web;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.crms.dto.request.ApplicationForPaymentRequest;
 import com.crms.dto.request.ContractRequest;
 import com.crms.dto.request.PayLessNoticeRequest;

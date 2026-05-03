@@ -25,6 +25,10 @@ public class PaymentNoticeRequest {
     
     @NotNull(message = "Sum considered due is required")
     private BigDecimal sumConsideredDue;
+
+    private BigDecimal amount;
+
+    private String reference;
     
     @Builder.Default
     private String currency = "GBP";

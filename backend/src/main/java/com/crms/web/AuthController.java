@@ -1,5 +1,6 @@
 package com.crms.web;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.crms.dto.request.LoginRequest;
 import com.crms.dto.request.RegisterRequest;
 import com.crms.dto.response.ApiResponse;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,7 @@ import java.util.Map;
 import com.crms.security.TokenBlacklistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor

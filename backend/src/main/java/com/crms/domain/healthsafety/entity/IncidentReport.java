@@ -29,6 +29,9 @@ import java.util.List;
 @Builder
 public class IncidentReport extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
@@ -49,6 +52,9 @@ public class IncidentReport extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private IncidentType type;
+
+    @Column(name = "incident_type")
+    private IncidentType incidentType;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -122,4 +128,26 @@ public class IncidentReport extends BaseEntity {
     public boolean isReportable() {
         return type == IncidentType.MAJOR_INJURY || type == IncidentType.FATALITY || requiresRIDDOR();
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class IncidentReportBuilder {
+        public IncidentReportBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

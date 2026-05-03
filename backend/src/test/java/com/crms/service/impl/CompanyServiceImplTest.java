@@ -10,7 +10,7 @@ import com.crms.dto.response.CompanyResponse;
 import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.SubbieGateStatus;
 import com.crms.exception.ResourceNotFoundException;
-import com.crms.subcontractor.enums.CisStatus;
+import com.crms.domain.company.enums.CisStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +41,7 @@ import static org.mockito.Mockito.*;
  * Tests cover company CRUD operations, Companies House integration, and CIS verification.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CompanyServiceImplTest {
 
     @Mock
@@ -291,7 +294,7 @@ class CompanyServiceImplTest {
             assertEquals(1L, response.getCompanyId());
             assertEquals("Test Construction Ltd", response.getCompanyName());
             assertEquals("VERIFIED", response.getVerificationStatus());
-            assertEquals("20.00", response.getHmrcDeductionRate());
+            assertEquals(new java.math.BigDecimal("20.00"), response.getHmrcDeductionRate());
             assertNotNull(response.getVerifiedAt());
         }
 

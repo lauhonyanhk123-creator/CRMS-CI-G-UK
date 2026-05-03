@@ -70,7 +70,7 @@ public class AuthServiceImpl implements AuthService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .enabled(true)
-                .roles(Set.of(request.getRole() != null ? request.getRole() : "ROLE_USER"))
+                .roles(Set.of(com.crms.domain.user.enums.Role.valueOf((request.getRole() != null ? request.getRole() : "ROLE_USER"))))
                 .build();
         
         user = userRepository.save(user);
@@ -120,12 +120,12 @@ public class AuthServiceImpl implements AuthService {
     
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
-                .id(user.getId())
+                .id(user.getId().getLeastSignificantBits())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .roles(user.getRoles())
+                .roles(user.getRoles() == null ? java.util.Collections.emptySet() : user.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet()))
                 .enabled(user.getEnabled())
                 .build();
     }

@@ -1,9 +1,7 @@
 package com.crms.domain.company.entity;
 
 import com.crms.domain.common.entity.Address;
-import com.crms.domain.common.entity.Auditable;
 import com.crms.domain.common.entity.BaseEntity;
-import com.crms.domain.common.entity.SoftDeletable;
 import com.crms.domain.company.enums.CompanyStatus;
 import com.crms.domain.company.enums.CompanyType;
 import com.crms.domain.company.enums.CisStatus;
@@ -30,9 +28,10 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SoftDeletable
-@Auditable
 public class Company extends BaseEntity {
+
+    @Transient
+    private Long compatibilityId;
 
     @Column(nullable = false)
     private String name;
@@ -76,6 +75,9 @@ public class Company extends BaseEntity {
 
     @Column(name = "hmrc_verification_ref")
     private String hmrcVerificationRef;
+
+    @Column(name = "utr")
+    private String utr;
 
     @Column(name = "hmrc_verification_date")
     private LocalDate hmrcVerificationDate;
@@ -125,4 +127,26 @@ public class Company extends BaseEntity {
     public boolean isActive() {
         return status == CompanyStatus.ACTIVE;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class CompanyBuilder {
+        public CompanyBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

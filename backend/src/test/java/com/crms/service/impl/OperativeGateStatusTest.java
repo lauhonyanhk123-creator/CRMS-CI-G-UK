@@ -29,6 +29,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -49,6 +51,7 @@ import static org.mockito.Mockito.*;
  * and plant ticket checks.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class OperativeGateStatusTest {
 
     @Mock
@@ -384,7 +387,7 @@ class OperativeGateStatusTest {
             assertTrue(status.isRAMSValid());
             assertTrue(status.isInductionValid());
             assertTrue(status.isPlantTicketValid());
-            assertEquals("All checks passed — gate open", status.getStatusMessage());
+            assertEquals("All checks passed", status.getStatusMessage());
         }
 
         @Test

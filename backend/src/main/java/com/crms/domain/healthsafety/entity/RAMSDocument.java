@@ -20,9 +20,21 @@ import java.time.LocalDate;
 @Builder
 public class RAMSDocument extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false)
     private Contract contract;
+
+    @Column(name = "rams_ref")
+    private String ramsRef;
+
+    @Column(name = "is_active")
+    private Boolean isActive;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "template_id")
@@ -63,4 +75,26 @@ public class RAMSDocument extends BaseEntity {
     public boolean isExpired() {
         return validUntil != null && validUntil.isBefore(LocalDate.now());
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class RAMSDocumentBuilder {
+        public RAMSDocumentBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

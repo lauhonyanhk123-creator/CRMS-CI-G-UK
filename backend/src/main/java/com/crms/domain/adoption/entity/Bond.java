@@ -27,8 +27,14 @@ import java.time.LocalDate;
 @Builder
 public class Bond extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "bond_number", nullable = false, unique = true)
     private String bondNumber;
+
+    @Column(name = "bond_ref")
+    private String bondRef;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "bond_type", nullable = false)
@@ -53,6 +59,13 @@ public class Bond extends BaseEntity {
     @Column(name = "release_date")
     private LocalDate releaseDate;
 
+    @Column(name = "release_requested")
+    @Builder.Default
+    private Boolean releaseRequested = false;
+
+    @Column(name = "release_requested_date")
+    private LocalDate releaseRequestedDate;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -73,4 +86,26 @@ public class Bond extends BaseEntity {
     public boolean isExpired() {
         return expiryDate != null && expiryDate.isBefore(LocalDate.now());
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class BondBuilder {
+        public BondBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

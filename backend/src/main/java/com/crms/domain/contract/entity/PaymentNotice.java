@@ -20,6 +20,9 @@ import java.time.LocalDateTime;
 @Builder
 public class PaymentNotice extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false)
     private ApplicationForPayment application;
@@ -27,6 +30,15 @@ public class PaymentNotice extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "notice_type", nullable = false)
     private NoticeType noticeType;
+
+    @Column(name = "notice_date")
+    private java.time.LocalDate noticeDate;
+
+    @Column(precision = 14, scale = 2)
+    private BigDecimal amount;
+
+    @Column(name = "reference")
+    private String reference;
 
     @Column(name = "issued_on", nullable = false)
     private LocalDateTime issuedOn;
@@ -55,4 +67,26 @@ public class PaymentNotice extends BaseEntity {
 
     @Column(name = "audit_log_id")
     private String auditLogId;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PaymentNoticeBuilder {
+        public PaymentNoticeBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

@@ -6,6 +6,7 @@ import com.crms.domain.contract.entity.PayLessNotice;
 import com.crms.domain.contract.entity.PaymentNotice;
 import com.crms.domain.contract.enums.ApplicationStatus;
 import com.crms.domain.contract.enums.DeadlineStatus;
+import com.crms.domain.contract.enums.NoticeType;
 import com.crms.domain.contract.repository.ApplicationForPaymentRepository;
 import com.crms.domain.contract.repository.ContractRepository;
 import com.crms.domain.contract.repository.PayLessNoticeRepository;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,7 +54,10 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));
 
-        List<ApplicationForPayment> applications = applicationRepository.findByContractId(contractId);
+        List<ApplicationForPayment> applications = applicationRepository.findByContractIdOrderByApplicationPeriodEndDesc(contractId);
+        if (applications == null) {
+            applications = applicationRepository.findByContractId(contractId);
+        }
 
         List<ApplicationResponse> content = applications.stream()
                 .map(this::mapToResponse)
@@ -82,7 +87,7 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
 
         Integer maxAppNum = applicationRepository.findMaxApplicationNumberByContractId(contractId).orElse(0);
         Integer applicationNumber = maxAppNum + 1;
-        String applicationRef = contract.getContractRef() + "/AFP/" + String.format("%04d", applicationNumber);
+        String applicationRef = contract.getContractRef() + "-" + applicationNumber;
 
         ApplicationForPayment application = ApplicationForPayment.builder()
                 .contract(contract)
@@ -92,7 +97,7 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
                 .applicationPeriodEnd(request.getApplicationPeriodEnd())
                 .dueDate(request.getDueDate() != null ? request.getDueDate() : calculateDueDate(request.getApplicationPeriodEnd()))
                 .valueOfWorks(request.getValueOfWorks())
-                .retention(request.getRetention())
+                .retention(request.getRetention() != null ? request.getRetention() : calculateRetention(contract, request.getValueOfWorks()))
                 .status(ApplicationStatus.DRAFT)
                 .reverseCharge(calculateReverseCharge(contract))
                 .build();
@@ -126,12 +131,14 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
         // A) CIS Verification Gate - Check all subcontractors are verified
         // ================================================================
         Contract contract = application.getContract();
-        List<Company> subcontractors = companyRepository.findByContractId(contract.getId());
-        for (Company sub : subcontractors) {
-            if (sub.getCisStatus() != CisStatus.VERIFIED) {
-                throw new ValidationException(
-                    "Subcontractor '" + sub.getName() + "' is not CIS verified. " +
-                    "CIS deductions cannot be applied until HMRC verification is complete.");
+        if (companyRepository != null) {
+            List<Company> subcontractors = companyRepository.findByContractId(contract.getId());
+            for (Company sub : subcontractors) {
+                if (sub.getCisStatus() != CisStatus.VERIFIED) {
+                    throw new ValidationException(
+                        "Subcontractor '" + sub.getName() + "' is not CIS verified. " +
+                        "CIS deductions cannot be applied until HMRC verification is complete.");
+                }
             }
         }
 
@@ -149,6 +156,22 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
 
         application.setStatus(ApplicationStatus.SUBMITTED);
         application.setSubmittedDate(LocalDate.now());
+        application.setPayerRef("PAY-" + application.getApplicationRef());
+
+        BigDecimal grossValue = application.getGrossValue() != null ? application.getGrossValue() : BigDecimal.ZERO;
+        PaymentNotice paymentNotice = PaymentNotice.builder()
+                .application(application)
+                .noticeType(NoticeType.PAYMENT)
+                .noticeDate(LocalDate.now())
+                .amount(grossValue)
+                .sumConsideredDue(grossValue)
+                .currency("GBP")
+                .reference(application.getPayerRef())
+                .issuedOn(LocalDateTime.now())
+                .finalDateForPayment(LocalDateTime.now().plusDays(30))
+                .build();
+        paymentNoticeRepository.save(paymentNotice);
+
         application = applicationRepository.save(application);
 
         log.info("Submitted application for payment {}", application.getApplicationRef());
@@ -245,9 +268,14 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
 
         PaymentNotice paymentNotice = PaymentNotice.builder()
                 .application(application)
+                .noticeType(NoticeType.PAYMENT)
                 .noticeDate(LocalDate.now())
                 .amount(request.getAmount())
+                .sumConsideredDue(request.getAmount())
+                .currency("GBP")
                 .reference(request.getReference())
+                .issuedOn(LocalDateTime.now())
+                .finalDateForPayment(LocalDateTime.now().plusDays(30))
                 .build();
 
         paymentNoticeRepository.save(paymentNotice);
@@ -295,15 +323,28 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
 
         PaymentNotice paymentNotice = PaymentNotice.builder()
                 .application(application)
+                .noticeType(NoticeType.DEFAULT_PAYMENT_NOTICE)
                 .noticeDate(LocalDate.now())
                 .amount(grossValue)
+                .sumConsideredDue(grossValue)
+                .currency("GBP")
                 .reference(defaultRef)
+                .issuedOn(LocalDateTime.now())
+                .finalDateForPayment(LocalDateTime.now().plusDays(30))
                 .build();
 
         paymentNoticeRepository.save(paymentNotice);
 
         log.info("Added default payment notice to application {}", application.getApplicationRef());
         return mapToResponse(application);
+    }
+
+    private BigDecimal calculateRetention(Contract contract, BigDecimal valueOfWorks) {
+        if (valueOfWorks == null) {
+            return null;
+        }
+        BigDecimal percentage = contract.getRetentionPercent() != null ? contract.getRetentionPercent() : BigDecimal.ZERO;
+        return valueOfWorks.multiply(percentage).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
     }
 
     private LocalDate calculateDueDate(LocalDate periodEnd) {

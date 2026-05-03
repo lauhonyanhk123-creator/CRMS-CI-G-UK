@@ -100,4 +100,11 @@ public class User {
     public void removeRole(Role role) {
         this.roles.remove(role);
     }
+    public Boolean getEnabled() {
+        return enabled;
+    }
+    public boolean isEnabled() {
+        return enabled;
+    }
+
 }

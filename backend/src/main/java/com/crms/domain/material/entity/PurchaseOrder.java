@@ -26,6 +26,9 @@ import java.util.List;
 @Builder
 public class PurchaseOrder extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "purchase_order_ref", nullable = false, unique = true)
     private String purchaseOrderRef;
 
@@ -86,4 +89,26 @@ public class PurchaseOrder extends BaseEntity {
         this.vatValue = net.multiply(new BigDecimal("0.20"));
         this.totalValue = net.add(vatValue);
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PurchaseOrderBuilder {
+        public PurchaseOrderBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

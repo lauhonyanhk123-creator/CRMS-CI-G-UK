@@ -25,6 +25,9 @@ import java.util.List;
 @Builder
 public class ApplicationForPayment extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false)
     private Contract contract;
@@ -60,6 +63,16 @@ public class ApplicationForPayment extends BaseEntity {
 
     @Column(name = "submitted_date")
     private LocalDate submittedDate;
+
+    @Column(name = "paid_date")
+    private LocalDate paidDate;
+
+    @Column(name = "payer_ref")
+    private String payerRef;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "pay_less_notice_id")
+    private PayLessNotice payLessNotice;
     
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -245,4 +258,26 @@ public class ApplicationForPayment extends BaseEntity {
             this.retentionReleased = true;
         }
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class ApplicationForPaymentBuilder {
+        public ApplicationForPaymentBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

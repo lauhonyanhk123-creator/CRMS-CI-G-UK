@@ -21,6 +21,9 @@ import java.time.LocalDateTime;
 @Builder
 public class CATScanRecord extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "permit_id", nullable = false)
     private PermitToDig permit;
@@ -43,4 +46,26 @@ public class CATScanRecord extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class CATScanRecordBuilder {
+        public CATScanRecordBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

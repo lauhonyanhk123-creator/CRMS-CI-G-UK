@@ -1,5 +1,6 @@
 package com.crms.service.impl;
 
+import java.util.Optional;
 import com.crms.domain.contract.entity.*;
 import com.crms.domain.contract.enums.ApplicationStatus;
 import com.crms.domain.contract.enums.ContractStatus;
@@ -147,7 +148,7 @@ public class CvrServiceImpl implements CvrService {
         // Dayworks and labour are NOT index-linked
         BigDecimal indexFactor = indices[2];  // current/base
         BigDecimal indexedMaterialsCost = materialsCost.multiply(indexFactor)
-            .divide(DEFAULT_BASE_INDEX, 2, RoundingMode.HALF_UP);
+            .setScale(2, RoundingMode.HALF_UP);
 
         report.setIndexedCostMaterials(indexedMaterialsCost);
 
@@ -155,7 +156,7 @@ public class CvrServiceImpl implements CvrService {
         // Note: labour (Series 4) and plant (Series 5) would use their respective indices
         // For simplicity, apply same factor to plant; production system would use separate series
         BigDecimal indexedPlantCost = plantCost.multiply(indexFactor)
-            .divide(DEFAULT_BASE_INDEX, 2, RoundingMode.HALF_UP);
+            .setScale(2, RoundingMode.HALF_UP);
         report.setIndexedCostPlant(indexedPlantCost);
 
         BigDecimal indexedTotal = indexedMaterialsCost
@@ -182,8 +183,19 @@ public class CvrServiceImpl implements CvrService {
         populateEarthworksBalance(contractId, report);
 
         // === EARLY WARNINGS ===
-        Map<String, BigDecimal> warnings = getEarlyWarnings(contractId, valuationDate);
-        report.setEarlyWarningAmount(warnings.getOrDefault("early_warning", BigDecimal.ZERO));
+        // Avoid calling getEarlyWarnings() here because that method builds a CVR report
+        // for margin/disallowed-cost checks. Calling it from generateCVR() creates a
+        // generateCVR -> getEarlyWarnings -> generateCVR recursion and eventually a
+        // StackOverflowError during tests and runtime report generation.
+        BigDecimal earlyWarningAmount = BigDecimal.ZERO;
+        BigDecimal contractWarningBase = contract.getContractValue() != null
+            ? contract.getContractValue() : BigDecimal.ZERO;
+        BigDecimal warningThreshold = contractWarningBase.multiply(new BigDecimal("1.05"));
+        if (contractWarningBase.compareTo(BigDecimal.ZERO) > 0
+            && indexedTotal.compareTo(warningThreshold) > 0) {
+            earlyWarningAmount = indexedTotal.subtract(contractWarningBase);
+        }
+        report.setEarlyWarningAmount(earlyWarningAmount);
         report.setHasDisallowedCosts(disallowedCost.compareTo(BigDecimal.ZERO) > 0);
 
         // === PROGRESS ===
@@ -263,8 +275,27 @@ public class CvrServiceImpl implements CvrService {
 
     @Override
     public BigDecimal getBCISAdjustmentFactor(int series, LocalDate currentDate, LocalDate baseDate) {
-        BigDecimal currentIndex = findIndexForDate(series, currentDate);
-        BigDecimal baseIndex = findIndexForDate(series, baseDate);
+        if (currentDate == null || baseDate == null) {
+            return BigDecimal.ONE;
+        }
+
+        if (currentDate.getYear() == baseDate.getYear()
+            && currentDate.getMonthValue() == baseDate.getMonthValue()) {
+            return new BigDecimal("1.000000");
+        }
+
+        BigDecimal currentIndex = bcisIndexRepository
+            .getIndexValue(series, currentDate.getYear(), currentDate.getMonthValue())
+            .or(() -> bcisIndexRepository
+                .getMostRecentOnOrBefore(series, currentDate.getYear(), currentDate.getMonthValue())
+                .map(b -> b.getIndexValue() != null ? b.getIndexValue() : b.getMaterialsIndex()))
+            .orElse(DEFAULT_CURRENT_INDEX);
+        BigDecimal baseIndex = bcisIndexRepository
+            .getIndexValue(series, baseDate.getYear(), baseDate.getMonthValue())
+            .or(() -> bcisIndexRepository
+                .getMostRecentOnOrBefore(series, baseDate.getYear(), baseDate.getMonthValue())
+                .map(b -> b.getIndexValue() != null ? b.getIndexValue() : b.getMaterialsIndex()))
+            .orElse(DEFAULT_BASE_INDEX);
 
         if (baseIndex.compareTo(BigDecimal.ZERO) == 0) {
             return BigDecimal.ONE;  // No indexation if base index is 0

@@ -39,4 +39,5 @@ public interface PlantItemRepository extends JpaRepository<PlantItem, Long> {
     Optional<PlantItem> findByIdWithExaminations(@Param("id") Long id);
 
     boolean existsByPlantRef(String plantRef);
+    long countByStatus(PlantStatus status);
 }

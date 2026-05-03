@@ -19,6 +19,9 @@ import java.util.UUID;
 @Builder
 public class BoQItem extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tender_id", nullable = false)
     private Tender tender;
@@ -66,4 +69,26 @@ public class BoQItem extends BaseEntity {
             this.totalValue = quantity.multiply(unitRate);
         }
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class BoQItemBuilder {
+        public BoQItemBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

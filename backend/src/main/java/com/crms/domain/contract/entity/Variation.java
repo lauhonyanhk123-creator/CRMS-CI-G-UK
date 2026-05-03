@@ -21,12 +21,24 @@ import java.time.LocalDate;
 @Builder
 public class Variation extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false)
     private Contract contract;
 
     @Column(name = "variation_ref", nullable = false, unique = true)
     private String variationRef;
+
+    @Column(name = "instruction_ref")
+    private String instructionRef;
+
+    @Column(columnDefinition = "TEXT")
+    private String reason;
+
+    @Column(precision = 14, scale = 2)
+    private java.math.BigDecimal value;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -54,4 +66,26 @@ public class Variation extends BaseEntity {
 
     @Column(name = "instructions_ref")
     private String instructionsRef;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class VariationBuilder {
+        public VariationBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

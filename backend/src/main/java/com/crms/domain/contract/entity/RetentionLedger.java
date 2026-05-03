@@ -19,6 +19,9 @@ import java.util.List;
 @Builder
 public class RetentionLedger extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false, unique = true)
     private Contract contract;
@@ -35,6 +38,12 @@ public class RetentionLedger extends BaseEntity {
     @Column(precision = 14, scale = 2)
     private BigDecimal balance;
 
+    @Column(name = "total_released")
+    private BigDecimal totalReleased;
+
+    @Column(name = "current_retention")
+    private BigDecimal currentRetention;
+
     @OneToMany(mappedBy = "retentionLedger", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<RetentionMovement> movements = new ArrayList<>();
@@ -49,4 +58,26 @@ public class RetentionLedger extends BaseEntity {
             this.balance = totalRetention.subtract(released);
         }
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class RetentionLedgerBuilder {
+        public RetentionLedgerBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

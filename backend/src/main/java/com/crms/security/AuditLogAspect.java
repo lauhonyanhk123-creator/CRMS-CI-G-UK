@@ -98,7 +98,7 @@ public class AuditLogAspect {
             String method = joinPoint.getSignature().toShortString();
             String action = getActionFromMethod(method);
 
-            String entityType = extractEntityType(joinPoint.getTargetClass().getSimpleName());
+            String entityType = extractEntityType(joinPoint.getTarget().getClass().getSimpleName());
             String entityId = extractEntityId(joinPoint.getArgs());
 
             HttpServletRequest request = getCurrentRequest();
