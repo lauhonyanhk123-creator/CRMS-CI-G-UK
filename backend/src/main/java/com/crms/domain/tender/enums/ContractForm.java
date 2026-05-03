@@ -1,6 +1,7 @@
 package com.crms.domain.tender.enums;
 
 public enum ContractForm {
+    NEC4,
     JCT_DB,
     JCT_IC,
     JCT_SBCSub_D,

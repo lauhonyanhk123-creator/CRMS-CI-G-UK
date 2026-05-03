@@ -20,6 +20,9 @@ import java.time.LocalDate;
 @Builder
 public class JournalEntry extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wip_report_id")
     private WipReport wipReport;
@@ -58,4 +61,26 @@ public class JournalEntry extends BaseEntity {
         POSTED,
         REVERSED
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class JournalEntryBuilder {
+        public JournalEntryBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

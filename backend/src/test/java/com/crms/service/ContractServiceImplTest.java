@@ -1,6 +1,7 @@
 package com.crms.service;
 
 import com.crms.domain.company.entity.Company;
+import com.crms.domain.company.repository.CompanyRepository;
 import com.crms.domain.contract.entity.Contract;
 import com.crms.domain.contract.entity.RetentionLedger;
 import com.crms.domain.contract.enums.ContractStatus;
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +48,7 @@ import static org.mockito.Mockito.*;
  * and variation totals for awarded contracts.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ContractServiceImplTest {
 
     @Mock
@@ -72,7 +76,7 @@ class ContractServiceImplTest {
     void setUp() {
         testClient = Company.builder()
                 .id(1L)
-                .name("Test Client Ltd")
+                .name("Test Company Ltd")
                 .build();
 
         testSite = Site.builder()
@@ -342,8 +346,8 @@ class ContractServiceImplTest {
                     .currentRetention(new BigDecimal("12500.00"))
                     .build();
 
+            testContract.setRetentionLedger(ledger);
             when(contractRepository.findById(1L)).thenReturn(Optional.of(testContract));
-            when(contractRepository.findById(1L).get().getRetentionLedger()).thenReturn(ledger);
 
             // When
             RetentionLedgerResponse response = contractService.getRetentionLedger(1L);
@@ -358,8 +362,8 @@ class ContractServiceImplTest {
         @DisplayName("getRetentionLedger creates new ledger when none exists")
         void getRetentionLedger_createsNewLedger_whenNoneExists() {
             // Given
+            testContract.setRetentionLedger(null);
             when(contractRepository.findById(1L)).thenReturn(Optional.of(testContract));
-            when(contractRepository.findById(1L).get().getRetentionLedger()).thenReturn(null);
             when(retentionLedgerRepository.save(any(RetentionLedger.class))).thenAnswer(invocation -> {
                 RetentionLedger l = invocation.getArgument(0);
                 l.setId(1L);

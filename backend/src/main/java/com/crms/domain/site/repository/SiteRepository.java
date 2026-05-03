@@ -22,6 +22,8 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
     List<Site> findByClient(Company client);
 
     List<Site> findByStatus(SiteStatus status);
+    org.springframework.data.domain.Page<Site> findByClientId(Long clientId, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<Site> findByStatus(SiteStatus status, org.springframework.data.domain.Pageable pageable);
 
     Page<Site> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
@@ -32,4 +34,5 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
     List<Site> findSitesNearingCompletion(@Param("date") LocalDate date);
 
     boolean existsBySiteCode(String siteCode);
+    long countByStatus(SiteStatus status);
 }

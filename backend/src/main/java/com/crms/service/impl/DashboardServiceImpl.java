@@ -8,7 +8,7 @@ import com.crms.domain.contract.enums.ContractStatus;
 import com.crms.domain.contract.repository.ApplicationForPaymentRepository;
 import com.crms.domain.contract.repository.ContractRepository;
 import com.crms.domain.healthsafety.entity.IncidentReport;
-import com.crms.domain.healthsafety.enums.IncidentSeverity;
+import com.crms.domain.healthsafety.enums.IncidentType;
 import com.crms.domain.healthsafety.repository.IncidentReportRepository;
 import com.crms.domain.plant.entity.LOLERExamination;
 import com.crms.domain.plant.entity.PlantItem;
@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,7 +122,7 @@ public class DashboardServiceImpl implements DashboardService {
         
         for (int i = 0; i < 12; i++) {
             YearMonth ym = YearMonth.from(now.plusMonths(i));
-            String monthLabel = ym.getMonth().getAbbreviation() + " " + ym.getYear();
+            String monthLabel = ym.getMonth().getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.UK) + " " + ym.getYear();
             
             // Stub - would calculate from applications and projections
             BigDecimal forecastAmount = new BigDecimal((i + 1) * 50000);
@@ -138,15 +139,19 @@ public class DashboardServiceImpl implements DashboardService {
     }
     
     private DashboardStats.HAndSStats calculateHSStats() {
-        LocalDate twelveMonthsAgo = LocalDate.now().minusMonths(12);
+        LocalDateTime twelveMonthsAgo = LocalDateTime.now().minusMonths(12);
+        List<IncidentReport> incidents = incidentRepository.findByDateRange(twelveMonthsAgo, LocalDateTime.now());
         
-        long nearMisses = incidentRepository.countBySeverityAndDateAfter(
-                IncidentSeverity.NEAR_MISS, twelveMonthsAgo);
-        long minorInjuries = incidentRepository.countBySeverityAndDateAfter(
-                IncidentSeverity.MINOR, twelveMonthsAgo);
-        long majorInjuries = incidentRepository.countBySeverityAndDateAfter(
-                IncidentSeverity.MAJOR, twelveMonthsAgo) + 
-                incidentRepository.countBySeverityAndDateAfter(IncidentSeverity.FATAL, twelveMonthsAgo);
+        long nearMisses = incidents.stream()
+                .filter(incident -> incident.getType() == IncidentType.NEAR_MISS)
+                .count();
+        long minorInjuries = incidents.stream()
+                .filter(incident -> incident.getType() == IncidentType.MINOR_INJURY)
+                .count();
+        long majorInjuries = incidents.stream()
+                .filter(incident -> incident.getType() == IncidentType.MAJOR_INJURY
+                        || incident.getType() == IncidentType.FATALITY)
+                .count();
         long observations = 0L; // Would come from observations system
         
         // AFR = (Major injuries + minor injuries) / total hours worked * 100000

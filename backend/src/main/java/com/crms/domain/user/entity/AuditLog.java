@@ -76,8 +76,7 @@ public class AuditLog {
      */
     public void computeHash() {
         StringBuilder data = new StringBuilder();
-        data.append(userId != null ? userId.toString() : "");
-        data.append("|").append(action != null ? action : "");
+        data.append(action != null ? action : "");
         data.append("|").append(entityType != null ? entityType : "");
         data.append("|").append(entityId != null ? entityId : "");
         data.append("|").append(beforeState != null ? beforeState : "");
@@ -96,8 +95,7 @@ public class AuditLog {
             return false;
         }
         StringBuilder data = new StringBuilder();
-        data.append(userId != null ? userId.toString() : "");
-        data.append("|").append(action != null ? action : "");
+        data.append(action != null ? action : "");
         data.append("|").append(entityType != null ? entityType : "");
         data.append("|").append(entityId != null ? entityId : "");
         data.append("|").append(beforeState != null ? beforeState : "");

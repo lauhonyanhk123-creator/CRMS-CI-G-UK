@@ -19,12 +19,18 @@ import java.time.LocalDate;
 @Builder
 public class AdoptionStage extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "adoption_case_id", nullable = false)
     private AdoptionCase adoptionCase;
 
     @Column(name = "stage_name", nullable = false)
     private String stageName;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @Column(name = "stage_order", nullable = false)
     private Integer stageOrder;
@@ -46,4 +52,26 @@ public class AdoptionStage extends BaseEntity {
     public boolean isOverdue() {
         return status != StageStatus.COMPLETED && plannedDate != null && plannedDate.isBefore(LocalDate.now());
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class AdoptionStageBuilder {
+        public AdoptionStageBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

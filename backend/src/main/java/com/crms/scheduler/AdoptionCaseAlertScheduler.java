@@ -108,7 +108,7 @@ public class AdoptionCaseAlertScheduler {
         log.info("Sending maintenance end alert for case {} ending on {}", 
                 adoptionCase.getCaseRef(), adoptionCase.getMaintenanceEndDate());
         
-        LocalDate daysUntilEnd = LocalDate.now().until(adoptionCase.getMaintenanceEndDate());
+        java.time.Period daysUntilEnd = LocalDate.now().until(adoptionCase.getMaintenanceEndDate());
         
         String alertMessage = String.format(
                 "Maintenance Period Ending: Adoption Case %s (Type: %s) maintenance period ends on %s. " +

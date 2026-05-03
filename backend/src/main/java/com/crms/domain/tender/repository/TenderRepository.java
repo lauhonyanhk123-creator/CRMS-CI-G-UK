@@ -19,6 +19,8 @@ public interface TenderRepository extends JpaRepository<Tender, Long> {
 
     @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.status = :status")
     List<Tender> findByStatus(@Param("status") TenderStatus status);
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.status = :status")
+    Page<Tender> findByStatus(@Param("status") TenderStatus status, Pageable pageable);
 
     @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     Page<Tender> findByTitleContainingIgnoreCase(@Param("title") String title, Pageable pageable);
@@ -38,5 +40,7 @@ public interface TenderRepository extends JpaRepository<Tender, Long> {
     @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site")
     Page<Tender> findAll(Pageable pageable);
 
+    @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.status IN :statuses")
+    List<Tender> findByStatusIn(@Param("statuses") List<TenderStatus> statuses);
     boolean existsByTenderRef(String tenderRef);
 }

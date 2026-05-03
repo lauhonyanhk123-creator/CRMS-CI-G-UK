@@ -20,6 +20,9 @@ import java.time.LocalDateTime;
 @Builder
 public class TenderDocument extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tender_id", nullable = false)
     private Tender tender;
@@ -45,4 +48,26 @@ public class TenderDocument extends BaseEntity {
 
     @Column(name = "file_ref")
     private String fileRef;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class TenderDocumentBuilder {
+        public TenderDocumentBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

@@ -1,4 +1,5 @@
 package com.crms.service.quality;
+import com.crms.domain.quality.entity.ITPTemplateItem;
 
 import com.crms.domain.contract.entity.Contract;
 import com.crms.domain.contract.repository.ContractRepository;

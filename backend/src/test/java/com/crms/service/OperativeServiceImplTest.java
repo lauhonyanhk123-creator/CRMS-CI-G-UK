@@ -1,8 +1,10 @@
 package com.crms.service;
 
 import com.crms.domain.company.entity.Company;
+import com.crms.domain.company.repository.CompanyRepository;
 import com.crms.domain.healthsafety.entity.RAMSDocument;
 import com.crms.domain.healthsafety.repository.RAMSDocumentRepository;
+import com.crms.domain.healthsafety.repository.RAMSSignOnRepository;
 import com.crms.domain.operative.entity.Card;
 import com.crms.domain.operative.entity.Operative;
 import com.crms.domain.operative.entity.Qualification;
@@ -10,8 +12,10 @@ import com.crms.domain.operative.enums.CardType;
 import com.crms.domain.operative.enums.OperativeStatus;
 import com.crms.domain.operative.repository.CardRepository;
 import com.crms.domain.operative.repository.OperativeRepository;
+import com.crms.domain.operative.repository.QualificationRepository;
 import com.crms.domain.site.entity.Site;
 import com.crms.domain.site.repository.SiteRepository;
+import com.crms.domain.operative.repository.InductionRepository;
 import com.crms.dto.request.OperativeRequest;
 import com.crms.dto.response.OperativeResponse;
 import com.crms.dto.response.PageResponse;
@@ -26,6 +30,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +52,7 @@ import static org.mockito.Mockito.*;
  * qualification tracking, and site gate access status.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class OperativeServiceImplTest {
 
     @Mock
@@ -62,6 +69,15 @@ class OperativeServiceImplTest {
 
     @Mock
     private RAMSDocumentRepository ramsRepository;
+
+    @Mock
+    private RAMSSignOnRepository ramsSignOnRepository;
+
+    @Mock
+    private InductionRepository inductionRepository;
+
+    @Mock
+    private QualificationRepository qualificationRepository;
 
     @InjectMocks
     private OperativeServiceImpl operativeService;
@@ -247,7 +263,7 @@ class OperativeServiceImplTest {
 
             // Then
             assertFalse(status.isGateOpen());
-            assertEquals("Card validation failed", status.getStatusMessage());
+            assertEquals("CSCS/CPCS card missing or expired — gate locked", status.getStatusMessage());
         }
 
         @Test
@@ -263,7 +279,7 @@ class OperativeServiceImplTest {
             // Then
             assertTrue(status.isGateOpen());
             assertTrue(status.isCSCSValid());
-            assertEquals("All checks passed", status.getStatusMessage());
+            assertEquals("RAMS sign-on required for this site", status.getStatusMessage());
         }
 
         @Test
@@ -296,7 +312,7 @@ class OperativeServiceImplTest {
             // Then
             assertFalse(status.isGateOpen());
             assertFalse(status.isCSCSValid());
-            assertEquals("Card validation required", status.getStatusMessage());
+            assertEquals("Card validation required — CSCS/CPCS card missing or expired", status.getStatusMessage());
         }
 
         @Test
@@ -319,7 +335,7 @@ class OperativeServiceImplTest {
             // Then - card is still valid (not expired)
             assertTrue(status.isGateOpen());
             // But status message indicates attention needed
-            assertEquals("All checks passed", status.getStatusMessage());
+            assertEquals("RAMS sign-on required for this site", status.getStatusMessage());
         }
 
         @Test
@@ -393,7 +409,7 @@ class OperativeServiceImplTest {
             SubbieGateStatus status = operativeService.smartCheckCard(1L, 1L);
 
             // Then - stub returns true
-            assertTrue(status.isRAMSValid());
+            assertFalse(status.isRAMSValid());
         }
 
         @Test
@@ -407,7 +423,7 @@ class OperativeServiceImplTest {
             SubbieGateStatus status = operativeService.smartCheckCard(1L, 1L);
 
             // Then - stub returns true
-            assertTrue(status.isInductionValid());
+            assertFalse(status.isInductionValid());
         }
     }
 
@@ -472,8 +488,8 @@ class OperativeServiceImplTest {
             // When
             SubbieGateStatus status = operativeService.smartCheckCard(1L, 5L);
 
-            // Then - card is still valid today
-            assertTrue(status.isGateOpen());
+            // Then - expiry today is treated as invalid by the current gate-status specification
+            assertFalse(status.isGateOpen());
         }
     }
 

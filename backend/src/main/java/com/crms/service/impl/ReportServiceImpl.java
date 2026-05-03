@@ -122,7 +122,7 @@ public class ReportServiceImpl implements ReportService {
         log.info("Generating CIS summary for {}", taxMonth);
         // Query CIS returns for the given tax month
         // Group by subcontractor, sum deductions, return amounts
-        List<CISReturn> cisReturns = cisReturnRepository.findByTaxMonth(taxMonth);
+        List<CISReturn> cisReturns = cisReturnRepository.findByTaxMonth(taxMonth).map(java.util.List::of).orElse(java.util.Collections.emptyList());
         Map<String, Map<String, Object>> summaryBySubcontractor = new LinkedHashMap<>();
         
         for (CISReturn cisReturn : cisReturns) {

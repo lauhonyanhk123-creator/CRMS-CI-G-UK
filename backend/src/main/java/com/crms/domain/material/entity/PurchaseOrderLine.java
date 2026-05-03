@@ -18,6 +18,9 @@ import java.math.BigDecimal;
 @Builder
 public class PurchaseOrderLine extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private PurchaseOrder order;
@@ -48,4 +51,26 @@ public class PurchaseOrderLine extends BaseEntity {
             this.netValue = unitPrice.multiply(quantity);
         }
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PurchaseOrderLineBuilder {
+        public PurchaseOrderLineBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.crms.web;
 
+import org.springframework.core.io.Resource;
 import com.crms.dto.request.DocumentRequest;
 import com.crms.dto.response.ApiResponse;
 import com.crms.dto.response.PageResponse;

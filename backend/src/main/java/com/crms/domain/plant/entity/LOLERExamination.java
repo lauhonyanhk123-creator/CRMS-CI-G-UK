@@ -19,6 +19,9 @@ import java.time.LocalDate;
 @Builder
 public class LOLERExamination extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plant_id", nullable = false)
     private PlantItem plant;
@@ -28,6 +31,9 @@ public class LOLERExamination extends BaseEntity {
 
     @Column(name = "next_due_date", nullable = false)
     private LocalDate nextDueDate;
+
+    @Column(name = "next_inspection_date")
+    private LocalDate nextInspectionDate;
 
     @Column
     private String examiner;
@@ -56,4 +62,26 @@ public class LOLERExamination extends BaseEntity {
         if (nextDueDate == null) return false;
         return nextDueDate.isBefore(LocalDate.now().plusDays(days)) && !isDue();
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class LOLERExaminationBuilder {
+        public LOLERExaminationBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

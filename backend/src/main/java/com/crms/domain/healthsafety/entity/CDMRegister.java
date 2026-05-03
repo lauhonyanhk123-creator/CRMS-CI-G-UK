@@ -22,6 +22,9 @@ import java.time.LocalDateTime;
 @Builder
 public class CDMRegister extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "notification_number", nullable = false, unique = true)
     private String notificationNumber;
 
@@ -107,4 +110,26 @@ public class CDMRegister extends BaseEntity {
         }
         return isActive != null && isActive;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class CDMRegisterBuilder {
+        public CDMRegisterBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

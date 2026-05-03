@@ -29,6 +29,9 @@ public interface BondRepository extends JpaRepository<Bond, Long> {
     @Query("SELECT b FROM Bond b WHERE b.expiryDate <= :date AND b.status = :status")
     List<Bond> findExpiringBonds(@Param("date") LocalDate date, @Param("status") BondStatus status);
 
+    @Query("SELECT b FROM Bond b WHERE b.expiryDate <= :date")
+    List<Bond> findExpiringBonds(@Param("date") LocalDate date);
+
     @Query("SELECT b FROM Bond b WHERE b.expiryDate < :date AND b.status = 'ACTIVE'")
     List<Bond> findExpiredActiveBonds(@Param("date") LocalDate date);
 

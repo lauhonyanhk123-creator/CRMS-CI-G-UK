@@ -19,6 +19,9 @@ import java.time.LocalDate;
 @Builder
 public class PUWERInspection extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plant_id", nullable = false)
     private PlantItem plant;
@@ -32,6 +35,9 @@ public class PUWERInspection extends BaseEntity {
     @Column
     private String inspector;
 
+    @Column(name = "inspector_company")
+    private String inspectorCompany;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private InspectionResult result;
@@ -41,4 +47,36 @@ public class PUWERInspection extends BaseEntity {
 
     @Column(name = "document_ref")
     private String documentRef;
+
+    @Column(name = "report_ref")
+    private String reportRef;
+    public boolean isDue() {
+        return nextDueDate != null && !nextDueDate.isAfter(java.time.LocalDate.now());
+    }
+
+    public boolean isDueSoon(int days) {
+        return nextDueDate != null && !nextDueDate.isAfter(java.time.LocalDate.now().plusDays(days));
+    }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PUWERInspectionBuilder {
+        public PUWERInspectionBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

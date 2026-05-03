@@ -20,6 +20,9 @@ import java.time.LocalDate;
 @Builder
 public class RetentionMovement extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "retention_ledger_id", nullable = false)
     private RetentionLedger retentionLedger;
@@ -39,4 +42,26 @@ public class RetentionMovement extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class RetentionMovementBuilder {
+        public RetentionMovementBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

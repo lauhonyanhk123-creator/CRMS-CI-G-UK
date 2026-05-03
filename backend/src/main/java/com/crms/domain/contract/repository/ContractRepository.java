@@ -42,4 +42,5 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
     
     @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site")
     Page<Contract> findAll(Pageable pageable);
+    long countByStatus(ContractStatus status);
 }

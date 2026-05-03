@@ -97,8 +97,8 @@ public class TokenBlacklistService {
     public long getBlacklistSize() {
         if (redisAvailable) {
             try {
-                Long size = redisTemplate.count(REDIS_KEY_PREFIX + "*");
-                return size != null ? size : 0L;
+                java.util.Set<String> keys = redisTemplate.keys(REDIS_KEY_PREFIX + "*");
+                return keys != null ? keys.size() : 0L;
             } catch (Exception e) {
                 return inMemoryBlacklist.size();
             }

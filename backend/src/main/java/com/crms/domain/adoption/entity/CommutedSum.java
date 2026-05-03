@@ -18,6 +18,9 @@ import java.math.BigDecimal;
 @Builder
 public class CommutedSum extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "adoption_case_id", nullable = false)
     private AdoptionCase adoptionCase;
@@ -48,4 +51,26 @@ public class CommutedSum extends BaseEntity {
         BigDecimal paid = paidAmount != null ? paidAmount : BigDecimal.ZERO;
         return paid.compareTo(totalAmount) >= 0;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class CommutedSumBuilder {
+        public CommutedSumBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

@@ -26,4 +26,12 @@ public class SubbieGateStatus {
     private Boolean isGateOpen;
     
     private String statusMessage;
+
+    public boolean isHMRCVerified() { return Boolean.TRUE.equals(isHMRCVerified); }
+    public boolean isCSCSValid() { return Boolean.TRUE.equals(isCSCSValid); }
+    public boolean isRAMSValid() { return Boolean.TRUE.equals(isRAMSValid); }
+    public boolean isInductionValid() { return Boolean.TRUE.equals(isInductionValid); }
+    public boolean isPlantTicketValid() { return Boolean.TRUE.equals(isPlantTicketValid); }
+    public boolean isGateOpen() { return Boolean.TRUE.equals(isGateOpen); }
+
 }

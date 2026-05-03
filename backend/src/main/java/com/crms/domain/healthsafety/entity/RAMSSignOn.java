@@ -21,6 +21,9 @@ import java.time.LocalDateTime;
 @Builder
 public class RAMSSignOn extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rams_id", nullable = false)
     private RAMSDocument rams;
@@ -45,4 +48,26 @@ public class RAMSSignOn extends BaseEntity {
     public boolean isValid() {
         return validUntil == null || validUntil.isAfter(LocalDateTime.now());
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class RAMSSignOnBuilder {
+        public RAMSSignOnBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

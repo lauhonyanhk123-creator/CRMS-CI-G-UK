@@ -2,7 +2,7 @@ package com.crms.domain.plant.entity;
 
 import com.crms.domain.common.entity.BaseEntity;
 import com.crms.domain.company.entity.Company;
-import com.crms.domain.operative.entity.DailyPreUseCheck;
+import com.crms.domain.plant.entity.DailyPreUseCheck;
 import com.crms.domain.plant.entity.PlantAllocation;
 import com.crms.domain.plant.enums.HireStatus;
 import com.crms.domain.plant.enums.PlantCategory;
@@ -26,6 +26,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class PlantItem extends BaseEntity {
+
+    @Transient
+    private Long compatibilityId;
 
     @Column(name = "plant_ref", nullable = false, unique = true)
     private String plantRef;
@@ -101,4 +104,26 @@ public class PlantItem extends BaseEntity {
     public boolean isAvailable() {
         return status == PlantStatus.AVAILABLE;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PlantItemBuilder {
+        public PlantItemBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

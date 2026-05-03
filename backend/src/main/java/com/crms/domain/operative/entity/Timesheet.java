@@ -21,6 +21,9 @@ import java.time.LocalDate;
 @Builder
 public class Timesheet extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @Column(name = "week_ending", nullable = false)
     private LocalDate weekEnding;
 
@@ -63,4 +66,26 @@ public class Timesheet extends BaseEntity {
         if (sickHours != null) total = total.add(sickHours);
         return total;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class TimesheetBuilder {
+        public TimesheetBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

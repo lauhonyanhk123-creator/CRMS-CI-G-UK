@@ -12,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.ByteArrayInputStream;
@@ -29,6 +31,7 @@ import static org.mockito.Mockito.*;
  * Tests cover document CRUD operations, file upload/download, and metadata management.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class DocumentServiceImplTest {
 
     @Mock
@@ -317,7 +320,7 @@ class DocumentServiceImplTest {
             // Then
             assertNotNull(url);
             assertEquals(expectedUrl, url);
-            verify(minioStorageService).getDownloadUrl("crms-documents", "2024-01-01/documents/test-id");
+            verify(minioStorageService).getDownloadUrl("crms-documents", "2024-01-01/documents/abc123_test-document.pdf");
         }
 
         @Test

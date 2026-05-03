@@ -17,11 +17,13 @@ public class ContactResponse {
     private String fullName;
     private String title;
     private String position;
+    private String jobTitle;
     private String email;
     private String phone;
     private String mobile;
     private String fax;
     private Long companyId;
     private String companyName;
+    private Boolean isPrimary;
     private String notes;
 }

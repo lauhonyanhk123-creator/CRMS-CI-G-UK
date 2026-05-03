@@ -18,6 +18,9 @@ import java.math.BigDecimal;
 @Builder
 public class PurchaseRequisitionLine extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requisition_id", nullable = false)
     private PurchaseRequisition requisition;
@@ -28,6 +31,10 @@ public class PurchaseRequisitionLine extends BaseEntity {
 
     @Column(nullable = false)
     private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private com.crms.domain.company.entity.Company supplier;
 
     @Column(precision = 12, scale = 3)
     private BigDecimal quantity;
@@ -51,4 +58,26 @@ public class PurchaseRequisitionLine extends BaseEntity {
             this.estimatedTotal = estimatedUnitPrice.multiply(quantity);
         }
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PurchaseRequisitionLineBuilder {
+        public PurchaseRequisitionLineBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

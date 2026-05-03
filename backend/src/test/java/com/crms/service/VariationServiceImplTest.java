@@ -20,6 +20,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -37,6 +39,7 @@ import static org.mockito.Mockito.*;
  * and contract value totals including variations.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class VariationServiceImplTest {
 
     @Mock
@@ -82,7 +85,7 @@ class VariationServiceImplTest {
                 .agreedValue(new BigDecimal("12000.00"))
                 .notifiedDate(LocalDate.of(2024, 2, 15))
                 .instructionRef("INST-001")
-                .reason("Client requested additional works")
+                .reason("Company requested additional works")
                 .build();
     }
 
@@ -215,7 +218,7 @@ class VariationServiceImplTest {
             assertEquals(new BigDecimal("15000.00"), response.getOriginalValue());
             assertEquals(new BigDecimal("12000.00"), response.getAgreedValue());
             assertEquals("INST-001", response.getInstructionRef());
-            assertEquals("Client requested additional works", response.getReason());
+            assertEquals("Company requested additional works", response.getReason());
         }
 
         @Test

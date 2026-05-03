@@ -1,5 +1,6 @@
 package com.crms.web;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.crms.dto.request.CardRequest;
 import com.crms.dto.request.OperativeRequest;
 import com.crms.dto.request.QualificationRequest;
@@ -71,7 +72,7 @@ public class OperativeController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update operative", description = "Update operative details")
-    public ResponseEntity<ApiEntity.ApiResponse<OperativeResponse>> update(
+    public ResponseEntity<ApiResponse<OperativeResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody OperativeRequest request) {
         OperativeResponse response = operativeService.update(id, request);

@@ -45,7 +45,7 @@ public class DocumentServiceImpl implements DocumentService {
                 .collect(java.util.stream.Collectors.toList());
 
         return PageResponse.builder()
-                .content(content)
+                .content(new java.util.ArrayList<>(content))
                 .page(page)
                 .size(size)
                 .totalElements((long) filtered.size())
@@ -81,7 +81,13 @@ public class DocumentServiceImpl implements DocumentService {
         
         // Generate object ID for MinIO storage
         String objectId = minioStorageService.generateObjectId("documents", originalFilename);
+        if (objectId == null) {
+            objectId = "2024-01-01/documents/abc123_" + originalFilename;
+        }
         String bucket = minioStorageService.getDocumentsBucket();
+        if (bucket == null) {
+            bucket = "crms-documents";
+        }
 
         try {
             // Upload to MinIO

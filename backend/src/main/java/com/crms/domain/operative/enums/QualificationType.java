@@ -1,5 +1,4 @@
 package com.crms.domain.operative.enums;
-
 public enum QualificationType {
     NVQ,
     SMSTS,
@@ -14,5 +13,9 @@ public enum QualificationType {
     FIRST_AID,
     MHFA,
     DBS,
+    NPORS,
+    CPCS,
+    CPCS_BLUE,
+    CITY_AND_GUILDS,
     OTHER
 }

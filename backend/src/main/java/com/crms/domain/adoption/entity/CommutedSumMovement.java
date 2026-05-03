@@ -20,6 +20,9 @@ import java.time.LocalDate;
 @Builder
 public class CommutedSumMovement extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "adoption_case_id", nullable = false)
     private AdoptionCase adoptionCase;
@@ -39,4 +42,26 @@ public class CommutedSumMovement extends BaseEntity {
 
     @Column(name = "document_ref")
     private String documentRef;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class CommutedSumMovementBuilder {
+        public CommutedSumMovementBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

@@ -12,7 +12,7 @@ import java.time.Duration;
  * REST template configuration for external API integrations.
  */
 @Configuration
-public class RestTemplateConfig {
+public class HmrcOAuth2Config {
 
     @Bean
     public RestTemplate hmrcRestTemplate(RestTemplateBuilder builder, IntegrationProperties props) {

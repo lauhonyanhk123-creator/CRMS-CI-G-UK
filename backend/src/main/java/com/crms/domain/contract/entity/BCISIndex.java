@@ -31,6 +31,9 @@ import java.time.LocalDate;
 @Builder
 public class BCISIndex extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     /**
      * BCIS series number.
      * Series 1 = All-in (materials + labour + plant)
@@ -75,4 +78,26 @@ public class BCISIndex extends BaseEntity {
 
     @Column(length = 500)
     private String source;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class BCISIndexBuilder {
+        public BCISIndexBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

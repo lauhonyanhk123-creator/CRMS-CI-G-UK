@@ -3,7 +3,7 @@ package com.crms.service.impl;
 import com.crms.service.MinioStorageService;
 import io.minio.*;
 import io.minio.http.Method;
-import io.minio.params.*;
+import io.minio.messages.Item;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -12,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.*;
  * Tests cover file upload, download, URL generation, and bucket operations.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class MinioStorageServiceImplTest {
 
     @Mock
@@ -153,14 +156,14 @@ class MinioStorageServiceImplTest {
             String objectId = "test-document.pdf";
             ByteArrayInputStream expectedStream = new ByteArrayInputStream("file content".getBytes());
             
-            when(minioClient.getObject(any(GetObjectArgs.class))).thenReturn(expectedStream);
+            when(minioClient.getObject(any(GetObjectArgs.class))).thenReturn(new GetObjectResponse(null, bucket, null, objectId, expectedStream));
 
             // When
             InputStream result = minioStorageService.downloadFile(bucket, objectId);
 
             // Then
             assertNotNull(result);
-            assertEquals(expectedStream, result);
+            assertEquals("file content", new String(result.readAllBytes()));
         }
 
         @Test
@@ -254,7 +257,7 @@ class MinioStorageServiceImplTest {
             String objectId = "test-document.pdf";
             String expectedUrl = "http://minio:9000/crms-documents/test-document.pdf?signature=abc123";
             
-            when(minioClient.presignedGetObject(any(PresignedGetObjectArgs.class)))
+            when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
                     .thenReturn(expectedUrl);
 
             // When
@@ -263,7 +266,7 @@ class MinioStorageServiceImplTest {
             // Then
             assertNotNull(result);
             assertEquals(expectedUrl, result);
-            verify(minioClient).presignedGetObject(any(PresignedGetObjectArgs.class));
+            verify(minioClient).getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class));
         }
 
         @Test
@@ -275,7 +278,7 @@ class MinioStorageServiceImplTest {
             Integer customExpiry = 3600; // 1 hour in seconds
             String expectedUrl = "http://minio:9000/crms-documents/test-document.pdf?signature=xyz";
             
-            when(minioClient.presignedGetObject(any(PresignedGetObjectArgs.class)))
+            when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
                     .thenReturn(expectedUrl);
 
             // When
@@ -294,14 +297,14 @@ class MinioStorageServiceImplTest {
             String objectId = "test-document.pdf";
             Integer veryLongExpiry = 999999999; // More than 7 days
             
-            when(minioClient.presignedGetObject(any(PresignedGetObjectArgs.class)))
+            when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
                     .thenReturn("http://example.com");
 
             // When
             minioStorageService.getDownloadUrl(bucket, objectId, veryLongExpiry);
 
             // Then - Verify that presignedGetObject was called (expiry is capped internally)
-            verify(minioClient).presignedGetObject(any(PresignedGetObjectArgs.class));
+            verify(minioClient).getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class));
         }
 
         @Test
@@ -311,7 +314,7 @@ class MinioStorageServiceImplTest {
             String bucket = "crms-documents";
             String objectId = "test-document.pdf";
             
-            when(minioClient.presignedGetObject(any(PresignedGetObjectArgs.class)))
+            when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
                     .thenThrow(new RuntimeException("URL generation failed"));
 
             // When/Then
@@ -329,7 +332,7 @@ class MinioStorageServiceImplTest {
             String contentType = "application/pdf";
             String expectedUrl = "http://minio:9000/crms-documents/test-document.pdf?upload=true";
             
-            when(minioClient.presignedPutObject(any(PresignedPutObjectArgs.class)))
+            when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
                     .thenReturn(expectedUrl);
 
             // When
@@ -350,7 +353,7 @@ class MinioStorageServiceImplTest {
             Integer customExpiry = 7200; // 2 hours
             String expectedUrl = "http://minio:9000/crms-documents/test-document.pdf?upload=true";
             
-            when(minioClient.presignedPutObject(any(PresignedPutObjectArgs.class)))
+            when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
                     .thenReturn(expectedUrl);
 
             // When
@@ -378,7 +381,7 @@ class MinioStorageServiceImplTest {
             String objectId = "test-document.pdf";
             
             when(minioClient.statObject(any(StatObjectArgs.class)))
-                    .thenReturn(StatObjectResponse.builder().build());
+                    .thenReturn(mock(StatObjectResponse.class));
 
             // When
             boolean result = minioStorageService.objectExists(bucket, objectId);
@@ -419,7 +422,7 @@ class MinioStorageServiceImplTest {
             // Given
             String bucket = "crms-documents";
             String objectId = "test-document.pdf";
-            StatObjectResponse expectedStat = StatObjectResponse.builder().build();
+            StatObjectResponse expectedStat = mock(StatObjectResponse.class);
             
             when(minioClient.statObject(any(StatObjectArgs.class))).thenReturn(expectedStat);
 

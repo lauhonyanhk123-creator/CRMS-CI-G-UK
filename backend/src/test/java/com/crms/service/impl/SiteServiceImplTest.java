@@ -19,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +40,7 @@ import static org.mockito.Mockito.*;
  * Tests cover site CRUD operations, pagination, and filtering.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class SiteServiceImplTest {
 
     @Mock
@@ -57,7 +60,7 @@ class SiteServiceImplTest {
     void setUp() {
         testCompany = Company.builder()
                 .id(1L)
-                .name("Test Client Ltd")
+                .name("Test Company Ltd")
                 .companyType(CompanyType.CLIENT)
                 .status(CompanyStatus.ACTIVE)
                 .build();
@@ -134,7 +137,7 @@ class SiteServiceImplTest {
         void findAll_filtersByStatus() {
             // Given
             Page<Site> sitePage = new PageImpl<>(List.of(testSite));
-            when(siteRepository.findByStatus(eq("ACTIVE"), any(Pageable.class))).thenReturn(sitePage);
+            when(siteRepository.findByStatus(eq(SiteStatus.ACTIVE), any(Pageable.class))).thenReturn(sitePage);
 
             // When
             PageResponse<SiteResponse> response = siteService.findAll(Map.of("status", "ACTIVE"));
@@ -142,7 +145,7 @@ class SiteServiceImplTest {
             // Then
             assertNotNull(response);
             assertEquals(1, response.getContent().size());
-            verify(siteRepository).findByStatus(eq("ACTIVE"), any(Pageable.class));
+            verify(siteRepository).findByStatus(eq(SiteStatus.ACTIVE), any(Pageable.class));
         }
 
         @Test
@@ -196,7 +199,7 @@ class SiteServiceImplTest {
             assertEquals("SITE001", response.getSiteCode());
             assertEquals("ACTIVE", response.getStatus());
             assertEquals(1L, response.getClientId());
-            assertEquals("Test Client Ltd", response.getClientName());
+            assertEquals("Test Company Ltd", response.getClientName());
         }
 
         @Test
@@ -268,13 +271,13 @@ class SiteServiceImplTest {
         @DisplayName("update changes client when clientId provided")
         void update_changesClient_whenClientIdProvided() {
             // Given
-            Company newClient = Company.builder()
+            Company newCompany = Company.builder()
                     .id(2L)
-                    .name("New Client Ltd")
+                    .name("New Company Ltd")
                     .build();
             
             when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
-            when(companyRepository.findById(2L)).thenReturn(Optional.of(newClient));
+            when(companyRepository.findById(2L)).thenReturn(Optional.of(newCompany));
             when(siteRepository.save(any(Site.class))).thenReturn(testSite);
 
             SiteRequest updateRequest = SiteRequest.builder()
@@ -360,14 +363,14 @@ class SiteServiceImplTest {
         @DisplayName("mapToResponse handles null client correctly")
         void mapToResponse_handlesNullClient() {
             // Given
-            Site siteWithoutClient = Site.builder()
+            Site siteWithoutCompany = Site.builder()
                     .id(1L)
                     .name("Test Site")
                     .siteCode("SITE001")
                     .client(null)
                     .status(SiteStatus.TENDER)
                     .build();
-            when(siteRepository.findById(1L)).thenReturn(Optional.of(siteWithoutClient));
+            when(siteRepository.findById(1L)).thenReturn(Optional.of(siteWithoutCompany));
 
             // When
             SiteResponse response = siteService.findById(1L);
@@ -448,7 +451,7 @@ class SiteServiceImplTest {
 
             // Then
             assertEquals(0, response.getPage());
-            assertEquals(10, response.getSize());
+            assertEquals(20, response.getSize());
             assertEquals(100L, response.getTotalElements());
             assertEquals(10, response.getTotalPages());
             assertEquals(1, response.getContent().size());

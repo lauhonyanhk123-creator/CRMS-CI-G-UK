@@ -1,5 +1,6 @@
 package com.crms.domain.healthsafety.entity;
 
+import java.time.LocalDateTime;
 import com.crms.domain.common.entity.BaseEntity;
 import com.crms.domain.contract.entity.Contract;
 import jakarta.persistence.*;
@@ -18,6 +19,9 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class F10Notification extends BaseEntity {
+
+    @Transient
+    private Long compatibilityId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false)
@@ -75,4 +79,26 @@ public class F10Notification extends BaseEntity {
         return (moreThan30Days != null && moreThan30Days) || 
                (moreThan500PersonDays != null && moreThan500PersonDays);
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class F10NotificationBuilder {
+        public F10NotificationBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

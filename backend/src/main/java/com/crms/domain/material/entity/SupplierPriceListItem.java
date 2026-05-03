@@ -20,6 +20,9 @@ import java.time.LocalDate;
 @Builder
 public class SupplierPriceListItem extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;
@@ -51,4 +54,26 @@ public class SupplierPriceListItem extends BaseEntity {
         return (validFrom == null || !validFrom.isAfter(now))
                 && (validTo == null || !validTo.isBefore(now));
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class SupplierPriceListItemBuilder {
+        public SupplierPriceListItemBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

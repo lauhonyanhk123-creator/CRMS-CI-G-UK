@@ -16,12 +16,10 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @Where(clause = "deleted_at IS NULL")
 public class Subcontractor extends Company {
 
     @OneToMany(mappedBy = "company", cascade = jakarta.persistence.CascadeType.ALL)
-    @Builder.Default
     private List<CISVerification> cisVerifications = new ArrayList<>();
 
     public boolean isGateApproved() {

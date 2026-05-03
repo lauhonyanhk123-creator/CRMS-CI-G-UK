@@ -1,5 +1,6 @@
 package com.crms.web;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.crms.dto.request.RAMSTemplateRequest;
 import com.crms.dto.response.ApiResponse;
 import com.crms.dto.response.PageResponse;

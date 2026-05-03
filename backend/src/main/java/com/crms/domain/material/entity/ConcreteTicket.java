@@ -22,6 +22,9 @@ import java.util.List;
 @Builder
 public class ConcreteTicket extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delivery_note_id", nullable = false)
     private DeliveryNote deliveryNote;
@@ -84,4 +87,26 @@ public class ConcreteTicket extends BaseEntity {
         }
         return BigDecimal.ZERO;
     }
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class ConcreteTicketBuilder {
+        public ConcreteTicketBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }

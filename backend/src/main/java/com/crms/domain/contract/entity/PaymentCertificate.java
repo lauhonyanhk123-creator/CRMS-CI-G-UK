@@ -19,6 +19,9 @@ import java.time.LocalDate;
 @Builder
 public class PaymentCertificate extends BaseEntity {
 
+    @Transient
+    private Long compatibilityId;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false)
     private ApplicationForPayment application;
@@ -40,4 +43,26 @@ public class PaymentCertificate extends BaseEntity {
 
     @Column(name = "certificate_ref")
     private String certificateRef;
+
+    /** Compatibility builder method for tests and legacy mapper code. */
+    public static class PaymentCertificateBuilder {
+        public PaymentCertificateBuilder id(Long id) {
+            this.compatibilityId = id;
+            return this;
+        }
+    }
+
+
+    @Override
+    public Long getId() {
+        Long id = super.getId();
+        return id != null ? id : compatibilityId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        super.setId(id);
+        this.compatibilityId = id;
+    }
+
 }
