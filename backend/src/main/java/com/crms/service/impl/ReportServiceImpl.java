@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -26,6 +27,10 @@ import com.crms.domain.subcontractor.repository.CISReturnRepository;
 import com.crms.domain.tender.entity.Tender;
 import com.crms.domain.tender.repository.TenderRepository;
 import com.crms.domain.operative.repository.TimesheetRepository;
+import com.crms.domain.plant.entity.PlantAllocation;
+import com.crms.domain.plant.entity.PlantItem;
+import com.crms.domain.plant.repository.PlantAllocationRepository;
+import com.crms.domain.plant.repository.PlantItemRepository;
 import com.crms.dto.response.CITBLevyReport;
 
 @Slf4j
@@ -38,6 +43,8 @@ public class ReportServiceImpl implements ReportService {
     private final CISReturnRepository cisReturnRepository;
     private final TenderRepository tenderRepository;
     private final TimesheetRepository timesheetRepository;
+    private final PlantItemRepository plantItemRepository;
+    private final PlantAllocationRepository plantAllocationRepository;
 
     @Override
     public List<CVRItem> getCVR(Long contractId, String period) {
@@ -156,11 +163,44 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public Object getPlantUtilization(Map<String, Object> params) {
         log.info("Generating plant utilization report");
-        // Query plant allocations and hire records
-        // Calculate utilization % per plant item = (on-hire days / total days) × 100
+
+        LocalDate toDate = LocalDate.now();
+        LocalDate fromDate = toDate.minusDays(30);
+        if (params != null) {
+            if (params.containsKey("from")) fromDate = LocalDate.parse(params.get("from").toString());
+            if (params.containsKey("to")) toDate = LocalDate.parse(params.get("to").toString());
+        }
+        final LocalDate from = fromDate;
+        final LocalDate to = toDate;
+        long periodDays = ChronoUnit.DAYS.between(from, to) + 1;
+
         List<Map<String, Object>> utilization = new ArrayList<>();
-        // Implementation would query PlantAllocationRepository and PlantRepository
-        // For now, return empty list as placeholder
+        for (PlantItem plant : plantItemRepository.findAll()) {
+            List<PlantAllocation> allocations =
+                    plantAllocationRepository.findByPlantIdAndDateRange(plant.getId(), from, to);
+
+            long onHireDays = 0;
+            for (PlantAllocation alloc : allocations) {
+                LocalDate allocStart = alloc.getStartDate() != null && alloc.getStartDate().isAfter(from)
+                        ? alloc.getStartDate() : from;
+                LocalDate allocEnd = alloc.getEndDate() == null || alloc.getEndDate().isAfter(to)
+                        ? to : alloc.getEndDate();
+                if (!allocStart.isAfter(allocEnd)) {
+                    onHireDays += ChronoUnit.DAYS.between(allocStart, allocEnd) + 1;
+                }
+            }
+
+            double utilisationPct = periodDays > 0 ? (double) onHireDays / periodDays * 100 : 0;
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("plantId", plant.getId());
+            item.put("plantRef", plant.getPlantRef());
+            item.put("description", plant.getDescription());
+            item.put("status", plant.getStatus() != null ? plant.getStatus().name() : "");
+            item.put("onHireDays", onHireDays);
+            item.put("periodDays", periodDays);
+            item.put("utilisationPercent", Math.round(utilisationPct * 10.0) / 10.0);
+            utilization.add(item);
+        }
         return utilization;
     }
 
