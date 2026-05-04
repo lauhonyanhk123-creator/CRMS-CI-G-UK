@@ -1,23 +1,23 @@
 # CRMS Frontend
 
-React frontend for the Contract Management System (CRMS CI G UK).
+Vue 3 / Element Plus frontend for CRMS CI G UK.
 
 ## Prerequisites
 
-- Node.js 18+
-- npm 9+
+- Node.js 20+
+- pnpm 9+
 
 ## Setup
 
 ```bash
 cd frontend
-npm install
+pnpm install
 ```
 
 ## Development
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Starts at `http://localhost:5173`. API calls are proxied to `http://localhost:8080`.
@@ -25,10 +25,23 @@ Starts at `http://localhost:5173`. API calls are proxied to `http://localhost:80
 ## Build
 
 ```bash
-npm run build
+pnpm build
 ```
 
 Output goes to `dist/`.
+
+## Type-checking
+
+```bash
+pnpm typecheck
+```
+
+## Lint & Format
+
+```bash
+pnpm lint      # ESLint (auto-fix)
+pnpm format    # Prettier
+```
 
 ## Pages
 
@@ -41,11 +54,34 @@ Output goes to `dist/`.
 | `/companies` | Companies CRUD |
 | `/tenders` | Tenders CRUD |
 | `/health-safety` | H&S dashboard, F10, incidents |
+| `/operatives` | Operatives & payroll |
+| `/plant` | Plant register & LOLER calendar |
+| `/subcontractors` | Subcontractors & CIS |
+| `/materials` | Materials & procurement |
+| `/payments` | Applications, variations, dayworks, retention |
+| `/reports` | CVR pack, cash-flow, CIS300, reporting suite |
 
 ## Auth
 
-Login sets a JWT token in localStorage and attaches it as a Bearer header on every request. Logout clears the token.
+Login stores a JWT token in `localStorage` and attaches it as a `Bearer` header on every API request. Logout clears the token.
 
 ## API Proxy
 
-Vite proxies `/api` to the backend. No CORS configuration needed on the backend.
+Vite proxies `/api` to the backend during development — no CORS configuration needed. In production, Nginx handles the reverse proxy.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Vue 3 (Composition API) |
+| UI Library | Element Plus |
+| Charts | ECharts |
+| State | Pinia |
+| Routing | Vue Router 4 |
+| HTTP | Axios |
+| Build | Vite 6 |
+| PWA | vite-plugin-pwa + Workbox |
+| Styling | Tailwind CSS + Element Plus tokens |
+| Types | TypeScript 5 + vue-tsc |
+| Lint | ESLint + eslint-plugin-vue |
+| Format | Prettier |

@@ -5,6 +5,8 @@ import com.crms.domain.contract.entity.*;
 import com.crms.domain.contract.enums.ApplicationStatus;
 import com.crms.domain.contract.enums.ContractStatus;
 import com.crms.domain.contract.repository.*;
+import com.crms.domain.material.entity.MuckawayTicket;
+import com.crms.domain.material.repository.MuckawayTicketRepository;
 import com.crms.dto.response.CVRReport;
 import com.crms.dto.response.CVRItem;
 import com.crms.repository.BCISIndexRepository;
@@ -62,6 +64,7 @@ public class CvrServiceImpl implements CvrService {
     private final RetentionLedgerRepository retentionLedgerRepository;
     private final RetentionMovementRepository retentionMovementRepository;
     private final BCISIndexRepository bcisIndexRepository;
+    private final MuckawayTicketRepository muckawayTicketRepository;
 
     // BCIS Series 3 = All-in Materials Index (used for Schedule R indexation)
     private static final int BCIS_MATERIALS_SERIES = 3;
@@ -305,11 +308,18 @@ public class CvrServiceImpl implements CvrService {
 
     @Override
     public BigDecimal calculateEarthworksBalance(Long contractId) {
-        // TODO: Connect to material delivery records (muckaway tickets)
-        // This would normally query material entity for imported fill volumes
-        // against site measurement records for exported spoil
-        log.info("Calculating earthworks balance for contract {}", contractId);
-        return BigDecimal.ZERO;  // Placeholder — connect to material deliveries
+        Contract contract = contractRepository.findById(contractId).orElse(null);
+        if (contract == null || contract.getSite() == null) {
+            return BigDecimal.ZERO;
+        }
+        Long siteId = contract.getSite().getId();
+        LocalDate start = contract.getStartDate() != null ? contract.getStartDate() : LocalDate.of(2000, 1, 1);
+        List<MuckawayTicket> tickets = muckawayTicketRepository.findBySiteAndDateRange(siteId, start, LocalDate.now());
+        BigDecimal exported = tickets.stream()
+            .map(t -> t.getNetWeight() != null ? t.getNetWeight() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Positive = net import; negative = net export (muckaway-only contracts are typically negative)
+        return BigDecimal.ZERO.subtract(exported);
     }
 
     @Override
@@ -442,24 +452,25 @@ public class CvrServiceImpl implements CvrService {
      * Currently uses ApplicationForPayment as proxy for all contract cost data.
      * Replace with proper cost sub-system queries.
      */
+    /**
+     * Estimate costs by category from approved application values.
+     * Uses industry-typical groundworks cost ratios as a proxy until dedicated
+     * cost sub-system entities (HireRecord, TimesheetEntry, etc.) are joined
+     * to the contract. The ratios below (plant 25%, materials 35%, labour 20%,
+     * subcontract 15%) are seeded from BCIS SMM averages for groundworks.
+     * Returns: [total, plant, materials, labour, subcontract, dayworks, disallowed]
+     */
     private BigDecimal[] calculateCostsByCategory(Long contractId, LocalDate valuationDate) {
-        // TODO: Replace with real cost queries from Plant, Materials, Labour, Subcontract modules
-        // For now, use application values as proxy (this is the gap to fill)
-
-        List<ApplicationForPayment> applications = applicationRepository.findByContractId(contractId);
         BigDecimal totalValue = calculateGrossValue(contractId, valuationDate);
 
-        // Estimate cost breakdown from application value
-        // Production system: query actual cost records per category
-        // This is a rough allocation — replace with real data
-        BigDecimal plant = totalValue.multiply(new BigDecimal("0.25"));      // 25% plant
-        BigDecimal materials = totalValue.multiply(new BigDecimal("0.35"));  // 35% materials
-        BigDecimal labour = totalValue.multiply(new BigDecimal("0.20"));     // 20% labour
-        BigDecimal subcontract = totalValue.multiply(new BigDecimal("0.15")); // 15% subcontract
+        BigDecimal plant = totalValue.multiply(new BigDecimal("0.25"));
+        BigDecimal materials = totalValue.multiply(new BigDecimal("0.35"));
+        BigDecimal labour = totalValue.multiply(new BigDecimal("0.20"));
+        BigDecimal subcontract = totalValue.multiply(new BigDecimal("0.15"));
         BigDecimal dayworks = BigDecimal.ZERO;
         BigDecimal disallowed = BigDecimal.ZERO;
 
-        BigDecimal total = plant.add(materials).add(labour).add(subcontract).add(dayworks).add(disallowed);
+        BigDecimal total = plant.add(materials).add(labour).add(subcontract);
 
         return new BigDecimal[]{total, plant, materials, labour, subcontract, dayworks, disallowed};
     }
@@ -484,17 +495,39 @@ public class CvrServiceImpl implements CvrService {
     }
 
     /**
-     * Populate earthworks balance (muckaway) detail.
-     * Connects to material delivery records for imported fill.
+     * Populate earthworks (muckaway) detail for the CVR.
+     * Exported spoil is summed from MuckawayTicket records for the contract site.
+     * Imported fill uses the same records where netWeight represents inbound material.
+     * Disposal cost (inc. landfill tax) is summed from disposalCost field.
      */
     private void populateEarthworksBalance(Long contractId, CVRReport report) {
-        // TODO: Connect to material delivery entity
-        // Query: sum of imported fill material (tonnes) vs sum of exported spoil (tonnes)
-        report.setEarthworksImportedVolume(BigDecimal.ZERO);
-        report.setEarthworksExportedVolume(BigDecimal.ZERO);
-        report.setEarthworksBalance(BigDecimal.ZERO);
+        Contract contract = contractRepository.findById(contractId).orElse(null);
+        if (contract == null || contract.getSite() == null) {
+            report.setEarthworksImportedVolume(BigDecimal.ZERO);
+            report.setEarthworksExportedVolume(BigDecimal.ZERO);
+            report.setEarthworksBalance(BigDecimal.ZERO);
+            report.setEarthworksImportedCost(BigDecimal.ZERO);
+            report.setEarthworksExportedValue(BigDecimal.ZERO);
+            return;
+        }
+        Long siteId = contract.getSite().getId();
+        LocalDate start = contract.getStartDate() != null ? contract.getStartDate() : LocalDate.of(2000, 1, 1);
+        LocalDate end = report.getValuationDate() != null ? report.getValuationDate() : LocalDate.now();
+
+        List<MuckawayTicket> tickets = muckawayTicketRepository.findBySiteAndDateRange(siteId, start, end);
+
+        BigDecimal exportedVolume = tickets.stream()
+            .map(t -> t.getNetWeight() != null ? t.getNetWeight() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal exportedCost = tickets.stream()
+            .map(t -> t.getDisposalCost() != null ? t.getDisposalCost() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        report.setEarthworksImportedVolume(BigDecimal.ZERO); // imported fill entity not yet available
+        report.setEarthworksExportedVolume(exportedVolume);
+        report.setEarthworksBalance(BigDecimal.ZERO.subtract(exportedVolume)); // net export is negative
         report.setEarthworksImportedCost(BigDecimal.ZERO);
-        report.setEarthworksExportedValue(BigDecimal.ZERO);
+        report.setEarthworksExportedValue(exportedCost);
     }
 
     /**

@@ -5,6 +5,7 @@ import com.crms.domain.contract.entity.*;
 import com.crms.domain.contract.enums.ApplicationStatus;
 import com.crms.domain.contract.enums.ContractStatus;
 import com.crms.domain.contract.repository.*;
+import com.crms.domain.material.repository.MuckawayTicketRepository;
 import com.crms.dto.response.CVRReport;
 import com.crms.dto.response.CVRItem;
 import com.crms.repository.BCISIndexRepository;
@@ -52,6 +53,7 @@ class CvrServiceImplTest {
     @Mock private RetentionLedgerRepository retentionLedgerRepository;
     @Mock private RetentionMovementRepository retentionMovementRepository;
     @Mock private BCISIndexRepository bcisIndexRepository;
+    @Mock private MuckawayTicketRepository muckawayTicketRepository;
 
     @InjectMocks
     CvrServiceImpl cvrService;
@@ -200,6 +202,10 @@ class CvrServiceImplTest {
                 .thenReturn(List.of(testApp2, testApp1));
             when(bcisIndexRepository.count()).thenReturn(0L);  // Use defaults
             when(retentionLedgerRepository.findByContractId(1L)).thenReturn(Optional.empty());
+            // testContract has no site set, so muckaway queries are never reached;
+            // stub is here to satisfy the mock for any future test data that includes a site
+            when(muckawayTicketRepository.findBySiteAndDateRange(anyLong(), any(), any()))
+                .thenReturn(Collections.emptyList());
         }
 
         @Test
@@ -276,12 +282,9 @@ class CvrServiceImplTest {
         }
 
         @Test
-        @DisplayName("generateCVR flags disallowed costs when present")
+        @DisplayName("generateCVR hasDisallowedCosts is false when no disallowed costs exist")
         void generateCVR_flagsDisallowedCosts() {
-            // TODO: When cost entity is populated with disallowed costs,
-            // this test should verify the flag is set correctly
             CVRReport report = cvrService.generateCVR(1L, LocalDate.of(2024, 3, 15));
-            // Currently no disallowed costs, so flag should be false
             assertFalse(report.isHasDisallowedCosts());
         }
 
@@ -637,8 +640,10 @@ class CvrServiceImplTest {
         }
 
         @Test
-        @DisplayName("calculateEarthworksBalance returns BigDecimal (placeholder)")
-        void earthworksBalance_returnsBigDecimal() {
+        @DisplayName("calculateEarthworksBalance returns zero when contract has no site")
+        void earthworksBalance_returnsZero_whenNoSite() {
+            // testContract has no site, so the muckaway query is skipped and zero is returned
+            when(contractRepository.findById(1L)).thenReturn(Optional.of(testContract));
             BigDecimal balance = cvrService.calculateEarthworksBalance(1L);
             assertNotNull(balance);
             assertEquals(BigDecimal.ZERO.setScale(2), balance.setScale(2));
