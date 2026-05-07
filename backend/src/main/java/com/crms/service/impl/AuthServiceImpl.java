@@ -120,7 +120,7 @@ public class AuthServiceImpl implements AuthService {
     
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
-                .id(user.getId().getLeastSignificantBits())
+                .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
