@@ -6,11 +6,14 @@ import com.crms.dto.request.RegisterRequest;
 import com.crms.dto.response.ApiResponse;
 import com.crms.dto.response.AuthResponse;
 import com.crms.dto.response.UserResponse;
+import com.crms.security.totp.TotpService;
+import com.crms.security.totp.TotpSetupResponse;
 import com.crms.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class AuthController {
     
     private final AuthService authService;
+    private final TotpService totpService;
     private final TokenBlacklistService tokenBlacklistService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -68,6 +72,39 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(request.getCurrentPassword(), request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+    }
+
+    // ── TOTP 2FA endpoints ────────────────────────────────────────────────────
+
+    @PostMapping("/totp/challenge")
+    @Operation(summary = "Complete TOTP challenge", description = "Exchange a TOTP challenge token + OTP code for a full JWT")
+    public ResponseEntity<ApiResponse<AuthResponse>> completeTotpChallenge(
+            @RequestBody Map<String, String> body) {
+        String challengeToken = body.get("challengeToken");
+        String code = body.get("code");
+        AuthResponse response = authService.completeTotpChallenge(challengeToken, code);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/totp/setup")
+    @Operation(summary = "Initiate TOTP setup", description = "Generate a TOTP secret and return a QR code data URI")
+    public ResponseEntity<ApiResponse<TotpSetupResponse>> setupTotp() {
+        TotpSetupResponse response = totpService.setupTotp();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/totp/enable")
+    @Operation(summary = "Enable TOTP", description = "Confirm a valid TOTP code to activate 2FA on the account")
+    public ResponseEntity<ApiResponse<Void>> enableTotp(@RequestBody Map<String, String> body) {
+        totpService.enableTotp(body.get("code"));
+        return ResponseEntity.ok(ApiResponse.success("Two-factor authentication enabled", null));
+    }
+
+    @DeleteMapping("/totp/disable")
+    @Operation(summary = "Disable TOTP", description = "Disable 2FA for the authenticated user")
+    public ResponseEntity<ApiResponse<Void>> disableTotp() {
+        totpService.disableTotp();
+        return ResponseEntity.ok(ApiResponse.success("Two-factor authentication disabled", null));
     }
 
     @PostMapping("/logout")

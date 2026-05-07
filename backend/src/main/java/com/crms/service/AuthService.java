@@ -16,4 +16,6 @@ public interface AuthService {
     UserResponse getProfile();
 
     void changePassword(String currentPassword, String newPassword);
+
+    AuthResponse completeTotpChallenge(String challengeToken, String totpCode);
 }

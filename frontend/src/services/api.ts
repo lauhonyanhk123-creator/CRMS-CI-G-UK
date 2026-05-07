@@ -852,7 +852,12 @@ export const api = {
       apiClient.post('/auth/refresh', { refreshToken: token }),
     getProfile: () => apiClient.get('/auth/profile'),
     changePassword: (data: { currentPassword: string; newPassword: string }) =>
-      apiClient.post('/auth/change-password', data)
+      apiClient.post('/auth/change-password', data),
+    totpSetup: () => apiClient.post('/auth/totp/setup'),
+    totpEnable: (code: string) => apiClient.post('/auth/totp/enable', { code }),
+    totpDisable: () => apiClient.delete('/auth/totp/disable'),
+    totpChallenge: (challengeToken: string, code: string) =>
+      apiClient.post('/auth/totp/challenge', { challengeToken, code })
   },
 
   companies: {

@@ -13,6 +13,7 @@ export interface User {
   roles: string[]
   enabled?: boolean
   mustChangePassword?: boolean
+  totpEnabled?: boolean
 }
 
 export interface LoginCredentials {
@@ -21,16 +22,23 @@ export interface LoginCredentials {
   rememberMe?: boolean
 }
 
+export interface TotpSetupData {
+  secret: string
+  qrDataUri: string
+  issuer: string
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
+  const totpChallengeToken = ref<string | null>(null)
+  const totpRequired = ref(false)
 
   const isAuthenticated = computed(() => !!token.value)
-
   const mustChangePassword = computed(() => !!user.value?.mustChangePassword)
 
-  const login = async (credentials: LoginCredentials): Promise<boolean> => {
+  const login = async (credentials: LoginCredentials): Promise<'ok' | 'totp' | false> => {
     try {
       const response = await api.auth.login({
         username: credentials.username,
@@ -38,10 +46,44 @@ export const useAuthStore = defineStore('auth', () => {
       })
 
       const data = response.data as any
+
+      if (data.requiresTotp) {
+        // Password correct but TOTP challenge required
+        totpChallengeToken.value = data.totpChallengeToken
+        totpRequired.value = true
+        user.value = data.user
+        return 'totp'
+      }
+
       user.value = data.user
       token.value = data.token
       refreshToken.value = data.refreshToken
+      totpChallengeToken.value = null
+      totpRequired.value = false
 
+      ElMessage.success('Login successful')
+      return 'ok'
+    } catch (error) {
+      const axiosError = error as AxiosError
+      const errData = axiosError.response?.data as any
+      const message = (errData && typeof errData === 'object' && 'message' in errData)
+        ? errData.message
+        : 'Login failed'
+      ElMessage.error(message)
+      return false
+    }
+  }
+
+  const completeTotpChallenge = async (code: string): Promise<boolean> => {
+    if (!totpChallengeToken.value) return false
+    try {
+      const response = await api.auth.totpChallenge(totpChallengeToken.value, code)
+      const data = response.data as any
+      user.value = data.user
+      token.value = data.token
+      refreshToken.value = data.refreshToken
+      totpChallengeToken.value = null
+      totpRequired.value = false
       ElMessage.success('Login successful')
       return true
     } catch (error) {
@@ -49,7 +91,7 @@ export const useAuthStore = defineStore('auth', () => {
       const errData = axiosError.response?.data as any
       const message = (errData && typeof errData === 'object' && 'message' in errData)
         ? errData.message
-        : 'Login failed'
+        : 'Invalid code'
       ElMessage.error(message)
       return false
     }
@@ -66,6 +108,8 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       token.value = null
       refreshToken.value = null
+      totpChallengeToken.value = null
+      totpRequired.value = false
     }
   }
 
@@ -103,9 +147,12 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     refreshToken,
+    totpChallengeToken,
+    totpRequired,
     isAuthenticated,
     mustChangePassword,
     login,
+    completeTotpChallenge,
     logout,
     refreshTokenFn,
     getProfile,
