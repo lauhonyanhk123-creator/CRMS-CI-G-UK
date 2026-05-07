@@ -8,6 +8,7 @@ import com.crms.dto.response.AuthResponse;
 import com.crms.dto.response.UserResponse;
 import com.crms.exception.ValidationException;
 import com.crms.security.JwtTokenProvider;
+import com.crms.security.totp.TotpService;
 import com.crms.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,21 +31,60 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final TotpService totpService;
     
     @Override
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
-        
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
+
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new ValidationException("User not found"));
-        
+
+        // If TOTP is enabled, return a challenge token instead of the full JWT
+        if (user.isTotpEnabled()) {
+            String challengeToken = tokenProvider.generateTotpChallengeToken(user.getUsername());
+            return AuthResponse.builder()
+                    .requiresTotp(true)
+                    .totpChallengeToken(challengeToken)
+                    .user(mapToUserResponse(user))
+                    .build();
+        }
+
         String token = tokenProvider.generateToken(authentication);
         String refreshToken = tokenProvider.generateRefreshToken(user.getUsername());
-        
+
+        return AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .expiresIn(tokenProvider.getExpirationTime())
+                .user(mapToUserResponse(user))
+                .build();
+    }
+
+    @Override
+    public AuthResponse completeTotpChallenge(String challengeToken, String totpCode) {
+        if (!tokenProvider.validateToken(challengeToken)) {
+            throw new ValidationException("Invalid or expired TOTP challenge token");
+        }
+        if (!tokenProvider.isTotpChallengeToken(challengeToken)) {
+            throw new ValidationException("Invalid challenge token type");
+        }
+
+        String username = tokenProvider.getUsernameFromToken(challengeToken);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ValidationException("User not found"));
+
+        if (!totpService.verifyCode(user, totpCode)) {
+            throw new ValidationException("Invalid TOTP code");
+        }
+
+        String token = tokenProvider.generateToken(user.getUsername(), user.getRoles());
+        String refreshToken = tokenProvider.generateRefreshToken(user.getUsername());
+
         return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)

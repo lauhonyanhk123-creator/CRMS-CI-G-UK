@@ -66,6 +66,13 @@ public class User {
     @Builder.Default
     private Boolean mustChangePassword = false;
 
+    @Column(name = "totp_secret", length = 64)
+    private String totpSecret;
+
+    @Column(name = "totp_enabled")
+    @Builder.Default
+    private boolean totpEnabled = false;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

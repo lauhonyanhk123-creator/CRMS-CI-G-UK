@@ -89,6 +89,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- TOTP 2FA -->
+        <dependency>
+            <groupId>dev.samstevens.totp</groupId>
+            <artifactId>totp</artifactId>
+            <version>1.7.1</version>
+        </dependency>
+
         <!-- PostgreSQL + Hibernate -->
         <dependency>
             <groupId>org.postgresql</groupId>

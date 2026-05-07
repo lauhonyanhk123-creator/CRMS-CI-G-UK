@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 // Lazy loaded views
 const LoginView = () => import('@/views/login/LoginView.vue')
 const ChangePasswordView = () => import('@/views/auth/ChangePasswordView.vue')
+const TotpSetupView = () => import('@/views/auth/TotpSetupView.vue')
 const DashboardView = () => import('@/views/dashboard/DashboardView.vue')
 const CompaniesView = () => import('@/views/companies/CompaniesView.vue')
 const CompanyDetailView = () => import('@/views/companies/CompanyDetailView.vue')
@@ -39,6 +40,12 @@ const routes: RouteRecordRaw[] = [
     name: 'ChangePassword',
     component: ChangePasswordView,
     meta: { requiresAuth: true, title: 'Change Password' }
+  },
+  {
+    path: '/account/2fa',
+    name: 'TotpSetup',
+    component: TotpSetupView,
+    meta: { requiresAuth: true, title: 'Two-Factor Authentication' }
   },
   {
     path: '/',

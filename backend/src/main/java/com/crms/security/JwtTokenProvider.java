@@ -130,4 +130,27 @@ public class JwtTokenProvider {
         return generateToken(claims, username);
     }
 
+    /** Generate a short-lived (5 min) challenge token used solely to identify a pending TOTP flow. */
+    public String generateTotpChallengeToken(String username) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("totp_challenge", true);
+        claims.put("jti", UUID.randomUUID().toString());
+        return Jwts.builder()
+                .claims(claims)
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 5 * 60 * 1000L)) // 5 minutes
+                .signWith(getSignInKey(), Jwts.SIG.HS256)
+                .compact();
+    }
+
+    public boolean isTotpChallengeToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return Boolean.TRUE.equals(claims.get("totp_challenge"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }
