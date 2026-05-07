@@ -4,6 +4,7 @@ import com.crms.domain.adoption.entity.Bond;
 import com.crms.domain.adoption.enums.BondStatus;
 import com.crms.domain.adoption.repository.BondRepository;
 import com.crms.service.BondService;
+import com.crms.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,6 +20,7 @@ public class BondExpiryAlertScheduler {
     
     private final BondRepository bondRepository;
     private final BondService bondService;
+    private final EmailService emailService;
     
     /**
      * Runs daily at 8:00 AM to check for bonds expiring within 30 days
@@ -94,9 +96,16 @@ public class BondExpiryAlertScheduler {
         log.info("  Expiring within 7 days: {}", expiring7Days.size());
         log.info("  Expiring within 30 days: {}", expiring30Days.size());
         log.info("  Expired (still active): {}", expiredBonds.size());
-        
-        // In a production system, this would send an email notification
-        // emailService.sendWeeklyBondReport(summary);
+
+        String reportBody = String.format(
+                "Weekly Bond Status Report%n%n" +
+                "Active: %d | Partially Released: %d | Released: %d | Called: %d%n" +
+                "Expiring within 7 days: %d%n" +
+                "Expiring within 30 days: %d%n" +
+                "Expired (still active — action required): %d",
+                activeBonds, partiallyReleased, released, called,
+                expiring7Days.size(), expiring30Days.size(), expiredBonds.size());
+        emailService.sendAdminAlert("CRMS Weekly Bond Status Report", reportBody);
     }
     
     private void sendExpiryAlert(Bond bond) {
@@ -115,10 +124,8 @@ public class BondExpiryAlertScheduler {
                 bond.getBondValue()
         );
         
-        // In production, this would send notification via email/SMS/push
-        // notificationService.sendAlert(bond.getAdoptionCase().getContract().getProjectManager(), alertMessage);
-        
         log.info("Alert: {}", alertMessage);
+        emailService.sendAdminAlert("Bond Expiry Alert: " + bond.getBondNumber(), alertMessage);
     }
     
     private void handleExpiredBond(Bond bond) {
@@ -138,8 +145,6 @@ public class BondExpiryAlertScheduler {
         );
         
         log.warn("Urgent: {}", urgentMessage);
-        
-        // In production, this would trigger escalation workflow
-        // escalationService.escalate(bond, UrgentLevel.HIGH);
+        emailService.sendAdminAlert("URGENT: Expired Bond — " + bond.getBondNumber(), urgentMessage);
     }
 }

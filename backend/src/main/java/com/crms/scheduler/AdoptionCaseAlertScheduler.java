@@ -6,6 +6,7 @@ import com.crms.domain.adoption.repository.AdoptionCaseRepository;
 import com.crms.domain.adoption.entity.AdoptionStage;
 import com.crms.domain.adoption.enums.StageStatus;
 import com.crms.domain.adoption.repository.AdoptionStageRepository;
+import com.crms.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -21,6 +23,7 @@ public class AdoptionCaseAlertScheduler {
     
     private final AdoptionCaseRepository adoptionCaseRepository;
     private final AdoptionStageRepository adoptionStageRepository;
+    private final EmailService emailService;
     
     /**
      * Runs daily at 7:00 AM to check for adoption cases nearing maintenance end
@@ -64,13 +67,21 @@ public class AdoptionCaseAlertScheduler {
         log.warn("Found {} overdue stages", overdueStages.size());
         
         for (AdoptionStage stage : overdueStages) {
-            log.info("Overdue: Case {}, Stage '{}', Planned: {}", 
+            log.info("Overdue: Case {}, Stage '{}', Planned: {}",
                     stage.getAdoptionCase().getCaseRef(),
                     stage.getStageName(),
                     stage.getPlannedDate());
         }
-        
-        // In production, send notifications to responsible parties
+
+        String body = "The following adoption case stages are overdue:\n\n" +
+                overdueStages.stream()
+                        .map(s -> String.format("  Case %s — Stage '%s' (planned %s)",
+                                s.getAdoptionCase().getCaseRef(),
+                                s.getStageName(),
+                                s.getPlannedDate()))
+                        .collect(Collectors.joining("\n"));
+        emailService.sendAdminAlert(
+                String.format("CRMS Alert: %d Overdue Adoption Stage(s)", overdueStages.size()), body);
     }
     
     /**
@@ -121,7 +132,7 @@ public class AdoptionCaseAlertScheduler {
         );
         
         log.info("Alert: {}", alertMessage);
-        
-        // In production, send notification and potentially trigger adoption workflow
+        emailService.sendAdminAlert(
+                "Maintenance Period Ending: " + adoptionCase.getCaseRef(), alertMessage);
     }
 }
