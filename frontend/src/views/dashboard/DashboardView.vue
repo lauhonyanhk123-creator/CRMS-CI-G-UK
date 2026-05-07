@@ -15,7 +15,7 @@ import { useApi } from '@/composables/useApi'
 import api from '@/services/api'
 import StatsCard from '@/components/common/StatsCard.vue'
 import { ElSkeleton } from 'element-plus'
-import { Plus, ChartLine, Document, Truck, Money, UserPlus, FolderPlus } from '@element-plus/icons-vue'
+import { Plus, DataLine, Document, Van, Money, User, Folder } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -32,7 +32,7 @@ use([
   GridComponent
 ])
 
-import apiClient from '@/services/api'
+import { apiClient } from '@/services/api'
 
 // Enhanced KPI stats
 const statsLoading = ref(true)
@@ -59,8 +59,8 @@ const activityLoading = ref(true)
 
 // Quick Actions
 const quickActions = [
-  { label: 'New Project', icon: FolderPlus, route: '/projects', type: 'primary' },
-  { label: 'Add Operative', icon: UserPlus, route: '/operatives', type: 'success' },
+  { label: 'New Project', icon: Folder, route: '/projects', type: 'primary' },
+  { label: 'Add Operative', icon: User, route: '/operatives', type: 'success' },
   { label: 'New Application', icon: Document, route: '/applications-for-payment', type: 'warning' },
   { label: 'Report Issue', icon: Plus, route: '/quality', type: 'info' }
 ]
@@ -536,7 +536,7 @@ const getAFR = computed(() => {
         <StatsCard
           title="Plant Allocated"
           :value="kpiStats.plantAllocated"
-          icon="Truck"
+          icon="Van"
           color="#909399"
           :loading="statsLoading"
         />

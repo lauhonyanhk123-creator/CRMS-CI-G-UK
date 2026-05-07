@@ -2,8 +2,8 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
-  Document, TrendCharts, Money, Truck, User, Tools,
-  DataAnalysis, FileText, List, Grid
+  Document, DataLine, Coin, Van, User, Tools,
+  DataAnalysis, Files, List, Grid
 } from '@element-plus/icons-vue'
 import api from '@/services/api'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -22,9 +22,9 @@ interface ReportCard {
 
 const financialReports = ref<ReportCard[]>([
   { id: 'afp', title: 'Applications for Payment Summary', icon: Document, description: 'Summary of all applications for payment by contract', reportType: 'financial_afp' },
-  { id: 'ret', title: 'Retentions Report', icon: Money, description: 'Retention held, released, and outstanding by contract', reportType: 'financial_retention' },
-  { id: 'var', title: 'Variances Report', icon: TrendCharts, description: 'Contract variations and approved/rejected amounts', reportType: 'financial_variance' },
-  { id: 'inv', title: 'Invoice Register', icon: FileText, description: 'Complete register of all invoices issued', reportType: 'financial_invoice' }
+  { id: 'ret', title: 'Retentions Report', icon: Coin, description: 'Retention held, released, and outstanding by contract', reportType: 'financial_retention' },
+  { id: 'var', title: 'Variances Report', icon: DataLine, description: 'Contract variations and approved/rejected amounts', reportType: 'financial_variance' },
+  { id: 'inv', title: 'Invoice Register', icon: Files, description: 'Complete register of all invoices issued', reportType: 'financial_invoice' }
 ])
 
 const projectReports = ref<ReportCard[]>([
@@ -34,9 +34,9 @@ const projectReports = ref<ReportCard[]>([
 ])
 
 const cisReports = ref<ReportCard[]>([
-  { id: 'cis300', title: 'CIS300 Submission Report', icon: FileText, description: 'CIS300 returns submitted to HMRC', reportType: 'cis_cis300' },
+  { id: 'cis300', title: 'CIS300 Submission Report', icon: Files, description: 'CIS300 returns submitted to HMRC', reportType: 'cis_cis300' },
   { id: 'subverify', title: 'Subcontractor Verification Report', icon: User, description: 'Subcontractor verification status', reportType: 'cis_verification' },
-  { id: 'ded', title: 'CIS Deductions Summary', icon: Money, description: 'Summary of CIS deductions made', reportType: 'cis_deductions' }
+  { id: 'ded', title: 'CIS Deductions Summary', icon: Coin, description: 'Summary of CIS deductions made', reportType: 'cis_deductions' }
 ])
 
 const hrReports = ref<ReportCard[]>([
@@ -46,7 +46,7 @@ const hrReports = ref<ReportCard[]>([
 ])
 
 const plantReports = ref<ReportCard[]>([
-  { id: 'alloc', title: 'Plant Allocation Report', icon: Truck, description: 'Plant allocation by site', reportType: 'plant_allocation' },
+  { id: 'alloc', title: 'Plant Allocation Report', icon: Van, description: 'Plant allocation by site', reportType: 'plant_allocation' },
   { id: 'loler', title: 'LOLER/PUWER Expiry Report', icon: Tools, description: 'Plant certifications expiring', reportType: 'plant_certification' },
   { id: 'hire', title: 'Plant Hire Register', icon: List, description: 'Complete plant hire register', reportType: 'plant_hire' }
 ])
@@ -149,7 +149,7 @@ const downloadReport = () => {
         <!-- Financial Reports -->
         <el-tab-pane>
           <template #label>
-            <el-icon><Money /></el-icon> Financial Reports
+            <el-icon><Coin /></el-icon> Financial Reports
           </template>
           <el-row :gutter="20">
             <el-col v-for="report in financialReports" :key="report.id" :xs="24" :sm="12" :md="8" :lg="6">
@@ -165,7 +165,7 @@ const downloadReport = () => {
         <!-- Project Reports -->
         <el-tab-pane>
           <template #label>
-            <el-icon><TrendCharts /></el-icon> Project Reports
+            <el-icon><DataLine /></el-icon> Project Reports
           </template>
           <el-row :gutter="20">
             <el-col v-for="report in projectReports" :key="report.id" :xs="24" :sm="12" :md="8" :lg="6">
@@ -213,7 +213,7 @@ const downloadReport = () => {
         <!-- Plant Reports -->
         <el-tab-pane>
           <template #label>
-            <el-icon><Truck /></el-icon> Plant Reports
+            <el-icon><Van /></el-icon> Plant Reports
           </template>
           <el-row :gutter="20">
             <el-col v-for="report in plantReports" :key="report.id" :xs="24" :sm="12" :md="8" :lg="6">

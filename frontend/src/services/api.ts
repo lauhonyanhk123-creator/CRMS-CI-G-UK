@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 
 // Base API instance
-const apiClient: AxiosInstance = axios.create({
+export const apiClient: AxiosInstance = axios.create({
   baseURL: '/api/v1',
   timeout: 30000,
   headers: {
@@ -26,16 +26,31 @@ apiClient.interceptors.request.use(
 
 // Response interceptor - handle errors and 401
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Unwrap ApiResponse envelope { success, message, data } → data
+    if (response.data && typeof response.data === 'object' && 'success' in response.data) {
+      response.data = response.data.data
+    }
+    return response
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
-    
+
+    // Handle 403 MUST_CHANGE_PASSWORD before any retry logic
+    if (error.response?.status === 403) {
+      const data = error.response.data as any
+      if (data?.code === 'MUST_CHANGE_PASSWORD') {
+        router.push('/change-password')
+        return Promise.reject(error)
+      }
+    }
+
     // Handle 401 - unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      
+
       const authStore = useAuthStore()
-      
+
       // Try to refresh token
       if (authStore.refreshToken) {
         try {
@@ -48,20 +63,20 @@ apiClient.interceptors.response.use(
           // Refresh failed
         }
       }
-      
+
       // Logout and redirect to login
       await authStore.logout()
       router.push('/login')
       ElMessage.error('Session expired. Please login again.')
     }
-    
+
     // Handle other errors
     const message = (error.response?.data as any)?.message || error.message || 'An error occurred'
-    
+
     if (error.response?.status !== 401) {
       ElMessage.error(message)
     }
-    
+
     return Promise.reject(error)
   }
 )
@@ -807,11 +822,13 @@ export interface WipEntry {
 export const api = {
   auth: {
     login: (credentials: { username: string; password: string }) =>
-      apiClient.post<{ user: User; token: string; refreshToken: string }>('/auth/login', credentials),
+      apiClient.post('/auth/login', credentials),
     logout: () => apiClient.post('/auth/logout'),
     refreshToken: (token: string) =>
-      apiClient.post<{ token: string; refreshToken: string }>('/auth/refresh', { refreshToken: token }),
-    getProfile: () => apiClient.get<User>('/auth/profile')
+      apiClient.post('/auth/refresh', { refreshToken: token }),
+    getProfile: () => apiClient.get('/auth/profile'),
+    changePassword: (data: { currentPassword: string; newPassword: string }) =>
+      apiClient.post('/auth/change-password', data)
   },
 
   companies: {
@@ -1160,11 +1177,12 @@ export const api = {
     updateSettings: (data: any) => apiClient.put('/admin/settings', data),
 
     users: {
-      getAll: (params?: { search?: string; role?: string; status?: string; page?: number; limit?: number }) =>
-        apiClient.get<{ data: any[]; total: number }>('/admin/users', { params }),
-      getById: (id: string) => apiClient.get<any>(`/admin/users/${id}`),
-      create: (data: any) => apiClient.post<any>('/admin/users', data),
-      update: (id: string, data: any) => apiClient.put<any>(`/admin/users/${id}`, data),
+      getAll: (params?: { page?: number; size?: number; sort?: string }) =>
+        apiClient.get('/admin/users', { params }),
+      create: (data: { username: string; email: string; password: string; firstName?: string; lastName?: string; role?: string }) =>
+        apiClient.post('/admin/users', data),
+      update: (id: string, data: { email?: string; firstName?: string; lastName?: string; roles?: string[]; enabled?: boolean; newPassword?: string }) =>
+        apiClient.patch(`/admin/users/${id}`, data),
       delete: (id: string) => apiClient.delete(`/admin/users/${id}`)
     }
   },

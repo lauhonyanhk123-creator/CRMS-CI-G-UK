@@ -768,10 +768,10 @@ const getContractRef = (contractId?: string) => contracts.value.find(c => c.id =
           <el-input v-model="incidentForm.data.description" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item label="Persons Involved">
-          <el-input v-model="incidentForm.data.personsInvolved.join(', ')" placeholder="Names (comma separated)" @input="v => incidentForm.data.personsInvolved = v.split(',').map(s => s.trim()).filter(Boolean)" />
+          <el-input :model-value="incidentForm.data.personsInvolved.join(', ')" placeholder="Names (comma separated)" @input="(v: string) => incidentForm.data.personsInvolved = v.split(',').map((s: string) => s.trim()).filter(Boolean)" />
         </el-form-item>
         <el-form-item label="Witnesses">
-          <el-input v-model="incidentForm.data.witnesses.join(', ')" placeholder="Names (comma separated)" @input="v => incidentForm.data.witnesses = v.split(',').map(s => s.trim()).filter(Boolean)" />
+          <el-input :model-value="incidentForm.data.witnesses.join(', ')" placeholder="Names (comma separated)" @input="(v: string) => incidentForm.data.witnesses = v.split(',').map((s: string) => s.trim()).filter(Boolean)" />
         </el-form-item>
         <el-form-item label="Action Taken">
           <el-input v-model="incidentForm.data.actionTaken" type="textarea" :rows="2" />

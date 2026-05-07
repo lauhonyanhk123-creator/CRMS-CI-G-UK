@@ -2,29 +2,25 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
-import api, { type User } from '@/services/api'
+import api from '@/services/api'
 import PageHeader from '@/components/common/PageHeader.vue'
-import StatusBadge from '@/components/common/StatusBadge.vue'
 
 interface AdminUser {
   id: string
+  username: string
   firstName: string
   lastName: string
   email: string
-  role: 'ADMIN' | 'SURVEYOR' | 'CONTRACT_MANAGER' | 'DIRECTOR'
-  status: 'ACTIVE' | 'INACTIVE'
-  lastLogin?: string
-  phone?: string
-  companyId?: string
+  roles: string[]
+  enabled: boolean
+  mustChangePassword: boolean
 }
 
 const loading = ref(false)
 const users = ref<AdminUser[]>([])
 const total = ref(0)
 
-const searchQuery = ref('')
-const filterRole = ref('')
-const filterStatus = ref('')
+const sortField = ref('username')
 const currentPage = ref(1)
 const pageSize = ref(20)
 
@@ -33,43 +29,50 @@ const dialogLoading = ref(false)
 const editingId = ref('')
 
 const form = ref({
+  username: '',
   firstName: '',
   lastName: '',
   email: '',
-  role: 'SURVEYOR' as AdminUser['role'],
+  role: 'ROLE_USER',
   password: '',
-  phone: '',
-  companyId: ''
+  newPassword: ''
 })
 
 const roles = [
-  { label: 'Admin', value: 'ADMIN' },
-  { label: 'Surveyor', value: 'SURVEYOR' },
-  { label: 'Contract Manager', value: 'CONTRACT_MANAGER' },
-  { label: 'Director', value: 'DIRECTOR' }
+  { label: 'Admin', value: 'ROLE_ADMIN' },
+  { label: 'User', value: 'ROLE_USER' },
+  { label: 'Ops Director', value: 'ROLE_OPS_DIRECTOR' },
+  { label: 'Contracts Manager', value: 'ROLE_CONTRACTS_MANAGER' },
+  { label: 'QS', value: 'ROLE_QS' },
+  { label: 'Site Agent', value: 'ROLE_SITE_AGENT' },
+  { label: 'Engineer', value: 'ROLE_ENGINEER' },
+  { label: 'Plant Manager', value: 'ROLE_PLANT_MANAGER' },
+  { label: 'Buyer', value: 'ROLE_BUYER' },
+  { label: 'Finance', value: 'ROLE_FINANCE' },
+  { label: 'Estimator', value: 'ROLE_ESTIMATOR' },
+  { label: 'Bid Manager', value: 'ROLE_BID_MANAGER' },
+  { label: 'IT Admin', value: 'ROLE_IT_ADMIN' }
 ]
+
+const roleLabel = (roleValue: string) =>
+  roles.find(r => r.value === roleValue)?.label ?? roleValue.replace('ROLE_', '').replace('_', ' ')
 
 const loadUsers = async () => {
   loading.value = true
   try {
     const response = await api.admin.users.getAll({
-      search: searchQuery.value || undefined,
-      role: filterRole.value || undefined,
-      status: filterStatus.value || undefined,
-      page: currentPage.value,
-      limit: pageSize.value
+      page: currentPage.value - 1,  // backend is 0-based
+      size: pageSize.value,
+      sort: sortField.value
     })
-    users.value = response.data.data
-    total.value = response.data.total
+    const page = response.data as any
+    users.value = page.content ?? []
+    total.value = page.totalElements ?? 0
   } catch {
     ElMessage.error('Failed to load users')
   } finally {
-    loading.value = false }
-}
-
-const handleSearch = () => {
-  currentPage.value = 1
-  loadUsers()
+    loading.value = false
+  }
 }
 
 const handlePageChange = (page: number) => {
@@ -79,28 +82,20 @@ const handlePageChange = (page: number) => {
 
 const handleAdd = () => {
   editingId.value = ''
-  form.value = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    role: 'SURVEYOR',
-    password: '',
-    phone: '',
-    companyId: ''
-  }
+  form.value = { username: '', firstName: '', lastName: '', email: '', role: 'ROLE_USER', password: '', newPassword: '' }
   dialogVisible.value = true
 }
 
 const handleEdit = (user: AdminUser) => {
   editingId.value = user.id
   form.value = {
-    firstName: user.firstName,
-    lastName: user.lastName,
+    username: user.username,
+    firstName: user.firstName ?? '',
+    lastName: user.lastName ?? '',
     email: user.email,
-    role: user.role,
+    role: user.roles?.[0] ?? 'ROLE_USER',
     password: '',
-    phone: user.phone || '',
-    companyId: user.companyId || ''
+    newPassword: ''
   }
   dialogVisible.value = true
 }
@@ -109,65 +104,69 @@ const handleSave = async () => {
   dialogLoading.value = true
   try {
     if (editingId.value) {
-      await api.admin.users.update(editingId.value, {
+      const payload: Record<string, any> = {
         firstName: form.value.firstName,
         lastName: form.value.lastName,
         email: form.value.email,
-        role: form.value.role,
-        phone: form.value.phone,
-        companyId: form.value.companyId
-      })
-      ElMessage.success('User updated successfully')
+        roles: [form.value.role]
+      }
+      if (form.value.newPassword) payload.newPassword = form.value.newPassword
+      await api.admin.users.update(editingId.value, payload)
+      ElMessage.success('User updated')
     } else {
+      if (!form.value.username || !form.value.email || !form.value.password) {
+        ElMessage.error('Username, email and password are required')
+        return
+      }
       await api.admin.users.create({
+        username: form.value.username,
+        email: form.value.email,
+        password: form.value.password,
         firstName: form.value.firstName,
         lastName: form.value.lastName,
-        email: form.value.email,
-        role: form.value.role,
-        password: form.value.password,
-        phone: form.value.phone,
-        companyId: form.value.companyId
+        role: form.value.role
       })
-      ElMessage.success('User created successfully')
+      ElMessage.success('User created — they must change their password on first login')
     }
     dialogVisible.value = false
     loadUsers()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || 'Failed to save user')
+    // Error shown by interceptor
   } finally {
     dialogLoading.value = false
   }
 }
 
-const handleDelete = async (user: AdminUser) => {
+const handleToggleEnabled = async (user: AdminUser) => {
+  const action = user.enabled ? 'disable' : 'enable'
   try {
     await ElMessageBox.confirm(
-      `Are you sure you want to delete user "${user.firstName} ${user.lastName}"?`,
-      'Confirm Delete',
+      `${action.charAt(0).toUpperCase() + action.slice(1)} account for ${user.username}?`,
+      'Confirm',
       { type: 'warning' }
     )
-    await api.admin.users.delete(user.id)
-    ElMessage.success('User deleted successfully')
+    if (user.enabled) {
+      await api.admin.users.delete(user.id)
+    } else {
+      await api.admin.users.update(user.id, { enabled: true })
+    }
+    ElMessage.success(`User ${action}d`)
     loadUsers()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error?.response?.data?.message || 'Failed to delete user')
+      ElMessage.error(`Failed to ${action} user`)
     }
   }
 }
 
-const getRoleType = (role: string) => {
+const getRoleTagType = (role: string) => {
   const map: Record<string, string> = {
-    ADMIN: 'danger',
-    SURVEYOR: '',
-    CONTRACT_MANAGER: 'warning',
-    DIRECTOR: 'success'
+    ROLE_ADMIN: 'danger',
+    ROLE_IT_ADMIN: 'danger',
+    ROLE_OPS_DIRECTOR: 'warning',
+    ROLE_CONTRACTS_MANAGER: 'warning'
   }
-  return map[role] || ''
-}
-
-const formatDate = (date?: string) => {
-  return date ? new Date(date).toLocaleString() : '—'
+  return map[role] ?? ''
 }
 
 onMounted(() => {
@@ -186,60 +185,52 @@ onMounted(() => {
     </PageHeader>
 
     <el-card shadow="never">
-      <!-- Filters -->
-      <div class="filters">
-        <el-input
-          v-model="searchQuery"
-          placeholder="Search by name or email..."
-          :prefix-icon="Search"
-          clearable
-          style="width: 300px"
-          @keyup.enter="handleSearch"
-        />
-        <el-select v-model="filterRole" placeholder="All Roles" clearable style="width: 180px" @change="handleSearch">
-          <el-option v-for="role in roles" :key="role.value" :label="role.label" :value="role.value" />
-        </el-select>
-        <el-select v-model="filterStatus" placeholder="All Statuses" clearable style="width: 150px" @change="handleSearch">
-          <el-option label="Active" value="ACTIVE" />
-          <el-option label="Inactive" value="INACTIVE" />
-        </el-select>
-        <el-button type="primary" @click="handleSearch">Search</el-button>
-      </div>
-
-      <!-- Users Table -->
-      <el-table v-loading="loading" :data="users" stripe style="margin-top: 20px">
-        <el-table-column label="Name" min-width="180">
+      <el-table v-loading="loading" :data="users" stripe>
+        <el-table-column prop="username" label="Username" width="150" />
+        <el-table-column label="Name" min-width="160">
           <template #default="{ row }">
             {{ row.firstName }} {{ row.lastName }}
           </template>
         </el-table-column>
         <el-table-column prop="email" label="Email" min-width="200" />
-        <el-table-column label="Role" width="160">
+        <el-table-column label="Role(s)" min-width="160">
           <template #default="{ row }">
-            <el-tag :type="getRoleType(row.role)" size="small">
-              {{ row.role.replace('_', ' ') }}
+            <el-tag
+              v-for="r in row.roles"
+              :key="r"
+              :type="getRoleTagType(r)"
+              size="small"
+              style="margin-right: 4px"
+            >
+              {{ roleLabel(r) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Status" width="100">
+        <el-table-column label="Status" width="110">
           <template #default="{ row }">
-            <StatusBadge :status="row.status" />
+            <el-tag :type="row.enabled ? 'success' : 'info'" size="small">
+              {{ row.enabled ? 'Active' : 'Disabled' }}
+            </el-tag>
+            <el-tag v-if="row.mustChangePassword" type="warning" size="small" style="margin-left: 4px">
+              Pwd Reset
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Last Login" width="160">
-          <template #default="{ row }">
-            {{ formatDate(row.lastLogin) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="Actions" width="150" fixed="right">
+        <el-table-column label="Actions" width="160" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleEdit(row)">Edit</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">Delete</el-button>
+            <el-button
+              link
+              :type="row.enabled ? 'danger' : 'success'"
+              size="small"
+              @click="handleToggleEnabled(row)"
+            >
+              {{ row.enabled ? 'Disable' : 'Enable' }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <!-- Pagination -->
       <el-pagination
         v-model:current-page="currentPage"
         :page-size="pageSize"
@@ -258,14 +249,17 @@ onMounted(() => {
       destroy-on-close
     >
       <el-form :model="form" label-position="top">
+        <el-form-item v-if="!editingId" label="Username" required>
+          <el-input v-model="form.username" placeholder="Unique login name" />
+        </el-form-item>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="First Name" required>
+            <el-form-item label="First Name">
               <el-input v-model="form.firstName" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="Last Name" required>
+            <el-form-item label="Last Name">
               <el-input v-model="form.lastName" />
             </el-form-item>
           </el-col>
@@ -278,14 +272,11 @@ onMounted(() => {
             <el-option v-for="role in roles" :key="role.value" :label="role.label" :value="role.value" />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="!editingId" label="Password" required>
-          <el-input v-model="form.password" type="password" show-password />
+        <el-form-item v-if="!editingId" label="Initial Password" required>
+          <el-input v-model="form.password" type="password" show-password placeholder="Min 8 characters" />
         </el-form-item>
-        <el-form-item label="Phone">
-          <el-input v-model="form.phone" />
-        </el-form-item>
-        <el-form-item label="Company ID">
-          <el-input v-model="form.companyId" />
+        <el-form-item v-if="editingId" label="Reset Password (leave blank to keep current)">
+          <el-input v-model="form.newPassword" type="password" show-password placeholder="New password (optional)" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -300,10 +291,8 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .user-management-view {
-  .filters {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+  .el-table {
+    margin-top: 0;
   }
 }
 </style>
