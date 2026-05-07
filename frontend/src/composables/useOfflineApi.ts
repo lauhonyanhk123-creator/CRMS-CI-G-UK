@@ -302,7 +302,7 @@ export class OfflineApiService {
     url: string,
     config: AxiosRequestConfig = {},
     options: OfflineApiOptions = {}
-  ): Promise<{ data: T; source: 'network' | 'cache' }> {
+  ): Promise<{ data: T; source: 'network' | 'cache' | 'queued' }> {
     return this.request<T>({ ...config, method: 'GET', url }, options)
   }
 
@@ -311,7 +311,7 @@ export class OfflineApiService {
     data?: any,
     config: AxiosRequestConfig = {},
     options: OfflineApiOptions = {}
-  ): Promise<{ data: T; source: 'network' | 'queued' }> {
+  ): Promise<{ data: T; source: 'network' | 'cache' | 'queued' }> {
     return this.request<T>({ ...config, method: 'POST', url, data }, options)
   }
 
@@ -320,7 +320,7 @@ export class OfflineApiService {
     data?: any,
     config: AxiosRequestConfig = {},
     options: OfflineApiOptions = {}
-  ): Promise<{ data: T; source: 'network' | 'queued' }> {
+  ): Promise<{ data: T; source: 'network' | 'cache' | 'queued' }> {
     return this.request<T>({ ...config, method: 'PUT', url, data }, options)
   }
 
@@ -328,7 +328,7 @@ export class OfflineApiService {
     url: string,
     config: AxiosRequestConfig = {},
     options: OfflineApiOptions = {}
-  ): Promise<{ data: T; source: 'network' | 'queued' }> {
+  ): Promise<{ data: T; source: 'network' | 'cache' | 'queued' }> {
     return this.request<T>({ ...config, method: 'DELETE', url }, options)
   }
 

@@ -38,14 +38,16 @@ const loadData = async () => {
 
 const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString() : '—'
 
-const getOperativeStatusType = (status: string) => {
-  const map: Record<string, string> = { active: 'success', inactive: 'info', suspended: 'danger' }
-  return map[status] || 'info'
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getOperativeStatusType = (status: string): TagType => {
+  const map: Record<string, TagType> = { active: 'success', inactive: 'info', suspended: 'danger' }
+  return map[status] ?? 'info'
 }
 
-const getPlantStatusType = (status: string) => {
-  const map: Record<string, string> = { AVAILABLE: 'success', HIRED_OUT: 'warning', MAINTENANCE: 'danger', DECOMMISSIONED: 'info' }
-  return map[status] || 'info'
+const getPlantStatusType = (status: string): TagType => {
+  const map: Record<string, TagType> = { AVAILABLE: 'success', HIRED_OUT: 'warning', MAINTENANCE: 'danger', DECOMMISSIONED: 'info' }
+  return map[status] ?? 'info'
 }
 
 const handleUploadSuccess = () => {

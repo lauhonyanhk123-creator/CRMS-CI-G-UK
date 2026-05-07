@@ -196,12 +196,14 @@ const verifyCIS = async (row: Subcontractor) => {
   } catch { ElMessage.error('CIS verification failed') } finally { verifyingId.value = '' }
 }
 
-const getCisStatusType = (status?: string) => {
-  const map: Record<string, string> = { verified: 'success', pending: 'warning', expired: 'danger' }
-  return map[status || ''] || 'info'
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getCisStatusType = (status?: string): TagType => {
+  const map: Record<string, TagType> = { verified: 'success', pending: 'warning', expired: 'danger' }
+  return map[status || ''] ?? 'info'
 }
 
-const getGateStatusType = (status?: string) => {
+const getGateStatusType = (status?: string): TagType => {
   return status === 'ready' ? 'success' : 'danger'
 }
 </script>

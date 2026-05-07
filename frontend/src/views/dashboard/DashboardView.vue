@@ -17,6 +17,8 @@ import StatsCard from '@/components/common/StatsCard.vue'
 import { ElSkeleton } from 'element-plus'
 import { Plus, DataLine, Document, Van, Coin, User, Folder } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+dayjs.extend(relativeTime)
 
 const router = useRouter()
 

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
-import api from '@/services/api'
+import api from '@/services/api'; import type { ElTagType } from '@/services/api'
 import PageHeader from '@/components/common/PageHeader.vue'
 
 interface AdminUser {
@@ -159,14 +159,16 @@ const handleToggleEnabled = async (user: AdminUser) => {
   }
 }
 
-const getRoleTagType = (role: string) => {
-  const map: Record<string, string> = {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getRoleTagType = (role: string): TagType | undefined => {
+  const map: Record<string, TagType> = {
     ROLE_ADMIN: 'danger',
     ROLE_IT_ADMIN: 'danger',
     ROLE_OPS_DIRECTOR: 'warning',
     ROLE_CONTRACTS_MANAGER: 'warning'
   }
-  return map[role] ?? ''
+  return map[role]
 }
 
 onMounted(() => {

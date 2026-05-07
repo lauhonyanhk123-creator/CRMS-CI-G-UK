@@ -149,7 +149,7 @@ const openEditContract = (contract: Contract) => {
     paymentTerms: contract.paymentTerms,
     contractForm: contract.contractForm,
     startDate: contract.startDate,
-    endDate: contract.endDate,
+    endDate: contract.endDate ?? '',
     status: contract.status
   }
   contractDrawerVisible.value = true
@@ -322,18 +322,20 @@ const downloadDocument = async (doc: Document) => {
 const formatCurrency = (value?: number) => value ? `£${value.toLocaleString()}` : '—'
 const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString() : '—'
 
-const getContractStatusType = (status: string) => {
-  const map: Record<string, string> = {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getContractStatusType = (status: string): TagType => {
+  const map: Record<string, TagType> = {
     draft: 'info',
     active: 'success',
     completed: 'primary',
     terminated: 'danger'
   }
-  return map[status] || 'info'
+  return map[status] ?? 'info'
 }
 
-const getTenderStageType = (stage: string) => {
-  const map: Record<string, string> = {
+const getTenderStageType = (stage: string): TagType => {
+  const map: Record<string, TagType> = {
     lead: 'info',
     qualified: 'info',
     pricing: 'warning',
@@ -342,7 +344,7 @@ const getTenderStageType = (stage: string) => {
     awarded: 'success',
     lost: 'danger'
   }
-  return map[stage] || 'info'
+  return map[stage] ?? 'info'
 }
 
 const getClientName = (clientId: string) => {

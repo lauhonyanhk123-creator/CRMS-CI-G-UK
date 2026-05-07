@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
-import api from '@/services/api'
+import api from '@/services/api'; import type { ElTagType } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 
@@ -80,8 +80,8 @@ const loadSettings = async () => {
   } catch {}
 }
 
-const handleTabChange = (tab: string) => {
-  activeTab.value = tab
+const handleTabChange = (tab: string | number) => {
+  activeTab.value = String(tab)
 }
 
 const triggerBackup = async () => {
@@ -140,14 +140,15 @@ const deleteUser = async (user: AdminUser) => {
   } catch { ElMessage.error('Failed to delete user') }
 }
 
-const getRoleType = (role: string) => {
-  const map: Record<string, string> = { 
-    ADMIN: 'danger', 
-    CONTRACT_MANAGER: 'warning', 
-    SURVEYOR: '', 
-    DIRECTOR: 'success' 
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getRoleType = (role: string): TagType | undefined => {
+  const map: Record<string, TagType> = {
+    ADMIN: 'danger',
+    CONTRACT_MANAGER: 'warning',
+    DIRECTOR: 'success'
   }
-  return map[role] || ''
+  return map[role]
 }
 
 const getUserName = (user: AdminUser) => `${user.firstName} ${user.lastName}`

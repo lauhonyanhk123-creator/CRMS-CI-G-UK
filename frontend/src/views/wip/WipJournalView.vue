@@ -80,9 +80,11 @@ const loadOperatives = async () => {
 const formatCurrency = (value: number) => `£${value.toLocaleString()}`
 const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString() : '—'
 
-const getStatusType = (status: string) => {
-  const map: Record<string, string> = { draft: 'info', submitted: 'warning', reviewed: 'primary', approved: 'success' }
-  return map[status] || 'info'
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getStatusType = (status: string): TagType => {
+  const map: Record<string, TagType> = { draft: 'info', submitted: 'warning', reviewed: 'primary', approved: 'success' }
+  return map[status] ?? 'info'
 }
 
 const handleAddEntry = () => {

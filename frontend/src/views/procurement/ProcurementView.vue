@@ -114,8 +114,8 @@ const loadSuppliers = async () => {
   } catch {}
 }
 
-const handleTabChange = (tab: string) => {
-  activeTab.value = tab
+const handleTabChange = (tab: string | number) => {
+  activeTab.value = String(tab)
   filters.page = 1
   if (tab === 'requisitions') loadRequisitions()
   else if (tab === 'orders') loadPurchaseOrders()
@@ -442,7 +442,7 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString()
             <el-table-column prop="noteNumber" label="Note #" width="120" />
             <el-table-column label="Type" width="150">
               <template #default="{ row }">
-                <el-tag size="small" :type="row.type === 'concrete_ticket' ? 'primary' : row.type === 'muckaway_ticket' ? 'success' : ''">
+                <el-tag size="small" :type="row.type === 'concrete_ticket' ? 'primary' : row.type === 'muckaway_ticket' ? 'success' : undefined">
                   {{ row.type === 'concrete_ticket' ? 'Concrete Ticket' : row.type === 'muckaway_ticket' ? 'Muckaway Ticket' : 'Standard' }}
                 </el-tag>
               </template>

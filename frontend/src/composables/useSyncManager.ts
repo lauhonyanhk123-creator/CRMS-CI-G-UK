@@ -124,7 +124,7 @@ export function useSyncManager(options: SyncManagerOptions = {}) {
         })
       }
 
-      return result
+      return { success: result.synced, failed: result.failed }
     } catch (error: any) {
       lastError.value = error.message || 'Sync failed'
       console.error('Sync error:', error)

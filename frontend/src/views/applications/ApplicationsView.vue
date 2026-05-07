@@ -109,8 +109,10 @@ const formatDate = (date?: string) => {
   return dayjs(date).format('DD/MM/YYYY')
 }
 
-const getStatusType = (status?: string) => {
-  const map: Record<string, string> = {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getStatusType = (status?: string): TagType => {
+  const map: Record<string, TagType> = {
     SUBMITTED: 'warning',
     MEASURED: 'info',
     AGREED: 'primary',
@@ -118,7 +120,7 @@ const getStatusType = (status?: string) => {
     PAID: 'success',
     REJECTED: 'danger'
   }
-  return map[status || ''] || 'info'
+  return map[status || ''] ?? 'info'
 }
 
 const viewApplication = async (row: ApplicationResponse) => {
@@ -274,7 +276,7 @@ const markAsPaid = async (id: string) => {
 }
 
 // Import axios for the mark-paid endpoint
-// import apiClient from '@/services/api'
+// import apiClient from '@/services/api'; import type { ElTagType } from '@/services/api'
 
 const getRowActions = (row: ApplicationResponse) => {
   const actions: Array<{ label: string; action: Function; type?: string; icon?: any }> = [
@@ -318,8 +320,6 @@ const getRowActions = (row: ApplicationResponse) => {
   return actions
 }
 
-// Import axios for the mark-paid endpoint
-import apiClient from '@/services/api'
 </script>
 
 <template>

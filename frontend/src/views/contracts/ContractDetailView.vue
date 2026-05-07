@@ -102,13 +102,17 @@ const submitApplication = async (app: Application) => {
   } catch { ElMessage.error('Failed to submit application') }
 }
 
-const getApplicationStatusType = (status: string) => {
-  const map: Record<string, string> = { draft: 'info', submitted: 'warning', measured: 'primary', agreed: 'success', paid: 'success' }
-  return map[status] || 'info'
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString() : '—'
+
+const getApplicationStatusType = (status: string): TagType => {
+  const map: Record<string, TagType> = { draft: 'info', submitted: 'warning', measured: 'primary', agreed: 'success', paid: 'success' }
+  return map[status] ?? 'info'
 }
 
-const getAdoptionStatusType = (status?: string) => {
-  const map: Record<string, string> = {
+const getAdoptionStatusType = (status?: string): TagType => {
+  const map: Record<string, TagType> = {
     'pre_application': 'info',
     'application': 'warning',
     'technical_approval': 'primary',
@@ -116,7 +120,7 @@ const getAdoptionStatusType = (status?: string) => {
     'adopted': 'success',
     'rejected': 'danger'
   }
-  return map[status || ''] || 'info'
+  return map[status || ''] ?? 'info'
 }
 
 // Variations handlers
