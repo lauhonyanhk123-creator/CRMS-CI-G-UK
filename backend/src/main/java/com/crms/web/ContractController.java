@@ -6,6 +6,7 @@ import com.crms.dto.request.ContractRequest;
 import com.crms.dto.request.PayLessNoticeRequest;
 import com.crms.dto.request.PaymentNoticeRequest;
 import com.crms.dto.response.*;
+import com.crms.service.AdoptionCaseService;
 import com.crms.service.ApplicationForPaymentService;
 import com.crms.service.ContractService;
 import com.crms.service.VariationService;
@@ -30,6 +31,7 @@ public class ContractController {
     private final ContractService contractService;
     private final ApplicationForPaymentService applicationService;
     private final VariationService variationService;
+    private final AdoptionCaseService adoptionCaseService;
     
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -136,7 +138,9 @@ public class ContractController {
     @GetMapping("/{id}/adoption-cases")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List adoption cases", description = "Get adoption cases for contract")
-    public ResponseEntity<ApiResponse<Object>> getAdoptionCases(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<PageResponse<AdoptionCaseResponse>>> getAdoptionCases(@PathVariable Long id) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("contractId", id);
+        return ResponseEntity.ok(ApiResponse.success(adoptionCaseService.findAll(params)));
     }
 }

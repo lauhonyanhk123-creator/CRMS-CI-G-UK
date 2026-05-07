@@ -18,9 +18,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.crms.domain.contract.entity.ApplicationForPayment;
 import com.crms.domain.contract.entity.Contract;
 import com.crms.domain.contract.entity.RetentionLedger;
+import com.crms.domain.contract.enums.ApplicationStatus;
 import com.crms.domain.contract.enums.ContractStatus;
+import com.crms.domain.contract.repository.ApplicationForPaymentRepository;
 import com.crms.domain.contract.repository.ContractRepository;
 import com.crms.domain.subcontractor.entity.CISReturn;
 import com.crms.domain.subcontractor.repository.CISReturnRepository;
@@ -40,6 +43,7 @@ public class ReportServiceImpl implements ReportService {
 
     private final CvrService cvrService;
     private final ContractRepository contractRepository;
+    private final ApplicationForPaymentRepository applicationRepository;
     private final CISReturnRepository cisReturnRepository;
     private final TenderRepository tenderRepository;
     private final TimesheetRepository timesheetRepository;
@@ -72,22 +76,49 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public Object getCashflow(String from, String to) {
         log.info("Generating cashflow report from {} to {}", from, to);
-        List<Map<String, Object>> cashflow = new ArrayList<>();
+
         LocalDate start = LocalDate.parse(from);
         LocalDate end = LocalDate.parse(to);
 
-        // Generate monthly cashflow projections from approved payment certificates
-        // and unpaid applications for payment
-        // This would normally query payment certificates and applications
-        // for forecast cash in, against known payment terms
-        for (LocalDate month = start; !month.isAfter(end); month = month.plusMonths(1)) {
-            cashflow.add(Map.of(
-                "period", month.getYear() + "-" + String.format("%02d", month.getMonthValue()),
-                "forecast_in", BigDecimal.ZERO,
-                "forecast_out", BigDecimal.ZERO,
-                "net", BigDecimal.ZERO,
-                "cumulative", BigDecimal.ZERO
-            ));
+        // Initialise a zero-value bucket for every month in the range
+        Map<String, BigDecimal> inByMonth = new LinkedHashMap<>();
+        for (LocalDate m = start.withDayOfMonth(1); !m.isAfter(end.withDayOfMonth(1)); m = m.plusMonths(1)) {
+            inByMonth.put(m.getYear() + "-" + String.format("%02d", m.getMonthValue()), BigDecimal.ZERO);
+        }
+
+        // PAID applications: use paidDate as the actual cash-in date
+        // APPROVED/SUBMITTED applications: use dueDate as the forecast cash-in date
+        for (ApplicationForPayment app : applicationRepository.findAll()) {
+            LocalDate effectiveDate = null;
+            if (app.getStatus() == ApplicationStatus.PAID && app.getPaidDate() != null) {
+                effectiveDate = app.getPaidDate();
+            } else if ((app.getStatus() == ApplicationStatus.APPROVED
+                        || app.getStatus() == ApplicationStatus.SUBMITTED)
+                       && app.getDueDate() != null) {
+                effectiveDate = app.getDueDate();
+            }
+            if (effectiveDate == null || effectiveDate.isBefore(start) || effectiveDate.isAfter(end)) {
+                continue;
+            }
+            String key = effectiveDate.getYear() + "-" + String.format("%02d", effectiveDate.getMonthValue());
+            if (inByMonth.containsKey(key)) {
+                BigDecimal gross = app.getGrossValue() != null ? app.getGrossValue() : BigDecimal.ZERO;
+                inByMonth.merge(key, gross, BigDecimal::add);
+            }
+        }
+
+        List<Map<String, Object>> cashflow = new ArrayList<>();
+        BigDecimal cumulative = BigDecimal.ZERO;
+        for (Map.Entry<String, BigDecimal> entry : inByMonth.entrySet()) {
+            BigDecimal forecastIn = entry.getValue().setScale(2, RoundingMode.HALF_UP);
+            cumulative = cumulative.add(forecastIn);
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("period", entry.getKey());
+            row.put("forecast_in", forecastIn);
+            row.put("forecast_out", BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+            row.put("net", forecastIn);
+            row.put("cumulative", cumulative.setScale(2, RoundingMode.HALF_UP));
+            cashflow.add(row);
         }
         return cashflow;
     }
