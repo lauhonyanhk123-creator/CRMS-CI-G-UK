@@ -162,6 +162,22 @@ crms:
       token-refresh-buffer-seconds: 300  # Proactively refresh 5 minutes before expiry
       token-expiry-buffer-seconds: 60    # Consider expired 60 seconds before actual expiry
 
+  # =============================================================================
+  # LICENCE CONFIGURATION
+  # =============================================================================
+  # Controls which tier is active and how many users are permitted.
+  # Override with environment variables in production:
+  #   CRMS_LICENCE_TIER=SITE
+  #   CRMS_LICENCE_MAX_USERS=40
+  #   CRMS_LICENCE_INSTALLATION_ID=INS-XXXX-XXXX-XXXX
+  #   CRMS_LICENCE_EXPIRY_DATE=2027-12-31
+  licence:
+    tier: ${CRMS_LICENCE_TIER:YARD}
+    max-users: ${CRMS_LICENCE_MAX_USERS:0}
+    installation-id: ${CRMS_LICENCE_INSTALLATION_ID:DEV-UNLICENSED}
+    expiry-date: ${CRMS_LICENCE_EXPIRY_DATE:}
+    enforcement-enabled: ${CRMS_LICENCE_ENFORCEMENT_ENABLED:true}
+
 # Application-level JWT config (also used by security config)
 app:
   jwt:
@@ -236,3 +252,4 @@ logging:
     name: ${LOG_FILE:/var/log/crms/application.log}
     max-size: 100MB
     max-history: 30
+

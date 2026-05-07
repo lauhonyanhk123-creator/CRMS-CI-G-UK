@@ -1,6 +1,7 @@
 package com.crms.service.impl;
 
 import com.crms.domain.company.entity.Company;
+import com.crms.domain.contract.repository.ApplicationForPaymentRepository;
 import com.crms.domain.subcontractor.entity.CISReturn;
 import com.crms.domain.subcontractor.entity.CISReturnLine;
 import com.crms.domain.subcontractor.entity.CISVerification;
@@ -22,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -51,6 +54,9 @@ class CISServiceImplTest {
 
     @Mock
     private CISVerificationRepository cisVerificationRepository;
+
+    @Mock
+    private ApplicationForPaymentRepository applicationForPaymentRepository;
 
     @InjectMocks
     private CISServiceImpl cisService;
@@ -74,6 +80,10 @@ class CISServiceImplTest {
                 .status(CisVerificationStatus.VERIFIED)
                 .rate(new BigDecimal("20"))
                 .build();
+
+        // Default: no payments for any company in any period
+        when(applicationForPaymentRepository.sumCisPaidGrossByCompanyAndPeriod(any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
 
         // Default lenient stubs — individual test classes can override
         when(cisReturnRepository.save(any(CISReturn.class)))
@@ -168,6 +178,31 @@ class CISServiceImplTest {
             assertThat(result.get("message").toString()).contains("generated successfully");
             verify(cisReturnRepository).save(any(CISReturn.class));
             verify(cisReturnLineRepository).saveAll(any());
+            // Must query actual payment amounts — not use a hardcoded zero
+            verify(applicationForPaymentRepository)
+                    .sumCisPaidGrossByCompanyAndPeriod(eq(10L), any(LocalDate.class), any(LocalDate.class));
+        }
+
+        @Test
+        @DisplayName("uses actual payment amounts from AFP repository when building return lines")
+        void validVerifications_usesActualPaymentAmounts() {
+            when(cisReturnRepository.findByTaxMonth("2025-04")).thenReturn(Optional.empty());
+            when(cisVerificationRepository.findByStatus(CisVerificationStatus.VERIFIED))
+                    .thenReturn(List.of(testVerification)); // rate = 20%
+            when(applicationForPaymentRepository.sumCisPaidGrossByCompanyAndPeriod(
+                    eq(10L), any(LocalDate.class), any(LocalDate.class)))
+                    .thenReturn(new BigDecimal("5000.00"));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = (Map<String, Object>) cisService.generateReturn("2025-04");
+
+            // 20% of £5000 = £1000 deduction, £4000 net
+            assertThat((BigDecimal) result.get("totalGross"))
+                    .isEqualByComparingTo(new BigDecimal("5000.00"));
+            assertThat((BigDecimal) result.get("totalDeduction"))
+                    .isEqualByComparingTo(new BigDecimal("1000.00"));
+            assertThat((BigDecimal) result.get("totalNet"))
+                    .isEqualByComparingTo(new BigDecimal("4000.00"));
         }
 
         @Test

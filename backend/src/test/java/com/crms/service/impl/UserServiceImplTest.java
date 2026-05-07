@@ -4,6 +4,7 @@ import com.crms.domain.user.entity.User;
 import com.crms.domain.user.enums.Role;
 import com.crms.domain.user.repository.UserRepository;
 import com.crms.dto.request.RegisterRequest;
+import com.crms.licence.LicenceService;
 import com.crms.dto.request.UpdateUserRequest;
 import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.UserResponse;
@@ -40,6 +41,9 @@ class UserServiceImplTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private LicenceService licenceService;
 
     @InjectMocks
     private UserServiceImpl userService;
