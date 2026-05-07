@@ -110,9 +110,18 @@ public class AdoptionCaseAlertScheduler {
         log.info("  ADOPTION: {}", adoptionCount);
         log.info("  COMPLETED: {}", completedCount);
         
-        long total = preAppCount + applicationCount + designCount + techAcceptCount + 
+        long total = preAppCount + applicationCount + designCount + techAcceptCount +
                      constructionCount + maintenanceCount + adoptionCount + completedCount;
         log.info("  TOTAL: {}", total);
+
+        String reportBody = String.format(
+                "Monthly Adoption Case Status Report%n%n" +
+                "Pre-App: %d | Application: %d | Design: %d | Technical Acceptance: %d%n" +
+                "Construction: %d | Maintenance: %d | Adoption: %d | Completed: %d%n" +
+                "Total: %d",
+                preAppCount, applicationCount, designCount, techAcceptCount,
+                constructionCount, maintenanceCount, adoptionCount, completedCount, total);
+        emailService.sendAdminAlert("CRMS Monthly Adoption Case Status Report", reportBody);
     }
     
     private void sendMaintenanceEndAlert(AdoptionCase adoptionCase) {
