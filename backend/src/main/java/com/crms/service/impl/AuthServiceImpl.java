@@ -111,13 +111,32 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse getProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ValidationException("User not found"));
-        
+
         return mapToUserResponse(user);
     }
-    
+
+    @Override
+    @Transactional
+    public void changePassword(String currentPassword, String newPassword) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ValidationException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new ValidationException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+        log.info("User '{}' changed their password", username);
+    }
+
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
@@ -127,6 +146,7 @@ public class AuthServiceImpl implements AuthService {
                 .lastName(user.getLastName())
                 .roles(user.getRoles() == null ? java.util.Collections.emptySet() : user.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet()))
                 .enabled(user.getEnabled())
+                .mustChangePassword(user.getMustChangePassword())
                 .build();
     }
 }

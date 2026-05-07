@@ -27,4 +27,6 @@ public class UserResponse {
     private Set<String> roles;
     
     private Boolean enabled;
+
+    private Boolean mustChangePassword;
 }
