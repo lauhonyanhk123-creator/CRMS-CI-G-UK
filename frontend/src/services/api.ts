@@ -29,7 +29,14 @@ apiClient.interceptors.response.use(
   (response) => {
     // Unwrap ApiResponse envelope { success, message, data } → data
     if (response.data && typeof response.data === 'object' && 'success' in response.data) {
-      response.data = response.data.data
+      const inner = response.data.data
+      // Normalize Spring PageResponse { content, totalElements, ... } so that
+      // existing view code using .data and .total still works alongside .content
+      if (inner && typeof inner === 'object' && 'content' in inner && 'totalElements' in inner) {
+        response.data = { ...inner, data: inner.content, total: inner.totalElements }
+      } else {
+        response.data = inner
+      }
     }
     return response
   },
