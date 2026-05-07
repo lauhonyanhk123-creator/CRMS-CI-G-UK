@@ -14,4 +14,6 @@ public interface AuthService {
     AuthResponse refreshToken(String refreshToken);
     
     UserResponse getProfile();
+
+    void changePassword(String currentPassword, String newPassword);
 }

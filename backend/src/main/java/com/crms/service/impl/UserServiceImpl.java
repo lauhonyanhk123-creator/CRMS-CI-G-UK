@@ -131,6 +131,7 @@ public class UserServiceImpl implements UserService {
                         ? java.util.Collections.emptySet()
                         : user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()))
                 .enabled(user.getEnabled())
+                .mustChangePassword(user.getMustChangePassword())
                 .build();
     }
 

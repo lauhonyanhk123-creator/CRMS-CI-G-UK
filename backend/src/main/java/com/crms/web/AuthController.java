@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Base64;
 import java.util.Map;
 
+import com.crms.dto.request.ChangePasswordRequest;
 import com.crms.security.TokenBlacklistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -62,6 +63,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Registration successful", response));
     }
     
+    @PostMapping("/change-password")
+    @Operation(summary = "Change password", description = "Change the authenticated user's password; clears mustChangePassword flag")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+    }
+
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Invalidate JWT token by blacklisting it")
     public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request) {

@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,10 +28,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final String CHANGE_PASSWORD_PATH = "/api/v1/auth/change-password";
+
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override
     protected void doFilterInternal(
@@ -70,8 +74,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String username = jwtTokenProvider.extractUsername(jwt);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                
+
                 if (jwtTokenProvider.isTokenValid(jwt, userDetails)) {
+                    if (userDetails instanceof CustomUserDetails customUser
+                            && Boolean.TRUE.equals(customUser.getUser().getMustChangePassword())
+                            && !CHANGE_PASSWORD_PATH.equals(request.getRequestURI())) {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.getWriter().write(
+                                "{\"error\":\"Password change required\",\"code\":\"MUST_CHANGE_PASSWORD\"}");
+                        return;
+                    }
+
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
