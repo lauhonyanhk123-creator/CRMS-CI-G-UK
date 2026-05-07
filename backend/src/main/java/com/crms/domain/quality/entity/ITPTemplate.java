@@ -34,7 +34,6 @@ public class ITPTemplate extends BaseEntity {
     @Column(nullable = false)
     private String category;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "trade_category")
     private String tradeCategory;
 

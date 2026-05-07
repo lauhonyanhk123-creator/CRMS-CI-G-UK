@@ -151,8 +151,7 @@ crms:
     landfill-tax-standard: 126.15   # £/tonne 2025/26
     landfill-tax-inert: 4.05          # £/tonne 2025/26
 
-# External API Integration Configuration
-crms:
+  # External API Integration Configuration
   integration:
     demo-mode: true  # Set to false with real API keys for production
     hmrc:
