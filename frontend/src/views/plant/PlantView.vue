@@ -119,19 +119,21 @@ const updateGanttChart = () => {
   }
 }
 
-const getCategoryType = (category: string) => {
-  const map: Record<string, string> = {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getCategoryType = (category: string): TagType | undefined => {
+  const map: Record<string, TagType | undefined> = {
     EXCAVATOR: 'primary',
     DUMPER: 'success',
     ROLLER: 'warning',
     PLANT_MIXER: 'info',
     CONCRETE_PUMP: 'danger',
-    TELEHANDLER: '',
+    TELEHANDLER: undefined,
     CRANE: 'warning',
     ACCESS_EQUIPMENT: 'info',
-    OTHER: ''
+    OTHER: undefined
   }
-  return map[category] || ''
+  return map[category]
 }
 
 const getLOLERStatus = (dueDate?: string) => {

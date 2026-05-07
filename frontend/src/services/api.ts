@@ -3,6 +3,9 @@ import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 
+// Shared Element Plus tag type
+export type ElTagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
 // Base API instance
 export const apiClient: AxiosInstance = axios.create({
   baseURL: '/api/v1',
@@ -211,6 +214,8 @@ export interface Application {
   status: 'draft' | 'submitted' | 'measured' | 'agreed' | 'paid'
   submittedAt?: string
   paidAt?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface ApplicationResponse {
@@ -243,6 +248,8 @@ export interface Subcontractor extends Company {
   cisVerificationDate?: string
   cis300Submitted?: boolean
   cis300SubmitDate?: string
+  insuranceExpiry?: string
+  notes?: string
 }
 
 export interface Operative {
@@ -252,6 +259,11 @@ export interface Operative {
   employeeRef?: string
   employerId?: string
   employer?: Company
+  niNumber?: string
+  dateOfBirth?: string
+  trade?: string
+  email?: string
+  phone?: string
   cscsCard?: CSCSCard
   qualifications: Qualification[]
   inductionStatus: 'pending' | 'complete' | 'expired'
@@ -261,13 +273,13 @@ export interface Operative {
 }
 
 export interface CSCSCard {
-  id: string
-  operativeId: string
+  id?: string
+  operativeId?: string
   cardNumber: string
   cardType: string
   expiryDate: string
   photoUrl?: string
-  verified: boolean
+  verified?: boolean
 }
 
 export interface Qualification {
@@ -314,13 +326,14 @@ export interface Requisition {
   site?: Site
   status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'converted'
   requiredDate: string
+  notes?: string
   items: RequisitionItem[]
   total: number
   createdAt: string
 }
 
 export interface RequisitionItem {
-  id: string
+  id?: string
   description: string
   quantity: number
   unit: string
@@ -334,15 +347,18 @@ export interface PurchaseOrder {
   supplier?: Company
   siteId: string
   site?: Site
-  status: 'draft' | 'sent' | 'acknowledged' | 'partial' | 'received' | 'cancelled'
+  orderDate?: string
   deliveryDate?: string
+  deliveryAddress?: string
+  notes?: string
+  status: 'draft' | 'sent' | 'acknowledged' | 'partial' | 'received' | 'cancelled'
   items: POItem[]
   total: number
   createdAt: string
 }
 
 export interface POItem {
-  id: string
+  id?: string
   description: string
   quantity: number
   unit: string
@@ -447,6 +463,7 @@ export interface AdoptionCase {
   type: 's38' | 's278' | 's104'
   title: string
   clientId: string
+  contractId?: string
   client?: Company
   laWaterAuthority?: string
   status: 'pre_application' | 'application' | 'technical_approval' | 'under_construction' | 'adopted' | 'rejected'
@@ -860,7 +877,7 @@ export const api = {
   },
 
   sites: {
-    getAll: (params?: { status?: string; clientId?: string; startDate?: string; endDate?: string; page?: number; limit?: number }) =>
+    getAll: (params?: { search?: string; status?: string; clientId?: string; startDate?: string; endDate?: string; page?: number; limit?: number }) =>
       apiClient.get<{ data: Site[]; total: number }>('/sites', { params }),
     getById: (id: string) => apiClient.get<Site>(`/sites/${id}`),
     create: (data: Partial<Site>) => apiClient.post<Site>('/sites', data),
@@ -959,7 +976,7 @@ export const api = {
   },
 
   operatives: {
-    getAll: (params?: { status?: string; employerId?: string; page?: number; limit?: number }) =>
+    getAll: (params?: { status?: string; employerId?: string; siteId?: string; page?: number; limit?: number }) =>
       apiClient.get<{ data: Operative[]; total: number }>('/operatives', { params }),
     getById: (id: string) => apiClient.get<Operative>(`/operatives/${id}`),
     create: (data: Partial<Operative>) => apiClient.post<Operative>('/operatives', data),
@@ -1184,9 +1201,9 @@ export const api = {
     updateSettings: (data: any) => apiClient.put('/admin/settings', data),
 
     users: {
-      getAll: (params?: { page?: number; size?: number; sort?: string }) =>
+      getAll: (params?: { page?: number; size?: number; sort?: string; limit?: number }) =>
         apiClient.get('/admin/users', { params }),
-      create: (data: { username: string; email: string; password: string; firstName?: string; lastName?: string; role?: string }) =>
+      create: (data: { username?: string; email: string; password: string; firstName?: string; lastName?: string; role?: string; status?: string }) =>
         apiClient.post('/admin/users', data),
       update: (id: string, data: { email?: string; firstName?: string; lastName?: string; roles?: string[]; enabled?: boolean; newPassword?: string }) =>
         apiClient.patch(`/admin/users/${id}`, data),
@@ -1198,6 +1215,7 @@ export const api = {
     getAll: (params?: {
       page?: number;
       size?: number;
+      limit?: number;
       startDate?: string;
       endDate?: string;
       userId?: string;
@@ -1226,24 +1244,6 @@ export const api = {
       apiClient.delete(`/contracts/${contractId}/retention-ledger/${id}`)
   },
 
-  reports: {
-    financial: (type: string) => {
-      // Mock placeholder - returns empty data
-      return Promise.resolve({ data: { data: [], total: 0 } })
-    },
-    project: (type: string) => {
-      return Promise.resolve({ data: { data: [], total: 0 } })
-    },
-    cis: (type: string) => {
-      return Promise.resolve({ data: { data: [], total: 0 } })
-    },
-    hr: (type: string) => {
-      return Promise.resolve({ data: { data: [], total: 0 } })
-    },
-    plant: (type: string) => {
-      return Promise.resolve({ data: { data: [], total: 0 } })
-    }
-  }
 }
 
 export default api

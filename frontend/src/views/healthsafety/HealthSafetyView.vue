@@ -164,7 +164,7 @@ const loadIncidents = async () => {
   } catch { ElMessage.error('Failed to load incidents') } finally { loading.value = false }
 }
 
-const handleTabChange = (tab: string) => {
+const handleTabChange = (tab: string | number) => {
   if (tab === 'f10') loadF10()
   else if (tab === 'cpp') loadCPPs()
   else if (tab === 'rams') loadRAMS()
@@ -374,14 +374,16 @@ const updatePermitStatus = async (id: string, status: string) => {
 }
 
 // Helpers
-const getPermitStatusType = (status?: string) => {
-  const map: Record<string, string> = { draft: 'info', prechecked: 'warning', issued: 'success', completed: 'success' }
-  return map[status || ''] || 'info'
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getPermitStatusType = (status?: string): TagType => {
+  const map: Record<string, TagType> = { draft: 'info', prechecked: 'warning', issued: 'success', completed: 'success' }
+  return map[status || ''] ?? 'info'
 }
 
-const getIncidentSeverityType = (severity?: string) => {
-  const map: Record<string, string> = { near_miss: 'info', minor: 'warning', major: 'danger', fatal: 'danger' }
-  return map[severity || ''] || 'info'
+const getIncidentSeverityType = (severity?: string): TagType => {
+  const map: Record<string, TagType> = { near_miss: 'info', minor: 'warning', major: 'danger', fatal: 'danger' }
+  return map[severity || ''] ?? 'info'
 }
 
 const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString() : '—'

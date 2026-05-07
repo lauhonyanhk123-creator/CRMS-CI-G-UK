@@ -163,7 +163,7 @@ const handleCommand = async (command: string) => {
           <el-dropdown trigger="click" @command="handleCommand">
             <span class="user-dropdown">
               <el-avatar :size="32" icon="UserFilled" />
-              <span class="username">{{ user?.name || 'User' }}</span>
+              <span class="username">{{ user?.firstName || user?.username || 'User' }}</span>
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>

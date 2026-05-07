@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Delete, View, Edit } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance } from 'element-plus'
-import api, { type Company, type Address, type BankDetails } from '@/services/api'
+import api, { type Company, type Address, type BankDetails } from '@/services/api'; import type { ElTagType } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import dayjs from 'dayjs'
@@ -234,15 +234,16 @@ const handleView = (row: Company) => {
   router.push(`/companies/${row.id}`)
 }
 
-// Status tag type
-const getCisStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getCisStatusType = (status: string): TagType => {
+  const statusMap: Record<string, TagType> = {
     verified: 'success',
     pending: 'warning',
     expired: 'danger',
     not_applicable: 'info'
   }
-  return statusMap[status] || 'info'
+  return statusMap[status] ?? 'info'
 }
 
 const getCompanyTypeLabel = (type: string) => {

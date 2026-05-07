@@ -115,7 +115,7 @@ const handleSave = async () => {
         lastName: formData.surname,
         niNumber: formData.niNumber,
         dateOfBirth: formData.dateOfBirth,
-        status: formData.employmentStatus,
+        status: formData.employmentStatus as Operative['status'],
         trade: formData.trade,
         cscsCard: formData.cscsNumber ? {
           cardNumber: formData.cscsNumber,
@@ -171,7 +171,7 @@ const smartCheckCard = async (operative: Operative) => {
   if (!operative.cscsCard) { ElMessage.warning('No CSCS card on record'); return }
   smartCheckingId.value = operative.id
   try {
-    await api.operatives.smartCheckCard(operative.id, operative.cscsCard.id)
+    await api.operatives.smartCheckCard(operative.id, operative.cscsCard.id ?? '')
     ElMessage.success('Smart Check completed')
     loadData()
   } catch { ElMessage.error('Smart Check failed') } finally { smartCheckingId.value = '' }
@@ -185,13 +185,15 @@ const getCardExpiryStatus = (card?: Operative['cscsCard']) => {
   return 'valid'
 }
 
-const getExpiryType = (status: string) => {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getExpiryType = (status: string): TagType => {
   return status === 'expired' ? 'danger' : status === 'expiring' ? 'warning' : 'success'
 }
 
-const getInductionStatusType = (status: string) => {
-  const map: Record<string, string> = { complete: 'success', pending: 'warning', expired: 'danger' }
-  return map[status] || 'info'
+const getInductionStatusType = (status: string): TagType => {
+  const map: Record<string, TagType> = { complete: 'success', pending: 'warning', expired: 'danger' }
+  return map[status] ?? 'info'
 }
 </script>
 

@@ -19,7 +19,7 @@ export function usePermission() {
   const authStore = useAuthStore()
   const { user } = storeToRefs(authStore)
 
-  const userRole = computed(() => user.value?.role || 'viewer')
+  const userRole = computed(() => user.value?.roles?.[0] || 'viewer')
 
   const permissions = computed(() => {
     return rolePermissions[userRole.value] || rolePermissions.viewer

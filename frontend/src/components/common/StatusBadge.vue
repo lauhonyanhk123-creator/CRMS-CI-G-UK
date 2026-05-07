@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'small'
 })
 
-const statusConfig: Record<string, { label: string; type: 'success' | 'warning' | 'danger' | 'info' | '' }> = {
+const statusConfig: Record<string, { label: string; type: 'success' | 'warning' | 'danger' | 'info' | undefined }> = {
   // General statuses
   active: { label: 'Active', type: 'success' },
   inactive: { label: 'Inactive', type: 'info' },
@@ -38,7 +38,7 @@ const statusConfig: Record<string, { label: string; type: 'success' | 'warning' 
   lead: { label: 'Lead', type: 'info' },
   qualified: { label: 'Qualified', type: 'info' },
   pricing: { label: 'Pricing', type: 'warning' },
-  negotiation: { label: 'Negotiation', type: '' },
+  negotiation: { label: 'Negotiation', type: undefined },
   awarded: { label: 'Awarded', type: 'success' },
   lost: { label: 'Lost', type: 'danger' },
   
@@ -70,7 +70,7 @@ const statusConfig: Record<string, { label: string; type: 'success' | 'warning' 
   gate_red: { label: 'GATE RED', type: 'danger' },
   
   // Default fallback
-  default: { label: 'Unknown', type: '' }
+  default: { label: 'Unknown', type: undefined }
 }
 
 const config = computed(() => {

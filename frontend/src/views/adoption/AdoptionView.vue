@@ -11,7 +11,7 @@ import api, {
   type BondReduction,
   type MaintenanceSchedule,
   type SnaggingInspection
-} from '@/services/api'
+} from '@/services/api'; import type { ElTagType } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import dayjs from 'dayjs'
@@ -130,7 +130,9 @@ const bondStatusOptions = [
   { label: 'Reduced', value: 'reduced' }
 ]
 
-const bondStatusColorMap: Record<string, string> = {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const bondStatusColorMap: Record<string, TagType> = {
   pending: 'info',
   issued: 'primary',
   called: 'danger',
@@ -184,7 +186,7 @@ const snaggingPriorityOptions = [
   { label: 'Critical', value: 'critical' }
 ]
 
-const snaggingPriorityColorMap: Record<string, string> = {
+const snaggingPriorityColorMap: Record<string, TagType> = {
   low: 'info',
   medium: 'warning',
   high: 'danger',
@@ -506,9 +508,9 @@ const openViewDialog = (type: 'case' | 'bond' | 'commutedSum' | 'snagging', item
 const formatCurrency = (value?: number) => value ? `£${value.toLocaleString()}` : '—'
 const formatDate = (date?: string) => date ? dayjs(date).format('DD/MM/YYYY') : '—'
 
-const getCaseTypeTag = (type: string) => {
-  const map: Record<string, string> = { s38: 'primary', s278: 'success', s104: 'warning' }
-  return map[type] || ''
+const getCaseTypeTag = (type: string): TagType | undefined => {
+  const map: Record<string, TagType> = { s38: 'primary', s278: 'success', s104: 'warning' }
+  return map[type]
 }
 
 const getBondAlertClass = (date?: string) => {
@@ -520,9 +522,9 @@ const getBondAlertClass = (date?: string) => {
   return ''
 }
 
-const getStageStatusType = (status?: string) => {
-  const map: Record<string, string> = { completed: 'success', in_progress: 'primary', pending: 'info' }
-  return map[status || ''] || 'info'
+const getStageStatusType = (status?: string): TagType => {
+  const map: Record<string, TagType> = { completed: 'success', in_progress: 'primary', pending: 'info' }
+  return map[status || ''] ?? 'info'
 }
 
 const getClientName = (clientId: string) => {
@@ -535,8 +537,8 @@ const getCaseRef = (caseId: string) => {
   return adoptionCase?.caseRef || caseId
 }
 
-const getSnaggingStatusColor = (status: string) => {
-  const map: Record<string, string> = {
+const getSnaggingStatusColor = (status: string): TagType => {
+  const map: Record<string, TagType> = {
     identified: 'info',
     in_progress: 'warning',
     awaiting_materials: 'warning',
@@ -544,7 +546,7 @@ const getSnaggingStatusColor = (status: string) => {
     passed: 'success',
     failed: 'danger'
   }
-  return map[status] || 'info'
+  return map[status] ?? 'info'
 }
 </script>
 

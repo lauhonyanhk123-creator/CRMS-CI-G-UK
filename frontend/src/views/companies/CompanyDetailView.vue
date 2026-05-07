@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, Edit, Refresh, Upload, Plus, Delete } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
-import api, { type Company, type Contact, type Site, type Contract, type Document } from '@/services/api'
+import api, { type Company, type Contact, type Site, type Contract, type Document } from '@/services/api'; import type { ElTagType } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
@@ -184,13 +184,15 @@ const formatDate = (date?: string) => {
   return new Date(date).toLocaleDateString()
 }
 
-const getCisStatusType = (status?: string) => {
-  const map: Record<string, string> = {
+type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+const getCisStatusType = (status?: string): TagType => {
+  const map: Record<string, TagType> = {
     verified: 'success',
     pending: 'warning',
     expired: 'danger'
   }
-  return map[status || ''] || 'info'
+  return map[status || ''] ?? 'info'
 }
 
 // Edit company dialog

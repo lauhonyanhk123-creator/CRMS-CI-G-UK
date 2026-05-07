@@ -12,7 +12,7 @@
         </select>
         <button @click="openCreateDialog" class="btn-primary">
           <Plus class="icon" />
-          New {{ tabLabels[activeTab] }}
+          New {{ tabLabels[activeTab as keyof typeof tabLabels] }}
         </button>
       </div>
     </div>
@@ -291,7 +291,7 @@
     <div v-if="showDialog" class="dialog-overlay" @click.self="closeDialog">
       <div class="dialog">
         <div class="dialog-header">
-          <h2>{{ dialogMode === 'create' ? 'Create' : 'Edit' }} {{ tabLabels[activeTab] }}</h2>
+          <h2>{{ dialogMode === 'create' ? 'Create' : 'Edit' }} {{ tabLabels[activeTab as keyof typeof tabLabels] }}</h2>
           <button @click="closeDialog" class="dialog-close">&times;</button>
         </div>
 
@@ -607,6 +607,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, View, CopyDocument, Refresh, Check, Close } from '@element-plus/icons-vue'
+import api, { type TemplateStatus, type DefectPriority, type DefectStatus } from '@/services/api'
 
 // State
 const activeTab = ref('templates')
@@ -646,7 +647,7 @@ const templateForm = reactive({
   description: '',
   category: '',
   tradeCategory: '',
-  status: 'draft',
+  status: 'draft' as TemplateStatus,
   items: [] as any[]
 })
 
@@ -676,8 +677,8 @@ const defectForm = reactive({
   contractId: '',
   description: '',
   location: '',
-  priority: 'medium',
-  status: 'open',
+  priority: 'medium' as DefectPriority,
+  status: 'open' as DefectStatus,
   identifiedDate: '',
   dueDate: '',
   assignedOperative: '',

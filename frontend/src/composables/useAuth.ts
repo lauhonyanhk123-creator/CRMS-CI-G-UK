@@ -28,14 +28,14 @@ export function useAuth() {
   }
 
   const hasRole = (roles: string | string[]) => {
-    const userRole = authStore.user?.role
-    if (!userRole) return false
+    const userRoles = authStore.user?.roles
+    if (!userRoles?.length) return false
     const roleArray = Array.isArray(roles) ? roles : [roles]
-    return roleArray.includes(userRole)
+    return roleArray.some(r => userRoles.includes(r))
   }
 
   const can = (permission: string) => {
-    const role = authStore.user?.role
+    const role = authStore.user?.roles?.[0]
     if (!role) return false
     
     const permissions: Record<string, string[]> = {

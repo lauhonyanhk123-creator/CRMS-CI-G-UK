@@ -104,6 +104,6 @@ export const useAppStore = defineStore('app', () => {
   persist: {
     key: 'crms-app',
     storage: localStorage,
-    paths: ['sidebarCollapsed', 'theme']
+    pick: ['sidebarCollapsed', 'theme']
   }
 })
