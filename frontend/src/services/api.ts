@@ -1216,6 +1216,10 @@ export const api = {
     }
   },
 
+  licence: {
+    getStatus: () => apiClient.get('/licence')
+  },
+
   auditLog: {
     getAll: (params?: {
       page?: number;

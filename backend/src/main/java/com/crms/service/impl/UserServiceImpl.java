@@ -9,6 +9,7 @@ import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.UserResponse;
 import com.crms.exception.ResourceNotFoundException;
 import com.crms.exception.ValidationException;
+import com.crms.licence.LicenceService;
 import com.crms.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LicenceService licenceService;
 
     @Override
     @Transactional(readOnly = true)
@@ -55,6 +57,9 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ValidationException("Email already exists");
         }
+
+        // Enforce licence user cap before creating a new enabled user
+        licenceService.assertUserSlotAvailable();
 
         Role role = parseRole(request.getRole(), Role.ROLE_USER);
 
@@ -88,7 +93,13 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
         if (request.getLastName() != null)  user.setLastName(request.getLastName());
-        if (request.getEnabled() != null)   user.setEnabled(request.getEnabled());
+        if (request.getEnabled() != null) {
+            // Re-enabling a disabled user consumes a licence slot — check cap first
+            if (Boolean.TRUE.equals(request.getEnabled()) && !Boolean.TRUE.equals(user.getEnabled())) {
+                licenceService.assertUserSlotAvailable();
+            }
+            user.setEnabled(request.getEnabled());
+        }
 
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
             Set<Role> roles = request.getRoles().stream()

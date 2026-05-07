@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Refresh } from '@element-plus/icons-vue'
+import { Plus, Key, WarningFilled, CircleCheckFilled, InfoFilled } from '@element-plus/icons-vue'
 import api from '@/services/api'; import type { ElTagType } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -17,32 +17,77 @@ interface AdminUser {
   phone?: string
 }
 
+interface LicenceStatus {
+  tier: string
+  installationId: string
+  maxUsers: number
+  activeUsers: number
+  availableSlots: number
+  atCapacity: boolean
+  maintenanceExpired: boolean
+  expiryDate: string | null
+  daysUntilExpiry: number
+  summary: string
+}
+
 const activeTab = ref('users')
 const loading = ref(false)
 const users = ref<AdminUser[]>([])
-const backupStatus = ref<any>(null)
-const integrations = ref<any[]>([])
-// Note: backup and integration endpoints are not yet implemented server-side
 const settings = ref<any>({})
 const roles = ref<any[]>([])
+const licence = ref<LicenceStatus | null>(null)
 
 const drawerVisible = ref(false)
 const drawerLoading = ref(false)
 const editingId = ref('')
-const form = ref({ 
-  firstName: '', 
-  lastName: '', 
-  email: '', 
-  role: 'SURVEYOR' as string, 
+const form = ref({
+  firstName: '',
+  lastName: '',
+  email: '',
+  role: 'SURVEYOR' as string,
   password: '',
-  status: 'ACTIVE' as string 
+  status: 'ACTIVE' as string
+})
+
+// Licence UI helpers
+const licenceBannerType = computed((): 'danger' | 'warning' | 'success' | 'info' => {
+  if (!licence.value) return 'info'
+  if (licence.value.atCapacity) return 'danger'
+  if (licence.value.maintenanceExpired) return 'warning'
+  if (licence.value.daysUntilExpiry >= 0 && licence.value.daysUntilExpiry <= 30) return 'warning'
+  return 'success'
+})
+
+const licenceBannerIcon = computed(() => {
+  const t = licenceBannerType.value
+  return t === 'danger' || t === 'warning' ? WarningFilled : CircleCheckFilled
+})
+
+const userCapPercent = computed(() => {
+  if (!licence.value) return 0
+  return Math.min(100, Math.round((licence.value.activeUsers / licence.value.maxUsers) * 100))
+})
+
+const userCapColor = computed(() => {
+  const p = userCapPercent.value
+  return p >= 100 ? '#f56c6c' : p >= 80 ? '#e6a23c' : '#67c23a'
 })
 
 onMounted(() => {
-  loadUsers();
+  loadUsers()
   loadSettings()
   loadRoles()
+  loadLicence()
 })
+
+const loadLicence = async () => {
+  try {
+    const response = await api.licence.getStatus()
+    licence.value = response.data as LicenceStatus
+  } catch {
+    // non-critical — silently ignore if endpoint fails in older installs
+  }
+}
 
 const loadUsers = async () => {
   loading.value = true
@@ -59,20 +104,6 @@ const loadRoles = async () => {
   } catch {}
 }
 
-const loadBackupStatus = async () => {
-  try {
-    const response = await api.admin.getBackupStatus()
-    backupStatus.value = response.data
-  } catch {}
-}
-
-const loadIntegrations = async () => {
-  try {
-    const response = await api.admin.getIntegrations()
-    integrations.value = response.data || []
-  } catch {}
-}
-
 const loadSettings = async () => {
   try {
     const response = await api.admin.getSettings()
@@ -82,14 +113,6 @@ const loadSettings = async () => {
 
 const handleTabChange = (tab: string | number) => {
   activeTab.value = String(tab)
-}
-
-const triggerBackup = async () => {
-  try {
-    await api.admin.triggerBackup()
-    ElMessage.success('Backup started')
-    loadBackupStatus()
-  } catch { ElMessage.error('Failed to start backup') }
 }
 
 const saveUser = async () => {
@@ -110,6 +133,7 @@ const saveUser = async () => {
     ElMessage.success('User saved')
     drawerVisible.value = false
     loadUsers()
+    loadLicence()
   } catch { ElMessage.error('Failed to save user') } finally { drawerLoading.value = false }
 }
 
@@ -121,13 +145,13 @@ const openAddUser = () => {
 
 const openEditUser = (user: AdminUser) => {
   editingId.value = user.id
-  form.value = { 
-    firstName: user.firstName, 
+  form.value = {
+    firstName: user.firstName,
     lastName: user.lastName,
-    email: user.email, 
-    role: user.role, 
+    email: user.email,
+    role: user.role,
     password: '',
-    status: user.status 
+    status: user.status
   }
   drawerVisible.value = true
 }
@@ -137,6 +161,7 @@ const deleteUser = async (user: AdminUser) => {
     await api.admin.users.delete(user.id)
     ElMessage.success('User deleted')
     loadUsers()
+    loadLicence()
   } catch { ElMessage.error('Failed to delete user') }
 }
 
@@ -152,7 +177,6 @@ const getRoleType = (role: string): TagType | undefined => {
 }
 
 const getUserName = (user: AdminUser) => `${user.firstName} ${user.lastName}`
-
 const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '—'
 </script>
 
@@ -165,6 +189,37 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
         </el-button>
       </template>
     </PageHeader>
+
+    <!-- Licence Status Banner -->
+    <el-alert
+      v-if="licence"
+      :type="licenceBannerType"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px"
+    >
+      <template #title>
+        <span class="licence-title">
+          <el-icon style="margin-right: 4px"><Key /></el-icon>
+          Licence — {{ licence.tier }} tier &nbsp;·&nbsp; Installation: {{ licence.installationId }}
+        </span>
+      </template>
+      <template #default>
+        <div class="licence-detail">
+          <span>{{ licence.summary }}</span>
+          <div class="cap-bar">
+            <el-progress
+              :percentage="userCapPercent"
+              :color="userCapColor"
+              :stroke-width="8"
+              :show-text="false"
+              style="flex: 1"
+            />
+            <span class="cap-label">{{ licence.activeUsers }} / {{ licence.maxUsers }} users</span>
+          </div>
+        </div>
+      </template>
+    </el-alert>
 
     <el-card shadow="never">
       <el-tabs v-model="activeTab" @tab-change="handleTabChange">
@@ -194,6 +249,51 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
           </el-table>
         </el-tab-pane>
 
+        <el-tab-pane label="Licence" name="licence">
+          <template v-if="licence">
+            <el-descriptions title="Licence Details" :column="2" border>
+              <el-descriptions-item label="Tier">
+                <el-tag :type="licence.tier === 'GROUP' ? 'success' : licence.tier === 'SITE' ? 'warning' : 'info'">
+                  {{ licence.tier }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="Installation ID">
+                <code>{{ licence.installationId }}</code>
+              </el-descriptions-item>
+              <el-descriptions-item label="Active Users">
+                {{ licence.activeUsers }} of {{ licence.maxUsers }}
+              </el-descriptions-item>
+              <el-descriptions-item label="Available Slots">
+                <el-tag :type="licence.atCapacity ? 'danger' : 'success'">
+                  {{ licence.atCapacity ? 'AT CAPACITY' : licence.availableSlots + ' free' }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="Maintenance Expiry">
+                <template v-if="licence.expiryDate">
+                  <el-tag :type="licence.maintenanceExpired ? 'danger' : licence.daysUntilExpiry <= 30 ? 'warning' : 'success'">
+                    {{ licence.expiryDate }}
+                    <template v-if="!licence.maintenanceExpired"> ({{ licence.daysUntilExpiry }}d)</template>
+                    <template v-else> EXPIRED</template>
+                  </el-tag>
+                </template>
+                <span v-else class="text-muted">Perpetual (no expiry)</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="Status">
+                <el-tag type="success">Active — Perpetual Licence</el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
+
+            <div style="margin-top: 20px">
+              <p style="color: #606266; font-size: 13px;">
+                To upgrade your tier or renew your support &amp; maintenance contract,
+                contact <strong>support@crms-ci-g-uk.co.uk</strong> quoting installation ID
+                <code>{{ licence.installationId }}</code>.
+              </p>
+            </div>
+          </template>
+          <el-empty v-else description="Licence information unavailable" />
+        </el-tab-pane>
+
         <el-tab-pane label="Roles" name="roles">
           <el-card shadow="never">
             <template #header><span>Casbin Policies</span></template>
@@ -203,12 +303,6 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
               <el-descriptions-item label="User">Create, Read, Update operations</el-descriptions-item>
               <el-descriptions-item label="Viewer">Read-only access</el-descriptions-item>
             </el-descriptions>
-          </el-card>
-        </el-tab-pane>
-
-        <el-tab-pane label="Backup &amp; Integrations" name="backup">
-          <el-card shadow="never">
-            <el-empty description="Backup management and external integration status are not yet available in this release." />
           </el-card>
         </el-tab-pane>
 
@@ -269,5 +363,35 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
 </template>
 
 <style lang="scss" scoped>
-.admin-view { }
+.admin-view {}
+
+.licence-title {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.licence-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cap-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 400px;
+}
+
+.cap-label {
+  font-size: 13px;
+  white-space: nowrap;
+  color: #606266;
+}
+
+.text-muted {
+  color: #909399;
+}
 </style>
