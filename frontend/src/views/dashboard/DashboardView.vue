@@ -115,20 +115,23 @@ onMounted(async () => {
 
 const loadKpis = async () => {
   try {
-    const [contractsRes, operativesRes, plantRes, appsRes] = await Promise.all([
+    const [contractsRes, operativesRes, plantRes, appsRes, kpisRes] = await Promise.all([
       api.contracts.getAll({ status: 'active', limit: 1 }),
       api.operatives.getAll({ status: 'active', limit: 1 }),
       api.plant.getAll({ status: 'allocated', limit: 1 }),
-      api.applicationsForPayment.getAll({ status: 'SUBMITTED', limit: 1 })
+      api.applicationsForPayment.getAll({ status: 'SUBMITTED', limit: 1 }),
+      apiClient.get('/dashboard/kpis')
     ])
-    
+
+    const kpis = kpisRes.data ?? {}
+
     kpiStats.value = {
       activeContracts: contractsRes.data?.total || 0,
       operativesOnSite: operativesRes.data?.total || 0,
       pendingApplications: appsRes.data?.total || 0,
       plantAllocated: plantRes.data?.total || 0,
-      revenueMTD: 0, // TODO: Calculate from approved/paid applications this month
-      cisDeductionsMTD: 0 // TODO: Calculate from CIS returns this month
+      revenueMTD: Number(kpis.revenueMTD ?? 0),
+      cisDeductionsMTD: Number(kpis.cisDeductionsMTD ?? 0)
     }
     
     // Legacy stats for backwards compatibility
