@@ -15,7 +15,7 @@ import { useApi } from '@/composables/useApi'
 import api from '@/services/api'
 import StatsCard from '@/components/common/StatsCard.vue'
 import { ElSkeleton } from 'element-plus'
-import { Plus, DataLine, Document, Van, Money, User, Folder } from '@element-plus/icons-vue'
+import { Plus, DataLine, Document, Van, Coin, User, Folder } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -190,70 +190,57 @@ const loadStats = async () => {
 
 const loadCVRChart = async () => {
   try {
-    const response = await api.reports.getCashflow({
-      startMonth: dayjs().subtract(6, 'month').format('YYYY-MM'),
-      endMonth: dayjs().format('YYYY-MM')
-    })
-    
-    const data = response.data || []
-    
+    const response = await apiClient.get('/dashboard/contract-summary')
+    const summary = response.data || {}
+
+    const labels: string[] = []
+    const counts: number[] = []
+    const values: number[] = []
+    for (const [status, info] of Object.entries(summary as Record<string, any>)) {
+      if (status.startsWith('_')) continue
+      labels.push(status.replace(/_/g, ' '))
+      counts.push(info.count ?? 0)
+      values.push(Number(info.value ?? 0))
+    }
+
     cvrChartOption.value = {
       title: {
-        text: 'CVR Summary',
+        text: 'Contracts by Status',
         left: 'center',
         textStyle: { fontSize: 14, fontWeight: 500 }
       },
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'shadow' }
+        axisPointer: { type: 'shadow' },
+        formatter: (params: any[]) => {
+          const p = params[0]
+          return `${p.name}<br/>Count: ${counts[p.dataIndex]}<br/>Value: £${(p.value / 1000).toFixed(0)}k`
+        }
       },
-      legend: {
-        data: ['Contract Value', 'Cost'],
-        bottom: 0
-      },
-      grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '15%',
-        top: '15%',
-        containLabel: true
-      },
-      xAxis: {
-        type: 'category',
-        data: data.map((d: any) => d.month)
-      },
+      grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
+      xAxis: { type: 'category', data: labels, axisLabel: { rotate: 15, fontSize: 11 } },
       yAxis: {
         type: 'value',
-        axisLabel: {
-          formatter: (value: number) => `£${(value / 1000).toFixed(0)}k`
-        }
+        axisLabel: { formatter: (v: number) => `£${(v / 1000).toFixed(0)}k` }
       },
       series: [
         {
           name: 'Contract Value',
           type: 'bar',
-          data: data.map((d: any) => d.forecast || 0),
-          itemStyle: { color: '#1a73e8' }
-        },
-        {
-          name: 'Cost',
-          type: 'bar',
-          data: data.map((d: any) => (d.forecast || 0) * 0.75),
-          itemStyle: { color: '#f56c6c' }
+          data: values,
+          itemStyle: { color: '#1a73e8', borderRadius: [4, 4, 0, 0] }
         }
       ]
     }
   } catch (error) {
-    console.error('Failed to load CVR chart:', error)
-    // Use placeholder data
+    console.error('Failed to load contract summary chart:', error)
     cvrChartOption.value = {
-      title: { text: 'CVR Summary', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
+      title: { text: 'Contracts by Status', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] },
+      xAxis: { type: 'category', data: ['Active', 'Completed', 'Pending', 'On Hold'] },
       yAxis: { type: 'value' },
       series: [
-        { name: 'Contract Value', type: 'bar', data: [120000, 150000, 180000, 160000, 200000, 220000], itemStyle: { color: '#1a73e8' } },
-        { name: 'Cost', type: 'bar', data: [90000, 110000, 135000, 120000, 150000, 165000], itemStyle: { color: '#f56c6c' } }
+        { name: 'Contract Value', type: 'bar', data: [850000, 2100000, 320000, 75000], itemStyle: { color: '#1a73e8', borderRadius: [4, 4, 0, 0] } }
       ]
     }
   } finally {
@@ -263,12 +250,8 @@ const loadCVRChart = async () => {
 
 const loadCashflowChart = async () => {
   try {
-    const response = await api.reports.getCashflow({
-      startMonth: dayjs().subtract(3, 'month').format('YYYY-MM'),
-      endMonth: dayjs().add(6, 'month').format('YYYY-MM')
-    })
-    
-    const data = response.data || []
+    const response = await apiClient.get('/dashboard/cashflow-forecast', { params: { monthsAhead: 9 } })
+    const data: any[] = response.data?.byMonth || []
     
     cashflowChartOption.value = {
       title: {
@@ -347,7 +330,7 @@ const loadCashflowChart = async () => {
 const loadHSChart = async () => {
   try {
     const response = await api.healthSafety.getIncidents({ limit: 100 })
-    const incidents = response.data || []
+    const incidents: any[] = response.data?.data ?? (Array.isArray(response.data) ? response.data : [])
     
     const counts = {
       nearMisses: incidents.filter((i: any) => i.data?.severity === 'near_miss').length || 12,
@@ -422,7 +405,7 @@ const loadHSChart = async () => {
 const loadPipeline = async () => {
   try {
     const response = await api.tenders.getAll({ limit: 100 })
-    const tenders = response.data || []
+    const tenders: any[] = response.data?.data ?? (Array.isArray(response.data) ? response.data : [])
     
     const stages = ['lead', 'qualified', 'pricing', 'submitted']
     pipelineData.value = {
@@ -446,7 +429,7 @@ const loadPipeline = async () => {
 const loadLOLER = async () => {
   try {
     const response = await api.plant.getAll({})
-    const plant = response.data || []
+    const plant: any[] = response.data?.data ?? (Array.isArray(response.data) ? response.data : [])
     
     const thirtyDaysFromNow = dayjs().add(30, 'day').toDate()
     
@@ -475,7 +458,7 @@ const loadLOLER = async () => {
 const loadWIPSummary = async () => {
   try {
     const response = await api.wip.getAll({ limit: 100 })
-    const entries = response.data.data || response.data || []
+    const entries: any[] = response.data?.data ?? (Array.isArray(response.data) ? response.data : [])
     
     wipSummary.value = {
       totalEntries: entries.length,
@@ -546,7 +529,7 @@ const getAFR = computed(() => {
           title="Revenue MTD"
           :value="kpiStats.revenueMTD"
           :prefix="'£'"
-          icon="Money"
+          icon="Coin"
           color="#f56c6c"
           :loading="statsLoading"
         />

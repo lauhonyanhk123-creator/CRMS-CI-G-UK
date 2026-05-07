@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   Document, DataLine, Coin, Van, User, Tools,
@@ -50,6 +50,55 @@ const plantReports = ref<ReportCard[]>([
   { id: 'loler', title: 'LOLER/PUWER Expiry Report', icon: Tools, description: 'Plant certifications expiring', reportType: 'plant_certification' },
   { id: 'hire', title: 'Plant Hire Register', icon: List, description: 'Complete plant hire register', reportType: 'plant_hire' }
 ])
+
+interface ColDef { prop: string; label: string; width?: number; currency?: boolean; tag?: boolean }
+
+const REPORT_COLUMNS: Record<string, ColDef[]> = {
+  financial_afp: [
+    { prop: 'id', label: 'Ref', width: 140 },
+    { prop: 'date', label: 'Date', width: 120 },
+    { prop: 'value', label: 'Amount', currency: true },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  financial_retention: [
+    { prop: 'id', label: 'Contract ID', width: 140 },
+    { prop: 'contract', label: 'Reference', width: 140 },
+    { prop: 'date', label: 'Start Date', width: 120 },
+    { prop: 'retentionHeld', label: 'Retention Held', currency: true },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  cis_cis300: [
+    { prop: 'id', label: 'Return ID', width: 140 },
+    { prop: 'month', label: 'Month', width: 110 },
+    { prop: 'subcontractors', label: 'Subcontractors', width: 140 },
+    { prop: 'gross', label: 'Gross', currency: true },
+    { prop: 'deduction', label: 'Deduction', currency: true },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  hr_onsite: [
+    { prop: 'id', label: 'ID', width: 120 },
+    { prop: 'name', label: 'Name' },
+    { prop: 'trade', label: 'Trade', width: 140 },
+    { prop: 'site', label: 'Site', width: 140 },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  plant_allocation: [
+    { prop: 'id', label: 'ID', width: 120 },
+    { prop: 'description', label: 'Description' },
+    { prop: 'category', label: 'Category', width: 140 },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ]
+}
+
+const currentColumns = computed<ColDef[]>(() => {
+  if (!currentReport.value) return []
+  return REPORT_COLUMNS[currentReport.value.reportType] ?? [
+    { prop: 'id', label: 'ID', width: 120 },
+    { prop: 'date', label: 'Date', width: 120 },
+    { prop: 'value', label: 'Value', currency: true },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ]
+})
 
 const dialogVisible = ref(false)
 const currentReport = ref<ReportCard | null>(null)
@@ -238,20 +287,39 @@ const downloadReport = () => {
       <div v-loading="loadingReport">
         <el-empty v-if="reportData.length === 0" description="No data available" />
         <el-table v-else :data="reportData" stripe max-height="400">
-          <el-table-column prop="id" label="ID" width="120" />
-          <el-table-column prop="date" label="Date" width="120" />
-          <el-table-column prop="value" label="Value">
-            <template #default="{ row }">
-              {{ row.value ? `£${row.value.toLocaleString()}` : '—' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="status" label="Status" width="120">
-            <template #default="{ row }">
-              <el-tag :type="row.status === 'paid' || row.status === 'active' ? 'success' : row.status === 'approved' ? 'success' : 'warning'" size="small">
-                {{ row.status }}
-              </el-tag>
-            </template>
-          </el-table-column>
+          <template v-for="col in currentColumns" :key="col.prop">
+            <el-table-column
+              v-if="col.currency"
+              :prop="col.prop"
+              :label="col.label"
+              :width="col.width"
+            >
+              <template #default="{ row }">
+                {{ row[col.prop] != null ? `£${Number(row[col.prop]).toLocaleString()}` : '—' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-else-if="col.tag"
+              :prop="col.prop"
+              :label="col.label"
+              :width="col.width"
+            >
+              <template #default="{ row }">
+                <el-tag
+                  :type="['paid', 'active', 'approved', 'submitted'].includes(row[col.prop]) ? 'success' : 'warning'"
+                  size="small"
+                >
+                  {{ row[col.prop] ?? '—' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-else
+              :prop="col.prop"
+              :label="col.label"
+              :width="col.width"
+            />
+          </template>
         </el-table>
       </div>
       <template #footer>
