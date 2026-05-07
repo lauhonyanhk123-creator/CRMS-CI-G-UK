@@ -6,11 +6,13 @@ import api from '@/services/api'
 
 export interface User {
   id: string
-  name: string
+  username: string
   email: string
-  role: string
-  token?: string
-  refreshToken?: string
+  firstName?: string
+  lastName?: string
+  roles: string[]
+  enabled?: boolean
+  mustChangePassword?: boolean
 }
 
 export interface LoginCredentials {
@@ -26,17 +28,20 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!token.value)
 
+  const mustChangePassword = computed(() => !!user.value?.mustChangePassword)
+
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
       const response = await api.auth.login({
         username: credentials.username,
         password: credentials.password
       })
-      
-      user.value = response.data.user
-      token.value = response.data.token
-      refreshToken.value = response.data.refreshToken
-      
+
+      const data = response.data as any
+      user.value = data.user
+      token.value = data.token
+      refreshToken.value = data.refreshToken
+
       ElMessage.success('Login successful')
       return true
     } catch (error) {
@@ -66,11 +71,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const refreshTokenFn = async (): Promise<boolean> => {
     if (!refreshToken.value) return false
-    
+
     try {
       const response = await api.auth.refreshToken(refreshToken.value)
-      token.value = response.data.token
-      refreshToken.value = response.data.refreshToken
+      const data = response.data as any
+      token.value = data.token
+      refreshToken.value = data.refreshToken
       return true
     } catch {
       await logout()
@@ -98,6 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     refreshToken,
     isAuthenticated,
+    mustChangePassword,
     login,
     logout,
     refreshTokenFn,

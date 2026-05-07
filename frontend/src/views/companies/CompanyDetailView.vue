@@ -146,7 +146,6 @@ await contactFormRef.value.validate(async (valid: boolean) => {
       ElMessage.error('Failed to save contact')
     }
   })
-  })
 }
 
 const deleteContact = async (contact: Contact) => {

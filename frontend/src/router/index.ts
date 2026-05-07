@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 
 // Lazy loaded views
 const LoginView = () => import('@/views/login/LoginView.vue')
+const ChangePasswordView = () => import('@/views/auth/ChangePasswordView.vue')
 const DashboardView = () => import('@/views/dashboard/DashboardView.vue')
 const CompaniesView = () => import('@/views/companies/CompaniesView.vue')
 const CompanyDetailView = () => import('@/views/companies/CompanyDetailView.vue')
@@ -32,6 +33,12 @@ const routes: RouteRecordRaw[] = [
     name: 'Login',
     component: LoginView,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/change-password',
+    name: 'ChangePassword',
+    component: ChangePasswordView,
+    meta: { requiresAuth: true, title: 'Change Password' }
   },
   {
     path: '/',
@@ -184,14 +191,33 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.meta.requiresAuth !== false
-  
+
   if (requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-  } else if (to.path === '/login' && authStore.isAuthenticated) {
-    next('/dashboard')
-  } else {
-    next()
+    return next('/login')
   }
+
+  if (to.path === '/login' && authStore.isAuthenticated) {
+    return next('/dashboard')
+  }
+
+  // Force password change before accessing anything else
+  if (authStore.isAuthenticated && authStore.mustChangePassword && to.path !== '/change-password') {
+    return next('/change-password')
+  }
+
+  // Role-based guard for admin routes
+  const requiredRoles = to.meta.roles as string[] | undefined
+  if (requiredRoles && authStore.user) {
+    const userRoles = authStore.user.roles ?? []
+    const hasRole = requiredRoles.some(r =>
+      userRoles.includes(`ROLE_${r.toUpperCase()}`) || userRoles.includes(r)
+    )
+    if (!hasRole) {
+      return next('/dashboard')
+    }
+  }
+
+  next()
 })
 
 export default router
