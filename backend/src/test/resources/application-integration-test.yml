@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:crms_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;NON_KEYWORDS=VALUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  flyway:
+    enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  quartz:
+    auto-startup: false
+    job-store-type: memory
+
+  mail:
+    host: localhost
+    port: 2525
+
+# Provide required secrets with test-only values
+JWT_SECRET: dGhpcy1pcy1jcm1zLXRlc3Qtand0LXNlY3JldC1rZXk=
+MINIO_ACCESS_KEY: test-access-key
+MINIO_SECRET_KEY: test-secret-key
+
+app:
+  jwt:
+    secret: dGhpcy1pcy1jcm1zLXRlc3Qtand0LXNlY3JldC1rZXk=
+    expiration: 900000
+    refresh-expiration: 86400000

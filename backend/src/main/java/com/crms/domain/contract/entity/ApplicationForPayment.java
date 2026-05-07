@@ -159,20 +159,11 @@ public class ApplicationForPayment extends BaseEntity {
 
     @PrePersist
     @PreUpdate
-    public void calculateGrossValue() {
+    public void onSave() {
         if (valueOfWorks != null && retention != null) {
             this.grossValue = valueOfWorks.subtract(retention);
         }
-    }
-
-    /**
-     * Calculate pay-less notice deadline under s.111 of Housing Grants Act.
-     * Deadline is 5 days before the application submitted date.
-     * This is enforced to ensure parties can serve pay-less notices in time.
-     */
-    @PrePersist
-    @PreUpdate
-    public void calculatePayLessNoticeDeadline() {
+        // Deadline is 5 days before the submitted date (s.111 Housing Grants Act)
         if (this.submittedDate != null) {
             this.payLessNoticeDeadline = this.submittedDate.minusDays(5);
             this.deadlineStatus = calculateDeadlineStatus(this.payLessNoticeDeadline);

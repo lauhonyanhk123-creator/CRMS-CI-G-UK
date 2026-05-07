@@ -110,7 +110,7 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
         application.setPayLessNoticeDeadline(
             request.getApplicationPeriodEnd().plusDays(5));  // 5 days after period end per s.111
 
-        application.calculateGrossValue();
+        application.onSave();
         application = applicationRepository.save(application);
 
         log.info("Created application for payment {} for contract {}", applicationRef, contract.getContractRef());

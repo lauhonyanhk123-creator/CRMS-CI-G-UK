@@ -38,6 +38,10 @@ public class Site extends BaseEntity {
     private String siteCode;
 
     @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "postcode",      column = @Column(name = "addr_postcode")),
+        @AttributeOverride(name = "gridReference", column = @Column(name = "addr_grid_reference"))
+    })
     private Address address;
 
     @Column(name = "grid_reference")
