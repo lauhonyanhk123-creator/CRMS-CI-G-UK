@@ -55,8 +55,7 @@ public class ITPTemplateController {
     @Operation(summary = "Get categories", description = "Get list of distinct template categories")
     public ResponseEntity<ApiResponse<List<String>>> getCategories(
             @RequestParam(required = false) String tradeCategory) {
-        // This would need a custom query - simplified for now
-        return ResponseEntity.ok(ApiResponse.success(List.of("Foundation", "Structure", "Drainage", "Brickwork", "Finishes")));
+        return ResponseEntity.ok(ApiResponse.success(service.getDistinctCategories()));
     }
 
     @GetMapping("/{id}")

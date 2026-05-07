@@ -22,6 +22,7 @@ const loading = ref(false)
 const users = ref<AdminUser[]>([])
 const backupStatus = ref<any>(null)
 const integrations = ref<any[]>([])
+// Note: backup and integration endpoints are not yet implemented server-side
 const settings = ref<any>({})
 const roles = ref<any[]>([])
 
@@ -37,10 +38,8 @@ const form = ref({
   status: 'ACTIVE' as string 
 })
 
-onMounted(() => { 
-  loadUsers(); 
-  loadBackupStatus(); 
-  loadIntegrations(); 
+onMounted(() => {
+  loadUsers();
   loadSettings()
   loadRoles()
 })
@@ -206,38 +205,10 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
           </el-card>
         </el-tab-pane>
 
-        <el-tab-pane label="Backup" name="backup">
+        <el-tab-pane label="Backup &amp; Integrations" name="backup">
           <el-card shadow="never">
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="Status">{{ backupStatus?.status || '—' }}</el-descriptions-item>
-              <el-descriptions-item label="Last Backup">{{ formatDate(backupStatus?.lastBackup) }}</el-descriptions-item>
-              <el-descriptions-item label="Backup Location">{{ backupStatus?.location || '—' }}</el-descriptions-item>
-              <el-descriptions-item label="Size">{{ backupStatus?.size || '—' }}</el-descriptions-item>
-            </el-descriptions>
-            <el-divider />
-            <el-button type="primary" @click="triggerBackup">Trigger Backup</el-button>
+            <el-empty description="Backup management and external integration status are not yet available in this release." />
           </el-card>
-        </el-tab-pane>
-
-        <el-tab-pane label="Integrations" name="integrations">
-          <el-table :data="integrations" stripe>
-            <el-table-column prop="name" label="Integration" min-width="200" />
-            <el-table-column label="Status" width="120">
-              <template #default="{ row }">
-                <el-tag :type="row.connected ? 'success' : 'danger'" size="small">
-                  {{ row.connected ? 'Connected' : 'Disconnected' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="Last Sync" width="180">
-              <template #default="{ row }">{{ formatDate(row.lastSync) }}</template>
-            </el-table-column>
-            <el-table-column label="Actions" width="100">
-              <template #default="{ row }">
-                <el-button link type="primary" size="small">{{ row.connected ? 'Configure' : 'Connect' }}</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
         </el-tab-pane>
 
         <el-tab-pane label="Settings" name="settings">
