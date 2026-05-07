@@ -4,6 +4,7 @@ import com.crms.dto.request.quality.ITPTemplateRequest;
 import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.quality.ITPTemplateResponse;
 
+import java.util.List;
 import java.util.Map;
 
 public interface ITPTemplateService {
@@ -19,4 +20,6 @@ public interface ITPTemplateService {
     void delete(Long id);
 
     ITPTemplateResponse copyTemplate(Long id);
+
+    List<String> getDistinctCategories();
 }

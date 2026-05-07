@@ -196,4 +196,10 @@ public class ITPTemplateServiceImpl implements ITPTemplateService {
             .updatedBy(template.getUpdatedBy())
             .build();
     }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<String> getDistinctCategories() {
+        return repository.findDistinctCategories();
+    }
 }

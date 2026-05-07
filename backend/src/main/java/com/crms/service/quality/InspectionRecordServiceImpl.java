@@ -4,7 +4,7 @@ import com.crms.domain.quality.entity.InspectionRecord;
 import com.crms.domain.quality.entity.InspectionAttachment;
 import com.crms.domain.quality.entity.ITPScheduleItem;
 import com.crms.domain.quality.repository.InspectionRecordRepository;
-import com.crms.domain.quality.repository.ITPScheduleRepository;
+import com.crms.domain.quality.repository.ITPScheduleItemRepository;
 import com.crms.dto.request.quality.InspectionRecordRequest;
 import com.crms.dto.response.PageResponse;
 import com.crms.dto.response.quality.InspectionRecordResponse;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class InspectionRecordServiceImpl implements InspectionRecordService {
 
     private final InspectionRecordRepository repository;
-    private final ITPScheduleRepository scheduleRepository;
+    private final ITPScheduleItemRepository scheduleItemRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -71,19 +71,8 @@ public class InspectionRecordServiceImpl implements InspectionRecordService {
 
     @Override
     public InspectionRecordResponse create(InspectionRecordRequest request) {
-        ITPScheduleItem scheduleItem = scheduleRepository.findById(request.getScheduleItemId())
-            .map(s -> {
-                // Get the schedule item by ID
-                return s.getItems().stream()
-                    .filter(i -> i.getId().equals(request.getScheduleItemId()))
-                    .findFirst()
-                    .orElse(null);
-            })
+        ITPScheduleItem scheduleItem = scheduleItemRepository.findById(request.getScheduleItemId())
             .orElseThrow(() -> new RuntimeException("Schedule item not found: " + request.getScheduleItemId()));
-        
-        if (scheduleItem == null) {
-            throw new RuntimeException("Schedule item not found: " + request.getScheduleItemId());
-        }
         
         InspectionRecord record = InspectionRecord.builder()
             .scheduleItem(scheduleItem)
