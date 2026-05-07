@@ -13,6 +13,7 @@ import com.crms.security.JwtAuthenticationFilter;
 import com.crms.security.JwtTokenProvider;
 import com.crms.security.PasswordEncoderConfig;
 import com.crms.security.TokenBlacklistService;
+import com.crms.security.totp.TotpService;
 import com.crms.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
@@ -73,6 +74,9 @@ class AuthIntegrationTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private TotpService totpService;
 
     @MockBean
     private UserDetailsService userDetailsService;

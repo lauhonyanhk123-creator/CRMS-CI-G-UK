@@ -1,6 +1,7 @@
 package com.crms.service.impl;
 
 import java.util.Optional;
+import com.crms.domain.contract.repository.ApplicationForPaymentRepository;
 import com.crms.domain.subcontractor.entity.CISReturn;
 import com.crms.domain.subcontractor.entity.CISReturnLine;
 import com.crms.domain.subcontractor.entity.CISVerification;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -32,6 +35,7 @@ public class CISServiceImpl implements CISService {
     private final CISReturnRepository cisReturnRepository;
     private final CISReturnLineRepository cisReturnLineRepository;
     private final CISVerificationRepository cisVerificationRepository;
+    private final ApplicationForPaymentRepository applicationForPaymentRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -99,20 +103,26 @@ public class CISServiceImpl implements CISService {
         
         cisReturn = cisReturnRepository.save(cisReturn);
         
+        // Derive date range from tax month (YYYY-MM → first to last day of that month)
+        YearMonth ym = YearMonth.parse(taxMonth);
+        LocalDate periodStart = ym.atDay(1);
+        LocalDate periodEnd = ym.atEndOfMonth();
+
         // Generate return lines from verifications and applications for payment
         List<CISReturnLine> returnLines = new ArrayList<>();
         BigDecimal totalGross = BigDecimal.ZERO;
         BigDecimal totalDeduction = BigDecimal.ZERO;
-        
+
         for (CISVerification verification : validVerifications) {
             if (verification.getCompany() == null) continue;
-            
-            BigDecimal cisRate = verification.getRate() != null 
-                    ? verification.getRate() 
+
+            BigDecimal cisRate = verification.getRate() != null
+                    ? verification.getRate()
                     : new BigDecimal("20"); // Default 20% CIS rate
-            
-            // Calculate based on subcontractor's payments
-            BigDecimal grossPaid = BigDecimal.ZERO; // Would be calculated from actual payments
+
+            BigDecimal grossPaid = applicationForPaymentRepository
+                    .sumCisPaidGrossByCompanyAndPeriod(verification.getCompany().getId(), periodStart, periodEnd);
+            if (grossPaid == null) grossPaid = BigDecimal.ZERO;
             BigDecimal deduction = grossPaid.multiply(cisRate).divide(new BigDecimal("100"));
             BigDecimal netPaid = grossPaid.subtract(deduction);
             
