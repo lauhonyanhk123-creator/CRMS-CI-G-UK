@@ -113,6 +113,11 @@ crms:
     max-age: 3600
     allow-credentials: true
 
+  # Email notifications
+  mail:
+    from: ${MAIL_FROM:noreply@crms.local}
+    admin-address: ${MAIL_ADMIN:admin@crms.local}
+
   # Audit — immutable append-only log
   audit:
     hash-algorithm: SHA-256
