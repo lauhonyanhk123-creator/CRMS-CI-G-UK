@@ -24,11 +24,13 @@ public class IntegrationProperties {
         private String baseUrl = "https://test-api.service.hmrc.gov.uk";
         private String clientId;
         private String clientSecret;
+        private String redirectUri;
+        private String scope = "read:construction-industry-scheme write:construction-industry-scheme";
+        private String contractorUtr;
         private String vatRate = "20.0";
         private String landfillTaxStandard = "126.15";
         private String landfillTaxInert = "4.05";
-        // Token refresh configuration
-        private int tokenRefreshBufferSeconds = 300; // 5 minutes - proactive refresh before expiry
+        private int tokenRefreshBufferSeconds = 300;
         private int tokenExpiryBufferSeconds = 60;
     }
 

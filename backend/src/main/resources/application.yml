@@ -153,14 +153,16 @@ crms:
 
   # External API Integration Configuration
   integration:
-    demo-mode: true  # Set to false with real API keys for production
+    demo-mode: ${HMRC_DEMO_MODE:true}
     hmrc:
       client-id: ${HMRC_CLIENT_ID:}
       client-secret: ${HMRC_CLIENT_SECRET:}
       base-url: ${HMRC_BASE_URL:https://test-api.service.hmrc.gov.uk}
-      # Token refresh configuration (seconds)
-      token-refresh-buffer-seconds: 300  # Proactively refresh 5 minutes before expiry
-      token-expiry-buffer-seconds: 60    # Consider expired 60 seconds before actual expiry
+      redirect-uri: ${HMRC_REDIRECT_URI:}
+      contractor-utr: ${HMRC_CONTRACTOR_UTR:}
+      scope: "read:construction-industry-scheme write:construction-industry-scheme"
+      token-refresh-buffer-seconds: 300
+      token-expiry-buffer-seconds: 60
 
   # =============================================================================
   # LICENCE CONFIGURATION
