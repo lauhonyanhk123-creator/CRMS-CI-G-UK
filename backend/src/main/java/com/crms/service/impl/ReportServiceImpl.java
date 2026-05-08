@@ -198,7 +198,7 @@ public class ReportServiceImpl implements ReportService {
         long periodDays = ChronoUnit.DAYS.between(from, to) + 1;
 
         List<Map<String, Object>> utilization = new ArrayList<>();
-        for (PlantItem plant : plantItemRepository.findAll()) {
+        for (PlantItem plant : plantItemRepository.findAll(org.springframework.data.domain.Sort.by("plantRef"))) {
             List<PlantAllocation> allocations =
                     plantAllocationRepository.findByPlantIdAndDateRange(plant.getId(), from, to);
 
@@ -232,7 +232,7 @@ public class ReportServiceImpl implements ReportService {
         log.info("Generating tender pipeline report");
         // Query tenders by status, group by probability
         // Calculate potential value per pipeline stage
-        List<Tender> tenders = tenderRepository.findAll();
+        List<Tender> tenders = tenderRepository.findByStatusIn(java.util.Arrays.asList(com.crms.domain.tender.enums.TenderStatus.values()));
         Map<String, Map<String, Object>> pipelineByStage = new LinkedHashMap<>();
         
         for (Tender tender : tenders) {
@@ -292,7 +292,7 @@ public class ReportServiceImpl implements ReportService {
             }
 
             List<CITBLevyReport> reports = new ArrayList<>();
-            List<Contract> contracts = contractRepository.findAll();
+            List<Contract> contracts = contractRepository.findContractsActiveDuring(periodStart, periodEnd);
 
             for (Contract contract : contracts) {
                 CITBLevyReport report = calculateCITBLevyForContract(contract, periodStart, periodEnd);

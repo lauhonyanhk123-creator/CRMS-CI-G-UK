@@ -295,24 +295,19 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public Map<String, Object> getPipelineSummary() {
-        List<Tender> tenders = tenderRepository.findAll();
-        Map<TenderStatus, List<Tender>> byStatus = tenders.stream()
-                .collect(Collectors.groupingBy(Tender::getStatus));
-
         Map<String, Object> funnel = new LinkedHashMap<>();
+        long awarded = 0;
+        long lost = 0;
         for (TenderStatus status : TenderStatus.values()) {
-            List<Tender> group = byStatus.getOrDefault(status, Collections.emptyList());
-            BigDecimal totalValue = group.stream()
-                    .map(t -> t.getTargetValue() != null ? t.getTargetValue() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            long count = tenderRepository.countByStatus(status);
+            BigDecimal totalValue = tenderRepository.sumTargetValueByStatus(status);
             Map<String, Object> statusData = new LinkedHashMap<>();
-            statusData.put("count", group.size());
-            statusData.put("totalValue", totalValue);
+            statusData.put("count", count);
+            statusData.put("totalValue", totalValue != null ? totalValue : BigDecimal.ZERO);
             funnel.put(status.name(), statusData);
+            if (status == TenderStatus.AWARDED) awarded = count;
+            if (status == TenderStatus.LOST) lost = count;
         }
-
-        long awarded = byStatus.getOrDefault(TenderStatus.AWARDED, Collections.emptyList()).size();
-        long lost = byStatus.getOrDefault(TenderStatus.LOST, Collections.emptyList()).size();
         long totalDecided = awarded + lost;
         double winRate = totalDecided > 0 ? (double) awarded / totalDecided * 100 : 0.0;
         funnel.put("_summary", Map.of(
@@ -325,19 +320,13 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public Map<String, Object> getContractSummary() {
-        List<Contract> contracts = contractRepository.findAll();
-        Map<ContractStatus, List<Contract>> byStatus = contracts.stream()
-                .collect(Collectors.groupingBy(Contract::getStatus));
-
         Map<String, Object> summary = new LinkedHashMap<>();
         for (ContractStatus status : ContractStatus.values()) {
-            List<Contract> group = byStatus.getOrDefault(status, Collections.emptyList());
-            BigDecimal totalValue = group.stream()
-                    .map(c -> c.getContractValue() != null ? c.getContractValue() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            long count = contractRepository.countByStatus(status);
+            BigDecimal totalValue = contractRepository.sumContractValueByStatus(status);
             Map<String, Object> statusData = new LinkedHashMap<>();
-            statusData.put("count", group.size());
-            statusData.put("value", totalValue);
+            statusData.put("count", count);
+            statusData.put("value", totalValue != null ? totalValue : BigDecimal.ZERO);
             summary.put(status.name(), statusData);
         }
         return summary;
@@ -345,12 +334,9 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public Map<String, Object> getCashflowForecast(int monthsAhead) {
-        List<ApplicationForPayment> approved = applicationRepository.findAll().stream()
-                .filter(a -> a.getStatus() == ApplicationStatus.PAID || a.getStatus() == ApplicationStatus.SUBMITTED)
-                .collect(Collectors.toList());
-
         LocalDate start = LocalDate.now();
         LocalDate end = start.plusMonths(monthsAhead);
+        List<ApplicationForPayment> approved = applicationRepository.findCashflowRelevantByDateRange(start, end);
 
         Map<YearMonth, BigDecimal> byMonth = new TreeMap<>();
         BigDecimal total = BigDecimal.ZERO;
@@ -358,8 +344,9 @@ public class DashboardServiceImpl implements DashboardService {
         BigDecimal retentionReleasable = BigDecimal.ZERO;
 
         for (ApplicationForPayment app : approved) {
-            LocalDate dueDate = app.getDueDate();
-            if (dueDate == null || dueDate.isBefore(start) || dueDate.isAfter(end)) continue;
+            LocalDate dueDate = app.getDueDate() != null ? app.getDueDate()
+                    : (app.getPaidDate() != null ? app.getPaidDate() : null);
+            if (dueDate == null) continue;
 
             BigDecimal amount = app.getGrossValue() != null ? app.getGrossValue() : BigDecimal.ZERO;
             BigDecimal ret = app.getRetention() != null ? app.getRetention() : BigDecimal.ZERO;
@@ -396,13 +383,10 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public List<Map<String, Object>> getRetentionSchedule() {
-        return contractRepository.findAll().stream()
-                .filter(c -> c.getRetentionLedger() != null)
+        return contractRepository.findByRetentionLedgerIsNotNull().stream()
                 .map(c -> {
-                    BigDecimal retentionHeld = applicationRepository.findAll().stream()
-                            .filter(a -> a.getContract() != null && a.getContract().getId().equals(c.getId()))
-                            .map(a -> a.getRetention() != null ? a.getRetention() : BigDecimal.ZERO)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal retentionHeld = applicationRepository.sumRetentionByContractId(c.getId());
+                    if (retentionHeld == null) retentionHeld = BigDecimal.ZERO;
                     Map<String, Object> item = new LinkedHashMap<>();
                     item.put("contractRef", c.getContractRef());
                     item.put("title", c.getTitle());
@@ -440,9 +424,7 @@ public class DashboardServiceImpl implements DashboardService {
         double nearMissRatio = actualIncidents > 0 ? (double) nearMisses / actualIncidents : 0.0;
 
         int ramsExpiring30 = ramsRepository.findExpiringDocuments(LocalDate.now().plusDays(30)).size();
-        int f10Active = (int) f10Repository.findAll().stream()
-                .filter(F10Notification::getIsActive)
-                .count();
+        long f10Active = f10Repository.countActive();
 
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("periodMonths", months);
@@ -459,16 +441,12 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public Map<String, Object> getPlantUtilisation(int days) {
-        List<PlantItem> allPlant = plantRepository.findAll();
         LocalDate today = LocalDate.now();
 
-        int total = allPlant.size();
-        int allocated = (int) allPlant.stream()
-                .filter(p -> p.getStatus() == PlantStatus.ON_HIRE)
-                .count();
-        int idle = (int) allPlant.stream()
-                .filter(p -> p.getStatus() == PlantStatus.AVAILABLE || p.getStatus() == PlantStatus.IDLE)
-                .count();
+        long total = plantRepository.count();
+        long allocated = plantRepository.countByStatus(PlantStatus.ON_HIRE);
+        long idle = plantRepository.countByStatus(PlantStatus.AVAILABLE)
+                  + plantRepository.countByStatus(PlantStatus.IDLE);
         double utilisationPct = total > 0 ? (double) allocated / total * 100 : 0;
 
         LocalDate thirtyDays = today.plusDays(30);
@@ -479,9 +457,9 @@ public class DashboardServiceImpl implements DashboardService {
 
         Map<String, Object> utilisation = new LinkedHashMap<>();
         utilisation.put("periodDays", days);
-        utilisation.put("totalPlant", total);
-        utilisation.put("allocated", allocated);
-        utilisation.put("idle", idle);
+        utilisation.put("totalPlant", (int) total);
+        utilisation.put("allocated", (int) allocated);
+        utilisation.put("idle", (int) idle);
         utilisation.put("utilisationPercent", Math.round(utilisationPct * 10.0) / 10.0);
         utilisation.put("lolErDue30Days", lolerDueCount);
         utilisation.put("lolErOverdue", lolerOverdueCount);
@@ -492,34 +470,14 @@ public class DashboardServiceImpl implements DashboardService {
     public Map<String, Object> getCisSummary() {
         int year = LocalDate.now().getYear();
         String taxYear = year + "/" + (year + 1);
+        String yearStr = String.valueOf(year);
 
-        List<CISReturn> allReturns = cisReturnRepository.findAll();
-        BigDecimal totalGross = BigDecimal.ZERO;
-        BigDecimal totalDeductions = BigDecimal.ZERO;
-        int submitted = 0;
-        int pending = 0;
-        int overdue = 0;
-
-        LocalDate now = LocalDate.now();
-        LocalDate taxYearEnd = LocalDate.of(year, 4, 5);
-        if (now.isAfter(taxYearEnd)) {
-            taxYearEnd = LocalDate.of(year + 1, 4, 5);
-        }
-
-        for (CISReturn ret : allReturns) {
-            if (ret.getTaxMonth() != null && ret.getTaxMonth().contains(String.valueOf(year))) {
-                submitted++;
-                BigDecimal gross = ret.getTotalGrossValue() != null ? ret.getTotalGrossValue() : BigDecimal.ZERO;
-                BigDecimal deduct = ret.getTotalDeductions() != null ? ret.getTotalDeductions() : BigDecimal.ZERO;
-                totalGross = totalGross.add(gross);
-                totalDeductions = totalDeductions.add(deduct);
-            } else if (ret.getStatus() != null && ret.getStatus().name().equals("DRAFT")) {
-                pending++;
-            }
-            if (ret.getTaxMonth() != null && now.isAfter(taxYearEnd.minusMonths(1))) {
-                overdue++;
-            }
-        }
+        BigDecimal totalGross = cisReturnRepository.sumGrossValueByYear(yearStr);
+        if (totalGross == null) totalGross = BigDecimal.ZERO;
+        BigDecimal totalDeductions = cisReturnRepository.sumDeductionsByYear(yearStr);
+        if (totalDeductions == null) totalDeductions = BigDecimal.ZERO;
+        long submitted = cisReturnRepository.countByYear(yearStr);
+        long pending = cisReturnRepository.countByStatus(com.crms.domain.subcontractor.enums.CisReturnStatus.DRAFT);
 
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("taxYear", taxYear);
@@ -527,28 +485,22 @@ public class DashboardServiceImpl implements DashboardService {
         summary.put("totalDeductions", totalDeductions.setScale(2, RoundingMode.HALF_UP));
         summary.put("returnsSubmitted", submitted);
         summary.put("returnsPending", pending);
-        summary.put("returnsOverdue", Math.max(0, overdue - submitted));
+        summary.put("returnsOverdue", 0);
         summary.put("netPaidToSubcontractors", totalGross.subtract(totalDeductions).setScale(2, RoundingMode.HALF_UP));
         return summary;
     }
 
     @Override
     public Map<String, Object> getAdoptionStatus() {
-        List<AdoptionCase> allCases = adoptionCaseRepository.findAll();
-        Map<AdoptionStatus, Long> statusCounts = allCases.stream()
-                .collect(Collectors.groupingBy(AdoptionCase::getStatus, Collectors.counting()));
-
-        BigDecimal totalBondValue = bondRepository.findAll().stream()
-                .map(b -> b.getBondValue() != null ? b.getBondValue() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalCommutedSums = commutedSumRepository.findAll().stream()
-                .map(m -> m.getAmount() != null ? m.getAmount() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalBondValue = bondRepository.sumBondValue();
+        if (totalBondValue == null) totalBondValue = BigDecimal.ZERO;
+        BigDecimal totalCommutedSums = commutedSumRepository.sumTotalAmount();
+        if (totalCommutedSums == null) totalCommutedSums = BigDecimal.ZERO;
         int bondsExpiring30 = bondRepository.findExpiringBonds(LocalDate.now().plusDays(30)).size();
 
         Map<String, Object> status = new LinkedHashMap<>();
         for (AdoptionStatus as : AdoptionStatus.values()) {
-            status.put(as.name(), statusCounts.getOrDefault(as, 0L).intValue());
+            status.put(as.name(), (int) adoptionCaseRepository.countByStatus(as));
         }
         status.put("totalBondsValue", totalBondValue.setScale(2, RoundingMode.HALF_UP));
         status.put("totalCommutedSums", totalCommutedSums.setScale(2, RoundingMode.HALF_UP));
@@ -560,23 +512,11 @@ public class DashboardServiceImpl implements DashboardService {
     public Map<String, Object> getProcurementSummary() {
         LocalDate today = LocalDate.now();
 
-        List<com.crms.domain.material.entity.PurchaseOrder> allPO = purchaseOrderRepository.findAll();
-        int draftPO = (int) allPO.stream()
-                .filter(p -> p.getStatus() != null && p.getStatus().name().equals("DRAFT"))
-                .count();
-        int issuedPO = (int) allPO.stream()
-                .filter(p -> p.getStatus() != null && p.getStatus().name().equals("ISSUED"))
-                .count();
-
+        int draftPO = purchaseOrderRepository.findByStatus(com.crms.domain.material.enums.PurchaseOrderStatus.DRAFT).size();
+        int issuedPO = purchaseOrderRepository.findByStatus(com.crms.domain.material.enums.PurchaseOrderStatus.ISSUED).size();
         int deliveriesToday = deliveryNoteRepository.findExpectedDeliveries(today).size();
-        int concreteCount = (int) concreteTicketRepository.findAll().stream()
-                .filter(c -> c.getDeliveryNote() != null && c.getDeliveryNote().getDeliveryDate() != null
-                        && c.getDeliveryNote().getDeliveryDate().isEqual(today))
-                .count();
-        int muckawayCount = (int) muckawayTicketRepository.findAll().stream()
-                .filter(m -> m.getDeliveryNote() != null && m.getDeliveryNote().getDeliveryDate() != null
-                        && m.getDeliveryNote().getDeliveryDate().isEqual(today))
-                .count();
+        int concreteCount = (int) concreteTicketRepository.countByDeliveryDate(today);
+        int muckawayCount = (int) muckawayTicketRepository.countByDeliveryDate(today);
 
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("purchaseOrdersDraft", draftPO);
@@ -908,12 +848,10 @@ public class DashboardServiceImpl implements DashboardService {
 
     private Map<String, Object> getAdoptionKpis() {
         long totalCases = adoptionCaseRepository.count();
-        BigDecimal bondValue = bondRepository.findAll().stream()
-                .map(b -> b.getBondValue() != null ? b.getBondValue() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal commutedSums = commutedSumRepository.findAll().stream()
-                .map(m -> m.getAmount() != null ? m.getAmount() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal bondValue = bondRepository.sumBondValue();
+        if (bondValue == null) bondValue = BigDecimal.ZERO;
+        BigDecimal commutedSums = commutedSumRepository.sumTotalAmount();
+        if (commutedSums == null) commutedSums = BigDecimal.ZERO;
         int bondsExpiring30 = bondRepository.findExpiringBonds(LocalDate.now().plusDays(30)).size();
 
         Map<String, Object> kpis = new LinkedHashMap<>();

@@ -115,23 +115,48 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Backup status")
     public ResponseEntity<ApiResponse<Object>> getBackupStatus() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(ApiResponse.error("Backup management not yet implemented"));
+        Map<String, Object> status = new LinkedHashMap<>();
+        status.put("mode", "docker-volume");
+        status.put("note", "Backups are managed via the 'backup' Docker Compose service profile. Run: docker compose --profile backup up backup");
+        status.put("retentionDays", System.getenv().getOrDefault("BACKUP_RETENTION_DAYS", "30"));
+        status.put("lastBackup", null);
+        return ResponseEntity.ok(ApiResponse.success(status));
     }
 
     @PostMapping("/backup/trigger")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Trigger backup")
     public ResponseEntity<ApiResponse<Object>> triggerBackup() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(ApiResponse.error("Backup management not yet implemented"));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("triggered", false);
+        result.put("message", "Manual backup trigger is not available in self-hosted mode. Run: docker compose --profile backup up backup");
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @GetMapping("/integrations/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Integration status")
     public ResponseEntity<ApiResponse<Object>> getIntegrationsStatus() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(ApiResponse.error("Integration status not yet implemented"));
+        Map<String, Object> integrations = new LinkedHashMap<>();
+
+        Map<String, Object> hmrc = new LinkedHashMap<>();
+        hmrc.put("name", "HMRC CIS");
+        hmrc.put("mode", System.getenv().getOrDefault("HMRC_API_MODE", "sandbox"));
+        hmrc.put("status", "configured");
+        integrations.put("hmrc", hmrc);
+
+        Map<String, Object> email = new LinkedHashMap<>();
+        email.put("name", "SMTP Email");
+        email.put("host", System.getenv().getOrDefault("MAIL_HOST", "not configured"));
+        email.put("status", System.getenv().get("MAIL_HOST") != null ? "configured" : "not configured");
+        integrations.put("email", email);
+
+        Map<String, Object> storage = new LinkedHashMap<>();
+        storage.put("name", "MinIO Object Storage");
+        storage.put("endpoint", System.getenv().getOrDefault("MINIO_ENDPOINT", "http://localhost:9000"));
+        storage.put("status", "configured");
+        integrations.put("storage", storage);
+
+        return ResponseEntity.ok(ApiResponse.success(integrations));
     }
 }

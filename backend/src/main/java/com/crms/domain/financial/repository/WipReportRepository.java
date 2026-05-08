@@ -34,4 +34,7 @@ public interface WipReportRepository extends JpaRepository<WipReport, Long> {
     Optional<WipReport> findByJournalReference(@Param("journalRef") String journalReference);
 
     boolean existsByContractIdAndReportDate(Long contractId, LocalDate reportDate);
+
+    @Query("SELECT w FROM WipReport w WHERE w.reportDate = :reportDate")
+    List<WipReport> findByReportDate(@Param("reportDate") LocalDate reportDate);
 }

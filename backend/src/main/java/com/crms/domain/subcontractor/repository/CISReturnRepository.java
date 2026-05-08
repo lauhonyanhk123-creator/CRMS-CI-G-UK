@@ -36,4 +36,15 @@ public interface CISReturnRepository extends JpaRepository<CISReturn, Long> {
     java.math.BigDecimal sumTotalDeductionBySubmissionDateBetween(
             @Param("from") java.time.LocalDate from,
             @Param("to") java.time.LocalDate to);
+
+    long countByStatus(CisReturnStatus status);
+
+    @Query("SELECT COUNT(c) FROM CISReturn c WHERE c.taxMonth LIKE CONCAT(:year, '%')")
+    long countByYear(@Param("year") String year);
+
+    @Query("SELECT COALESCE(SUM(c.totalGrossValue), 0) FROM CISReturn c WHERE c.taxMonth LIKE CONCAT(:year, '%')")
+    java.math.BigDecimal sumGrossValueByYear(@Param("year") String year);
+
+    @Query("SELECT COALESCE(SUM(c.totalDeductions), 0) FROM CISReturn c WHERE c.taxMonth LIKE CONCAT(:year, '%')")
+    java.math.BigDecimal sumDeductionsByYear(@Param("year") String year);
 }

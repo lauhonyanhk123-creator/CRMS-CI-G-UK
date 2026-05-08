@@ -309,7 +309,7 @@ public class PlantServiceImpl implements PlantService {
     @Override
     @Transactional(readOnly = true)
     public List<PlantGanttItem> getPlantGantt(LocalDate from, LocalDate to) {
-        List<PlantItem> plants = plantRepository.findAll();
+        List<PlantItem> plants = plantRepository.findAll(org.springframework.data.domain.Sort.by("plantRef"));
 
         return plants.stream()
                 .map(plant -> {

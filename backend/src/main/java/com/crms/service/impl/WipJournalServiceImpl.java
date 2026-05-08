@@ -76,10 +76,9 @@ public class WipJournalServiceImpl implements WipJournalService {
     @Override
     @Transactional
     public List<WipReportResponse> generateAllWipReports(LocalDate reportDate) {
-        List<Contract> contracts = contractRepository.findAll();
+        List<Contract> contracts = contractRepository.findByStatus(com.crms.domain.contract.enums.ContractStatus.ACTIVE);
 
         return contracts.stream()
-                .filter(contract -> contract.getStatus() == com.crms.domain.contract.enums.ContractStatus.ACTIVE)
                 .map(contract -> {
                     try {
                         return generateWipReport(contract.getId(), reportDate);
@@ -125,14 +124,7 @@ public class WipJournalServiceImpl implements WipJournalService {
     @Override
     @Transactional(readOnly = true)
     public List<WipReportResponse> getWipReportsByDate(LocalDate reportDate) {
-        List<WipReport> reports = wipReportRepository.findByContractIdOrderByReportDateDesc(null);
-
-        // Find reports by date - need to filter manually as there's no direct method
-        List<WipReport> allReports = wipReportRepository.findAll().stream()
-                .filter(r -> r.getReportDate().equals(reportDate))
-                .collect(Collectors.toList());
-
-        return allReports.stream()
+        return wipReportRepository.findByReportDate(reportDate).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }

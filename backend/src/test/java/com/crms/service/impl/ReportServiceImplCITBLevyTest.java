@@ -102,7 +102,7 @@ class ReportServiceImplCITBLevyTest {
             String period = "2024-01";
             BigDecimal liveWages = new BigDecimal("25000.00");
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(liveWages);
 
@@ -128,7 +128,7 @@ class ReportServiceImplCITBLevyTest {
             // Given
             String period = "2024-01";
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(null);
 
@@ -151,7 +151,7 @@ class ReportServiceImplCITBLevyTest {
             // Given
             String period = "2024-01";
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(BigDecimal.ZERO);
 
@@ -178,7 +178,7 @@ class ReportServiceImplCITBLevyTest {
             // Given
             String period = "2024-Q1"; // January-March 2024
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(new BigDecimal("75000.00"));
 
@@ -201,7 +201,7 @@ class ReportServiceImplCITBLevyTest {
             // Given
             String period = "2024-Q4"; // October-December 2024
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(new BigDecimal("60000.00"));
 
@@ -228,7 +228,7 @@ class ReportServiceImplCITBLevyTest {
             // Given
             String period = "2024-01";
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(new BigDecimal("10000.00"));
 
@@ -249,7 +249,7 @@ class ReportServiceImplCITBLevyTest {
             // Given
             String period = "2024-01";
             // 10001 * 0.5% = 50.005 -> should round to 50.01
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(new BigDecimal("10001.00"));
 
@@ -270,7 +270,7 @@ class ReportServiceImplCITBLevyTest {
             String period = "2024-01";
             testContract.setLabourValue(new BigDecimal("1000000.00")); // 1 million
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(BigDecimal.ZERO);
 
@@ -292,7 +292,7 @@ class ReportServiceImplCITBLevyTest {
             String period = "2024-01";
             testContract.setLabourValue(BigDecimal.ZERO);
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(BigDecimal.ZERO);
 
@@ -318,7 +318,7 @@ class ReportServiceImplCITBLevyTest {
             String period = "2024-01";
             testContract.setSite(null);
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             // timesheetRepository should NOT be called
 
             // When
@@ -347,7 +347,7 @@ class ReportServiceImplCITBLevyTest {
                     .status(ContractStatus.IN_PROGRESS)
                     .build();
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract, contract2));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract, contract2));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(any(), any(), any()))
                     .thenReturn(BigDecimal.ZERO);
 
@@ -370,7 +370,7 @@ class ReportServiceImplCITBLevyTest {
             // Given
             String period = "invalid-period";
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
 
             // When
             Object result = reportService.getCITBLevy(period);
@@ -386,7 +386,7 @@ class ReportServiceImplCITBLevyTest {
         void getCITBLevy_returnsEmptyList_whenNoContracts() {
             // Given
             String period = "2024-01";
-            when(contractRepository.findAll()).thenReturn(Collections.emptyList());
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(Collections.emptyList());
 
             // When
             Object result = reportService.getCITBLevy(period);
@@ -403,7 +403,7 @@ class ReportServiceImplCITBLevyTest {
             String period = "2024-01";
             testContract.setLabourValue(null);
             
-            when(contractRepository.findAll()).thenReturn(List.of(testContract));
+            when(contractRepository.findContractsActiveDuring(any(), any())).thenReturn(List.of(testContract));
             when(timesheetRepository.calculateTotalWagesBySiteAndPeriod(eq(1L), any(), any()))
                     .thenReturn(BigDecimal.ZERO);
 

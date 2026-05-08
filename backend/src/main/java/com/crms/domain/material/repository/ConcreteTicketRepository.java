@@ -19,4 +19,7 @@ public interface ConcreteTicketRepository extends JpaRepository<ConcreteTicket, 
 
     @Query("SELECT c FROM ConcreteTicket c WHERE c.deliveryNote.site.id = :siteId AND c.deliveryNote.deliveryDate = :date")
     List<ConcreteTicket> findBySiteAndDate(@Param("siteId") Long siteId, @Param("date") LocalDate date);
+
+    @Query("SELECT COUNT(c) FROM ConcreteTicket c WHERE c.deliveryNote.deliveryDate = :date")
+    long countByDeliveryDate(@Param("date") LocalDate date);
 }

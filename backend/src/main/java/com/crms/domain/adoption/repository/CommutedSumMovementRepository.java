@@ -22,4 +22,7 @@ public interface CommutedSumMovementRepository extends JpaRepository<CommutedSum
 
     @Query("SELECT m FROM CommutedSumMovement m WHERE m.adoptionCase.id = :adoptionCaseId AND m.movementDate BETWEEN :start AND :end")
     List<CommutedSumMovement> findByAdoptionCaseIdAndDateRange(@Param("adoptionCaseId") Long adoptionCaseId, @Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("SELECT COALESCE(SUM(m.amount), 0) FROM CommutedSumMovement m")
+    BigDecimal sumTotalAmount();
 }

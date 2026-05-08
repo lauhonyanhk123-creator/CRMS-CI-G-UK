@@ -52,4 +52,7 @@ public interface BondRepository extends JpaRepository<Bond, Long> {
             @Param("alertDate") LocalDate alertDate);
 
     boolean existsByBondNumber(String bondNumber);
+
+    @Query("SELECT COALESCE(SUM(b.bondValue), 0) FROM Bond b")
+    java.math.BigDecimal sumBondValue();
 }

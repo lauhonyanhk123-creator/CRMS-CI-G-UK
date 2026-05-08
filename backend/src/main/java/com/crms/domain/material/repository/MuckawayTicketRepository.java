@@ -26,4 +26,7 @@ public interface MuckawayTicketRepository extends JpaRepository<MuckawayTicket, 
 
     @Query("SELECT SUM(m.disposalCost) FROM MuckawayTicket m WHERE m.deliveryNote.site.id = :siteId AND m.deliveryNote.deliveryDate BETWEEN :start AND :end")
     Optional<BigDecimal> sumDisposalCostBySiteAndDateRange(@Param("siteId") Long siteId, @Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("SELECT COUNT(m) FROM MuckawayTicket m WHERE m.deliveryNote.deliveryDate = :date")
+    long countByDeliveryDate(@Param("date") LocalDate date);
 }

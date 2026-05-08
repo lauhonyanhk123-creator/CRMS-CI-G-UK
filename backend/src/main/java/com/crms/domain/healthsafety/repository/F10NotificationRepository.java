@@ -20,4 +20,7 @@ public interface F10NotificationRepository extends JpaRepository<F10Notification
 
     @Query("SELECT f FROM F10Notification f WHERE f.constructionEndDate <= :date AND f.isActive = true")
     List<F10Notification> findExpiringNotifications(@Param("date") LocalDate date);
+
+    @Query("SELECT COUNT(f) FROM F10Notification f WHERE f.isActive = true")
+    long countActive();
 }

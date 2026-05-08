@@ -43,4 +43,13 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
     @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site")
     Page<Contract> findAll(Pageable pageable);
     long countByStatus(ContractStatus status);
+
+    @Query("SELECT COALESCE(SUM(c.contractValue), 0) FROM Contract c WHERE c.status = :status")
+    java.math.BigDecimal sumContractValueByStatus(@Param("status") ContractStatus status);
+
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.retentionLedger IS NOT NULL")
+    List<Contract> findByRetentionLedgerIsNotNull();
+
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.startDate <= :periodEnd AND (c.actualCompletionDate IS NULL OR c.actualCompletionDate >= :periodStart)")
+    List<Contract> findContractsActiveDuring(@Param("periodStart") LocalDate periodStart, @Param("periodEnd") LocalDate periodEnd);
 }

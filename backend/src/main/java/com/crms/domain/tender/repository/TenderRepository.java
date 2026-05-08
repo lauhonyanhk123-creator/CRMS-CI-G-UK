@@ -42,5 +42,14 @@ public interface TenderRepository extends JpaRepository<Tender, Long> {
 
     @Query("SELECT DISTINCT t FROM Tender t LEFT JOIN FETCH t.client LEFT JOIN FETCH t.site WHERE t.status IN :statuses")
     List<Tender> findByStatusIn(@Param("statuses") List<TenderStatus> statuses);
+
+    long countByStatus(TenderStatus status);
+
+    @Query("SELECT COALESCE(SUM(t.targetValue), 0) FROM Tender t WHERE t.status = :status")
+    java.math.BigDecimal sumTargetValueByStatus(@Param("status") TenderStatus status);
+
+    @Query("SELECT COALESCE(SUM(t.estimatedValue), 0) FROM Tender t WHERE t.status = :status")
+    java.math.BigDecimal sumEstimatedValueByStatus(@Param("status") TenderStatus status);
+
     boolean existsByTenderRef(String tenderRef);
 }

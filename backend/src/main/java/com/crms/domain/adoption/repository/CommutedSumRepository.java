@@ -25,4 +25,7 @@ public interface CommutedSumRepository extends JpaRepository<CommutedSum, Long> 
 
     @Query("SELECT cs FROM CommutedSum cs WHERE cs.releasedAmount < cs.paidAmount")
     List<CommutedSum> findPartiallyReleasedCommutedSums();
+
+    @Query("SELECT COALESCE(SUM(cs.totalAmount), 0) FROM CommutedSum cs")
+    java.math.BigDecimal sumTotalAmount();
 }

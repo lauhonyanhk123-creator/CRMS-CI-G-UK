@@ -86,4 +86,7 @@ public interface ApplicationForPaymentRepository extends JpaRepository<Applicati
     List<ApplicationForPayment> findCashflowRelevantByDateRange(
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
+
+    @Query("SELECT COALESCE(SUM(a.retention), 0) FROM ApplicationForPayment a WHERE a.contract.id = :contractId")
+    java.math.BigDecimal sumRetentionByContractId(@Param("contractId") Long contractId);
 }
