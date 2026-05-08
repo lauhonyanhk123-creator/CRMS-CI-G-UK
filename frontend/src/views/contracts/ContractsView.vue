@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 import api, { type Contract, type Company, type Site } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { exportCsv } from '@/utils/exportCsv'
 
 const router = useRouter()
 
@@ -59,12 +60,34 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString()
 
 const viewContract = (row: Contract) => { router.push(`/contracts/${row.id}`) }
 const editContract = (row: Contract) => { router.push(`/contracts/${row.id}/edit`) }
+
+const handleExport = () => {
+  const rows = tableData.value.map(c => ({
+    reference: c.reference ?? '',
+    title: c.title ?? '',
+    client: c.client?.name ?? '',
+    status: c.status ?? '',
+    contractValue: c.contractValue ?? '',
+    startDate: c.startDate ?? '',
+    endDate: (c as any).endDate ?? ''
+  }))
+  exportCsv('contracts.csv', rows, [
+    { label: 'Contract Ref', key: 'reference' },
+    { label: 'Project Name', key: 'title' },
+    { label: 'Client', key: 'client' },
+    { label: 'Status', key: 'status' },
+    { label: 'Contract Value', key: 'contractValue' },
+    { label: 'Start Date', key: 'startDate' },
+    { label: 'End Date', key: 'endDate' }
+  ])
+}
 </script>
 
 <template>
   <div class="contracts-view">
     <PageHeader title="Contracts" :breadcrumbs="[{ title: 'Contracts' }]">
       <template #actions>
+        <el-button size="small" @click="handleExport">Export CSV</el-button>
         <el-button type="primary" :icon="Plus">New Contract</el-button>
       </template>
     </PageHeader>
@@ -92,7 +115,10 @@ const editContract = (row: Contract) => { router.push(`/contracts/${row.id}/edit
     </el-card>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-empty v-if="tableData.length === 0 && !loading" description="No contracts found" :image-size="120">
+        <el-button type="primary" :icon="Plus">Add your first contract</el-button>
+      </el-empty>
+      <el-table v-else v-loading="loading" :data="tableData" stripe>
         <el-table-column type="expand">
           <template #default="{ row }">
             <div class="contract-details">

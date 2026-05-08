@@ -6,6 +6,7 @@ import type { FormInstance } from 'element-plus'
 import api, { type Tender, type Company } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { exportCsv } from '@/utils/exportCsv'
 
 const loading = ref(false)
 const tenders = ref<Tender[]>([])
@@ -56,7 +57,28 @@ const loadCompanies = async () => {
   try {
     const response = await api.companies.getAll({ limit: 100 })
     companies.value = response.data.data
-  } catch {}
+  } catch (e) { console.error(e) }
+}
+
+const handleExport = () => {
+  const rows = tenders.value.map(t => ({
+    id: t.id,
+    title: t.title,
+    client: t.client?.name ?? '',
+    valueMax: t.valueMax ?? '',
+    stage: t.stage,
+    returnDate: t.returnDate ?? '',
+    decisionDate: (t as any).decisionDate ?? ''
+  }))
+  exportCsv('tenders.csv', rows, [
+    { label: 'Tender Ref', key: 'id' },
+    { label: 'Project Name', key: 'title' },
+    { label: 'Client', key: 'client' },
+    { label: 'Value', key: 'valueMax' },
+    { label: 'Status', key: 'stage' },
+    { label: 'Submission Date', key: 'returnDate' },
+    { label: 'Decision Date', key: 'decisionDate' }
+  ])
 }
 
 const formatCurrency = (value?: number) => value ? `£${(value / 1000).toFixed(0)}k` : '—'
@@ -123,6 +145,7 @@ const loseTender = async (tender: Tender) => {
     <PageHeader title="Tenders" :breadcrumbs="[{ title: 'Tenders' }]">
       <template #actions>
         <el-button :icon="Refresh" @click="loadData">Refresh</el-button>
+        <el-button size="small" @click="handleExport">Export CSV</el-button>
         <el-button type="primary" :icon="Plus" @click="openAddDrawer">Add Tender</el-button>
       </template>
     </PageHeader>

@@ -103,14 +103,14 @@ const loadRoles = async () => {
   try {
     const response = await api.admin.getRoles()
     roles.value = response.data || []
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const loadSettings = async () => {
   try {
     const response = await api.admin.getSettings()
     settings.value = response.data || {}
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const handleTabChange = (tab: string | number) => {
@@ -190,7 +190,7 @@ const loadIntegrations = async () => {
   try {
     const res = await api.admin.getIntegrations()
     integrations.value = res.data || {}
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const loadHmrcStatus = async () => {

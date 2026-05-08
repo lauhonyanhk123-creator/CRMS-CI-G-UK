@@ -6,6 +6,7 @@ import api, { type Operative, type Company } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import dayjs from 'dayjs'
+import { exportCsv } from '@/utils/exportCsv'
 
 const loading = ref(false)
 const tableData = ref<Operative[]>([])
@@ -161,7 +162,28 @@ const loadCompanies = async () => {
   try {
     const response = await api.companies.getAll({ type: 'subcontractor', limit: 100 })
     companies.value = response.data.data
-  } catch {}
+  } catch (e) { console.error(e) }
+}
+
+const handleExport = () => {
+  const rows = tableData.value.map(o => ({
+    name: `${o.firstName} ${o.lastName}`,
+    trade: o.trade ?? '',
+    status: o.status ?? '',
+    niNumber: o.niNumber ?? '',
+    utr: (o as any).utr ?? '',
+    cardType: o.cscsCard?.cardType ?? '',
+    cardExpiry: o.cscsCard?.expiryDate ?? ''
+  }))
+  exportCsv('operatives.csv', rows, [
+    { label: 'Name', key: 'name' },
+    { label: 'Trade', key: 'trade' },
+    { label: 'Status', key: 'status' },
+    { label: 'NI Number', key: 'niNumber' },
+    { label: 'UTR', key: 'utr' },
+    { label: 'Card Type', key: 'cardType' },
+    { label: 'Card Expiry', key: 'cardExpiry' }
+  ])
 }
 
 const handleSearch = () => { filters.page = 1; loadData() }
@@ -201,6 +223,7 @@ const getInductionStatusType = (status: string): TagType => {
   <div class="operatives-view">
     <PageHeader title="Operatives" :breadcrumbs="[{ title: 'Operatives' }]">
       <template #actions>
+        <el-button size="small" @click="handleExport">Export CSV</el-button>
         <el-button type="primary" :icon="Plus" @click="handleAdd">Add Operative</el-button>
       </template>
     </PageHeader>
@@ -223,7 +246,10 @@ const getInductionStatusType = (status: string): TagType => {
     </el-card>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-empty v-if="tableData.length === 0 && !loading" description="No operatives found" :image-size="120">
+        <el-button type="primary" :icon="Plus" @click="dialogVisible = true; dialogMode = 'add'">Add your first operative</el-button>
+      </el-empty>
+      <el-table v-else v-loading="loading" :data="tableData" stripe>
         <el-table-column type="expand">
           <template #default="{ row }">
             <div class="operative-details">

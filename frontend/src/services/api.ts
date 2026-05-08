@@ -1280,6 +1280,24 @@ export const api = {
     delete: (id: number) => apiClient.delete(`/cdm-register/${id}`),
   },
 
+  search: {
+    global: (query: string) =>
+      apiClient.get<{ contracts: any[]; operatives: any[]; sites: any[]; companies: any[]; plant: any[] }>(
+        '/search', { params: { q: query } }
+      )
+  },
+
+  notifications: {
+    getCount: () =>
+      apiClient.get<{ count: number; items: Array<{ type: string; message: string; severity: string; link: string }> }>(
+        '/notifications/count'
+      ),
+    getAlerts: () =>
+      apiClient.get<{ count: number; items: Array<{ type: string; message: string; severity: string; link: string }> }>(
+        '/notifications/alerts'
+      )
+  },
+
 }
 
 export default api

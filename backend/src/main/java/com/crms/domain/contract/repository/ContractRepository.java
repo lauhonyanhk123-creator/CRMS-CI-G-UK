@@ -50,6 +50,9 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
     @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.retentionLedger IS NOT NULL")
     List<Contract> findByRetentionLedgerIsNotNull();
 
+    @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.variations")
+    List<Contract> findAllWithVariations();
+
     @Query("SELECT DISTINCT c FROM Contract c LEFT JOIN FETCH c.client LEFT JOIN FETCH c.site WHERE c.startDate <= :periodEnd AND (c.actualCompletionDate IS NULL OR c.actualCompletionDate >= :periodStart)")
     List<Contract> findContractsActiveDuring(@Param("periodStart") LocalDate periodStart, @Param("periodEnd") LocalDate periodEnd);
 }

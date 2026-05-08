@@ -58,7 +58,7 @@ const loadCompanies = async () => {
   try {
     const response = await api.companies.getAll({ limit: 100 })
     companies.value = response.data.data
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const handleSearch = () => {

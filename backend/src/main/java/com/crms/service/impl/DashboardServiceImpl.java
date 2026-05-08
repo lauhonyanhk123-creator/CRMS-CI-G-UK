@@ -675,7 +675,7 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate sixtyDaysFromNow = now.plusDays(60);
 
         List<DashboardStats.LOLERItem> calendar = new ArrayList<>();
-        for (PlantItem plant : plantRepository.findAll()) {
+        for (PlantItem plant : plantRepository.findAllWithLolerExaminations()) {
             if (plant.getLolerExaminations() == null || plant.getLolerExaminations().isEmpty()) continue;
             plant.getLolerExaminations().stream()
                     .filter(e -> e.getNextInspectionDate() != null)
@@ -740,7 +740,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private Map<String, Object> getContractKpis() {
-        List<Contract> contracts = contractRepository.findAll();
+        List<Contract> contracts = contractRepository.findAllWithVariations();
         long total = contracts.size();
         long active = contracts.stream().filter(c -> c.getStatus() == ContractStatus.ACTIVE).count();
 

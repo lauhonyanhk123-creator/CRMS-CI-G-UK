@@ -6,6 +6,7 @@ import api, { type ApplicationResponse, type Contract } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import dayjs from 'dayjs'
+import { exportCsv } from '@/utils/exportCsv'
 
 const loading = ref(false)
 const activeTab = ref('submitted')
@@ -278,6 +279,27 @@ const markAsPaid = async (id: string) => {
 // Import axios for the mark-paid endpoint
 // import apiClient from '@/services/api'; import type { ElTagType } from '@/services/api'
 
+const handleExport = () => {
+  const rows = tableData.value.map(a => ({
+    applicationRef: a.applicationRef ?? `APP-${a.id}`,
+    contractRef: a.contractRef ?? `Contract #${a.contractId}`,
+    status: a.status ?? '',
+    grossValue: a.grossValue ?? '',
+    retention: a.retention ?? '',
+    valueOfWorks: a.valueOfWorks ?? '',
+    submittedDate: a.submittedDate ?? ''
+  }))
+  exportCsv('applications.csv', rows, [
+    { label: 'Application No', key: 'applicationRef' },
+    { label: 'Contract', key: 'contractRef' },
+    { label: 'Status', key: 'status' },
+    { label: 'Gross Amount', key: 'grossValue' },
+    { label: 'Retention', key: 'retention' },
+    { label: 'Net Amount', key: 'valueOfWorks' },
+    { label: 'Submitted Date', key: 'submittedDate' }
+  ])
+}
+
 const getRowActions = (row: ApplicationResponse) => {
   const actions: Array<{ label: string; action: Function; type?: string; icon?: any }> = [
     { label: 'View Details', action: () => viewApplication(row), type: 'primary' }
@@ -329,6 +351,7 @@ const getRowActions = (row: ApplicationResponse) => {
       :breadcrumbs="[{ title: 'Applications for Payment' }]"
     >
       <template #actions>
+        <el-button size="small" @click="handleExport">Export CSV</el-button>
         <el-button type="primary" :icon="Plus" @click="openNewDialog">
           New Application
         </el-button>

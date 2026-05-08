@@ -11,6 +11,7 @@ import api, { type PlantItem } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import dayjs from 'dayjs'
+import { exportCsv } from '@/utils/exportCsv'
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent])
 
@@ -205,6 +206,29 @@ const handleDelete = async (row: PlantItem) => {
   }
 }
 
+const handleExport = () => {
+  const rows = tableData.value.map(p => ({
+    plantRef: (p as any).plantRef ?? '',
+    description: p.description ?? '',
+    category: p.category ?? '',
+    status: p.status ?? '',
+    site: (p as any).site?.name ?? '',
+    hireStart: (p as any).hireStart ?? '',
+    hireEnd: (p as any).hireEnd ?? '',
+    hireRate: p.hireRate ?? ''
+  }))
+  exportCsv('plant.csv', rows, [
+    { label: 'Plant Ref', key: 'plantRef' },
+    { label: 'Description', key: 'description' },
+    { label: 'Category', key: 'category' },
+    { label: 'Status', key: 'status' },
+    { label: 'Site', key: 'site' },
+    { label: 'Hire Start', key: 'hireStart' },
+    { label: 'Hire End', key: 'hireEnd' },
+    { label: 'Daily Rate', key: 'hireRate' }
+  ])
+}
+
 const handleSave = async () => {
   if (!formData.value.description) {
     ElMessage.warning('Description is required')
@@ -249,13 +273,17 @@ const handleSave = async () => {
     <PageHeader title="Plant" :breadcrumbs="[{ title: 'Plant' }]">
       <template #actions>
         <el-button :icon="Refresh" @click="loadData">Refresh</el-button>
+        <el-button size="small" @click="handleExport">Export CSV</el-button>
         <el-button type="primary" :icon="Plus" @click="handleAdd">Add Plant</el-button>
       </template>
     </PageHeader>
 
     <el-card shadow="never" class="mb-4">
       <template #header><span>Plant Register</span></template>
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-empty v-if="tableData.length === 0 && !loading" description="No plant items found" :image-size="120">
+        <el-button type="primary" :icon="Plus" @click="dialogVisible = true; dialogMode = 'add'">Add your first plant item</el-button>
+      </el-empty>
+      <el-table v-else v-loading="loading" :data="tableData" stripe>
         <el-table-column prop="plantRef" label="Ref" width="100" />
         <el-table-column prop="description" label="Description" min-width="180" />
         <el-table-column label="Make/Model" width="150">

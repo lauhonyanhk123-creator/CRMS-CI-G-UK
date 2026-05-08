@@ -77,7 +77,7 @@ const loadClients = async () => {
   try {
     const response = await api.companies.getAll({ type: 'client', limit: 100 })
     clients.value = response.data.data
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const handleSearch = () => {
@@ -207,7 +207,10 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString()
     </el-card>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="tableData" stripe>
+      <el-empty v-if="tableData.length === 0 && !loading" description="No sites found" :image-size="120">
+        <el-button type="primary" :icon="Plus" @click="dialogVisible = true; dialogMode = 'add'">Add your first site</el-button>
+      </el-empty>
+      <el-table v-else v-loading="loading" :data="tableData" stripe>
         <el-table-column prop="siteCode" label="Code" width="100" />
         <el-table-column prop="name" label="Site Name" min-width="200" />
         <el-table-column label="Client" min-width="180">

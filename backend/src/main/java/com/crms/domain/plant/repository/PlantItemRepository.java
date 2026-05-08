@@ -38,6 +38,9 @@ public interface PlantItemRepository extends JpaRepository<PlantItem, Long> {
     @Query("SELECT p FROM PlantItem p LEFT JOIN FETCH p.lolerExaminations WHERE p.id = :id")
     Optional<PlantItem> findByIdWithExaminations(@Param("id") Long id);
 
+    @Query("SELECT p FROM PlantItem p LEFT JOIN FETCH p.lolerExaminations")
+    List<PlantItem> findAllWithLolerExaminations();
+
     boolean existsByPlantRef(String plantRef);
     long countByStatus(PlantStatus status);
 }
