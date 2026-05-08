@@ -163,6 +163,14 @@ crms:
       scope: "read:construction-industry-scheme write:construction-industry-scheme"
       token-refresh-buffer-seconds: 300
       token-expiry-buffer-seconds: 60
+    companies-house:
+      base-url: ${COMPANIES_HOUSE_BASE_URL:https://api.company-information.service.gov.uk}
+      api-key: ${COMPANIES_HOUSE_API_KEY:}
+    cscs:
+      base-url: ${CSCS_BASE_URL:https://api.cscs.uk}
+      api-key: ${CSCS_API_KEY:}
+      client-id: ${CSCS_CLIENT_ID:}
+      client-secret: ${CSCS_CLIENT_SECRET:}
 
   # =============================================================================
   # LICENCE CONFIGURATION

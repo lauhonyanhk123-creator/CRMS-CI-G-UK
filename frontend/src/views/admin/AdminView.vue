@@ -476,6 +476,40 @@ const disconnectHmrc = async () => {
               </el-card>
             </el-col>
 
+            <!-- Companies House -->
+            <el-col :xs="24" :md="12" style="margin-bottom: 16px">
+              <el-card shadow="never">
+                <template #header>Companies House</template>
+                <el-descriptions :column="1" border>
+                  <el-descriptions-item label="Status">
+                    <el-tag :type="integrations.companiesHouseConfigured ? 'success' : 'warning'">
+                      {{ integrations.companiesHouseConfigured ? 'Live — API key set' : 'Demo mode' }}
+                    </el-tag>
+                  </el-descriptions-item>
+                  <el-descriptions-item label="Used for">Company search &amp; profile lookup</el-descriptions-item>
+                </el-descriptions>
+                <el-alert v-if="!integrations.companiesHouseConfigured" type="info" :closable="false" show-icon style="margin-top:10px"
+                  title="Set COMPANIES_HOUSE_API_KEY to enable live company lookups. Register free at developer.company-information.service.gov.uk" />
+              </el-card>
+            </el-col>
+
+            <!-- CSCS Smart Check -->
+            <el-col :xs="24" :md="12" style="margin-bottom: 16px">
+              <el-card shadow="never">
+                <template #header>CSCS Smart Check</template>
+                <el-descriptions :column="1" border>
+                  <el-descriptions-item label="Status">
+                    <el-tag :type="integrations.cscsConfigured ? 'success' : 'warning'">
+                      {{ integrations.cscsConfigured ? 'Live — credentials set' : 'Demo mode' }}
+                    </el-tag>
+                  </el-descriptions-item>
+                  <el-descriptions-item label="Used for">Operative card &amp; qualification verification</el-descriptions-item>
+                </el-descriptions>
+                <el-alert v-if="!integrations.cscsConfigured" type="info" :closable="false" show-icon style="margin-top:10px"
+                  title="Set CSCS_API_KEY, CSCS_CLIENT_ID, CSCS_CLIENT_SECRET to enable live card verification. Register at cscs.uk.com" />
+              </el-card>
+            </el-col>
+
           </el-row>
         </el-tab-pane>
       </el-tabs>

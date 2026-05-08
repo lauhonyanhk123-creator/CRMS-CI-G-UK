@@ -150,6 +150,12 @@ public class AdminController {
         result.put("hmrcContractorUtr", System.getenv().get("HMRC_CONTRACTOR_UTR"));
         result.put("hmrcBaseUrl", System.getenv().getOrDefault("HMRC_BASE_URL", "https://test-api.service.hmrc.gov.uk"));
 
+        String chApiKey = System.getenv().getOrDefault("COMPANIES_HOUSE_API_KEY", "");
+        result.put("companiesHouseConfigured", !chApiKey.isBlank());
+
+        String cscsApiKey = System.getenv().getOrDefault("CSCS_API_KEY", "");
+        result.put("cscsConfigured", !cscsApiKey.isBlank());
+
         String minioEndpoint = System.getenv().getOrDefault("MINIO_ENDPOINT", "http://localhost:9000");
         result.put("minioConfigured", System.getenv().containsKey("MINIO_ENDPOINT"));
         result.put("minioEndpoint", minioEndpoint);
