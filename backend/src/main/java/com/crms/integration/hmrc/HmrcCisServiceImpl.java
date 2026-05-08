@@ -19,7 +19,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,8 +36,8 @@ public class HmrcCisServiceImpl implements HmrcCisService {
     private final IntegrationProperties properties;
     private final NetworkMonitor networkMonitor;
     private final IntegrationCacheService cacheService;
+    private final HmrcOAuthService hmrcOAuthService;
 
-    private volatile HmrcOAuth2Token cachedToken;
     private final AtomicInteger tokenRefreshAttempts = new AtomicInteger(0);
     private static final int MAX_TOKEN_REFRESH_ATTEMPTS = 3;
     private static final int RETRY_DELAY_MS = 1000;
@@ -294,83 +293,16 @@ public class HmrcCisServiceImpl implements HmrcCisService {
     // ==================== OAuth2 Authentication ====================
 
     /**
-     * Get a valid access token, refreshing if necessary.
-     * Uses proactive refresh to ensure the token is valid before making API calls.
-     * 
-     * @return a valid access token
+     * Get a valid access token via the persistent authorization code flow.
+     * Delegates to HmrcOAuthService which handles refresh automatically.
      */
     private String getValidAccessToken() {
-        HmrcOAuth2Token currentToken = cachedToken;
-        
-        // Check if token needs proactive refresh (before it expires)
-        if (currentToken != null && !currentToken.isExpired(properties.getHmrc().getTokenRefreshBufferSeconds())) {
-            log.debug("Using cached token, {} seconds until refresh needed", 
-                    currentToken.getRemainingSeconds() - properties.getHmrc().getTokenRefreshBufferSeconds());
-            return currentToken.getAccessToken();
+        String contractorUtr = properties.getHmrc().getContractorUtr();
+        if (contractorUtr == null || contractorUtr.isBlank()) {
+            throw new HmrcAuthenticationException(
+                    "HMRC_CONTRACTOR_UTR is not configured. Set the environment variable and re-authorise via /api/v1/hmrc/oauth/begin");
         }
-        
-        // Token is missing, expired, or about to expire - refresh it
-        return refreshAccessToken();
-    }
-
-    /**
-     * Synchronized method to refresh the OAuth2 access token.
-     * Handles concurrent requests by ensuring only one thread refreshes the token.
-     * 
-     * @return a new valid access token
-     */
-    private synchronized String refreshAccessToken() {
-        // Double-check pattern: another thread may have refreshed while we waited
-        HmrcOAuth2Token currentToken = cachedToken;
-        if (currentToken != null && !currentToken.isExpired(properties.getHmrc().getTokenRefreshBufferSeconds())) {
-            log.debug("Token was refreshed by another thread");
-            return currentToken.getAccessToken();
-        }
-
-        log.info("Obtaining new OAuth2 access token from HMRC");
-        tokenRefreshAttempts.set(0);
-
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            String body = "grant_type=client_credentials" +
-                    "&client_id=" + properties.getHmrc().getClientId() +
-                    "&client_secret=" + properties.getHmrc().getClientSecret() +
-                    "&scope=" + "read:constructive-industry-scheme write:constructive-industry-scheme";
-
-            HttpEntity<String> entity = new HttpEntity<>(body, headers);
-            ResponseEntity<Map> response = hmrcRestTemplate.postForEntity(
-                    "https://api.service.hmrc.gov.uk/oauth/token",
-                    entity,
-                    Map.class
-            );
-
-            Map<String, Object> tokenData = response.getBody();
-            
-            if (tokenData == null || !tokenData.containsKey("access_token")) {
-                throw new IllegalStateException("Invalid token response from HMRC: missing access_token");
-            }
-
-            HmrcOAuth2Token newToken = HmrcOAuth2Token.builder()
-                    .accessToken((String) tokenData.get("access_token"))
-                    .tokenType((String) tokenData.getOrDefault("token_type", "Bearer"))
-                    .expiresIn(((Number) tokenData.get("expires_in")).longValue())
-                    .issuedAt(Instant.now())
-                    .build();
-
-            cachedToken = newToken;
-            log.info("Successfully obtained new OAuth2 token, expires in {} seconds", newToken.getExpiresIn());
-            
-            return newToken.getAccessToken();
-            
-        } catch (HttpClientErrorException e) {
-            log.error("HMRC OAuth2 authentication failed: {} - {}", e.getStatusCode(), e.getMessage());
-            throw new HmrcAuthenticationException("OAuth2 authentication failed: " + e.getMessage(), e);
-        } catch (Exception e) {
-            log.error("Failed to obtain OAuth2 token: {}", e.getMessage());
-            throw new HmrcAuthenticationException("Failed to obtain OAuth2 token: " + e.getMessage(), e);
-        }
+        return hmrcOAuthService.getValidAccessToken(contractorUtr);
     }
 
     /**
@@ -398,9 +330,7 @@ public class HmrcCisServiceImpl implements HmrcCisService {
                             operationType, identifier, attempts, maxAttempts);
                     
                     if (attempts < maxAttempts) {
-                        // Invalidate cached token and force refresh
-                        cachedToken = null;
-                        log.info("Invalidating cached token and forcing refresh");
+                        log.info("Token may be stale — retrying, HmrcOAuthService will refresh");
                         
                         // Brief delay before retry
                         try {
