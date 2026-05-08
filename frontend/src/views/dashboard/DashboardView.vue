@@ -117,31 +117,30 @@ onMounted(async () => {
 
 const loadKpis = async () => {
   try {
-    const [contractsRes, operativesRes, plantRes, appsRes, kpisRes] = await Promise.all([
+    const [contractsRes, operativesRes, plantRes, appsRes, statsRes] = await Promise.all([
       api.contracts.getAll({ status: 'active', limit: 1 }),
       api.operatives.getAll({ status: 'active', limit: 1 }),
       api.plant.getAll({ status: 'allocated', limit: 1 }),
       api.applicationsForPayment.getAll({ status: 'SUBMITTED', limit: 1 }),
-      apiClient.get('/dashboard/kpis')
+      apiClient.get('/dashboard/stats')
     ])
 
-    const kpis = kpisRes.data ?? {}
+    const stats = statsRes.data ?? {}
 
     kpiStats.value = {
-      activeContracts: contractsRes.data?.total || 0,
-      operativesOnSite: operativesRes.data?.total || 0,
-      pendingApplications: appsRes.data?.total || 0,
-      plantAllocated: plantRes.data?.total || 0,
-      revenueMTD: Number(kpis.revenueMTD ?? 0),
-      cisDeductionsMTD: Number(kpis.cisDeductionsMTD ?? 0)
+      activeContracts: stats.activeContracts ?? contractsRes.data?.total ?? 0,
+      operativesOnSite: stats.operativesOnSite ?? operativesRes.data?.total ?? 0,
+      pendingApplications: stats.pendingApplications ?? appsRes.data?.total ?? 0,
+      plantAllocated: stats.plantAllocated ?? plantRes.data?.total ?? 0,
+      revenueMTD: Number(stats.revenueMTD ?? 0),
+      cisDeductionsMTD: Number(stats.cisDeductionsMTD ?? 0)
     }
     
-    // Legacy stats for backwards compatibility
     statsData.value = {
-      totalContracts: contractsRes.data?.total || 0,
-      activeSites: contractsRes.data?.total || 0,
-      plantOnSite: plantRes.data?.total || 0,
-      pendingApplications: appsRes.data?.total || 0
+      totalContracts: stats.activeContracts ?? contractsRes.data?.total ?? 0,
+      activeSites: stats.activeContracts ?? contractsRes.data?.total ?? 0,
+      plantOnSite: stats.plantAllocated ?? plantRes.data?.total ?? 0,
+      pendingApplications: stats.pendingApplications ?? appsRes.data?.total ?? 0
     }
   } catch (error) {
     console.error('Failed to load KPIs:', error)

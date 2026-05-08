@@ -77,7 +77,7 @@ describe('LoginView', () => {
     })
     const button = wrapper.find('button')
     // isFormValid is false with empty fields, button should have disabled attribute
-    expect(wrapper.vm.isFormValid).toBe(false)
+    expect((wrapper.vm as any).isFormValid).toBe(false)
   })
 
   it('isFormValid becomes true with valid username and password', async () => {
@@ -86,10 +86,10 @@ describe('LoginView', () => {
       global: { plugins: [router], stubs }
     })
     // Access the reactive form directly
-    wrapper.vm.form.username = 'admin@crms.local'
-    wrapper.vm.form.password = 'Admin123!'
+    ;(wrapper.vm as any).form.username = 'admin@crms.local'
+    ;(wrapper.vm as any).form.password = 'Admin123!'
     await wrapper.vm.$nextTick()
-    expect(wrapper.vm.isFormValid).toBe(true)
+    expect((wrapper.vm as any).isFormValid).toBe(true)
   })
 
   it('calls authStore.login on handleLogin with correct credentials', async () => {
@@ -107,9 +107,9 @@ describe('LoginView', () => {
       global: { plugins: [router], stubs }
     })
 
-    wrapper.vm.form.username = 'admin@crms.local'
-    wrapper.vm.form.password = 'Admin123!'
-    await wrapper.vm.handleLogin()
+    ;(wrapper.vm as any).form.username = 'admin@crms.local'
+    ;(wrapper.vm as any).form.password = 'Admin123!'
+    await (wrapper.vm as any).handleLogin()
     await flushPromises()
 
     expect(api.auth.login).toHaveBeenCalledWith({
@@ -129,12 +129,12 @@ describe('LoginView', () => {
       global: { plugins: [router], stubs }
     })
 
-    wrapper.vm.form.username = 'bad@crms.local'
-    wrapper.vm.form.password = 'wrongpass'
-    await wrapper.vm.handleLogin()
+    ;(wrapper.vm as any).form.username = 'bad@crms.local'
+    ;(wrapper.vm as any).form.password = 'wrongpass'
+    await (wrapper.vm as any).handleLogin()
     await flushPromises()
 
-    expect(wrapper.vm.loading).toBe(false)
+    expect((wrapper.vm as any).loading).toBe(false)
     const store = useAuthStore()
     expect(store.isAuthenticated).toBe(false)
   })
@@ -153,10 +153,10 @@ describe('LoginView', () => {
       global: { plugins: [router], stubs }
     })
 
-    await wrapper.vm.demoLogin('admin')
+    await (wrapper.vm as any).demoLogin('admin')
     await flushPromises()
 
-    expect(wrapper.vm.form.username).toBe('admin@crms.com')
+    expect((wrapper.vm as any).form.username).toBe('admin@crms.com')
     expect(api.auth.login).toHaveBeenCalled()
   })
 })

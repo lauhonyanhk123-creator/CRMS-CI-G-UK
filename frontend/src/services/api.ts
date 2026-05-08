@@ -977,7 +977,9 @@ export const api = {
   cisReturns: {
     getAll: (params?: { month?: string; status?: string; page?: number; limit?: number }) =>
       apiClient.get<{ data: any[]; total: number }>('/cis-returns', { params }),
-    submit: (id: string) => apiClient.post(`/cis-returns/${id}/submit`)
+    submit: (id: string) => apiClient.post(`/cis-returns/${id}/submit`),
+    downloadPdf: (id: string | number) =>
+      apiClient.get(`/cis-returns/${id}/payment-deduction-statements/pdf`, { responseType: 'blob' })
   },
 
   operatives: {
