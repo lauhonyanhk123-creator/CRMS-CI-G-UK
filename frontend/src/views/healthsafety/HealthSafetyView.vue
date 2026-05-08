@@ -330,38 +330,48 @@ const saveIncident = async () => {
 
 // Delete operations
 const deleteF10 = async (id: string) => {
-  await ElMessageBox.confirm('Delete this F10 notification?', 'Confirm')
-  await api.healthSafety.deleteF10(id)
-  ElMessage.success('Deleted')
-  loadF10()
+  try {
+    await ElMessageBox.confirm('Delete this F10 notification?', 'Confirm')
+    await api.healthSafety.deleteF10(id)
+    ElMessage.success('Deleted')
+    loadF10()
+  } catch (e: any) { if (e !== 'cancel') ElMessage.error('Failed to delete F10 notification') }
 }
 
 const deleteCPP = async (id: string) => {
-  await ElMessageBox.confirm('Delete this CPP?', 'Confirm')
-  await api.healthSafety.deleteCPP(id)
-  ElMessage.success('Deleted')
-  loadCPPs()
+  try {
+    await ElMessageBox.confirm('Delete this CPP?', 'Confirm')
+    await api.healthSafety.deleteCPP(id)
+    ElMessage.success('Deleted')
+    loadCPPs()
+  } catch (e: any) { if (e !== 'cancel') ElMessage.error('Failed to delete CPP') }
 }
 
 const deleteRAMS = async (id: string) => {
-  await ElMessageBox.confirm('Delete this RAMS?', 'Confirm')
-  await api.healthSafety.deleteRAMS(id)
-  ElMessage.success('Deleted')
-  loadRAMS()
+  try {
+    await ElMessageBox.confirm('Delete this RAMS?', 'Confirm')
+    await api.healthSafety.deleteRAMS(id)
+    ElMessage.success('Deleted')
+    loadRAMS()
+  } catch (e: any) { if (e !== 'cancel') ElMessage.error('Failed to delete RAMS') }
 }
 
 const deletePermit = async (id: string) => {
-  await ElMessageBox.confirm('Delete this permit?', 'Confirm')
-  await api.healthSafety.deletePermit(id)
-  ElMessage.success('Deleted')
-  loadPermits()
+  try {
+    await ElMessageBox.confirm('Delete this permit?', 'Confirm')
+    await api.healthSafety.deletePermit(id)
+    ElMessage.success('Deleted')
+    loadPermits()
+  } catch (e: any) { if (e !== 'cancel') ElMessage.error('Failed to delete permit') }
 }
 
 const deleteIncident = async (id: string) => {
-  await ElMessageBox.confirm('Delete this incident?', 'Confirm')
-  await api.healthSafety.deleteIncident(id)
-  ElMessage.success('Deleted')
-  loadIncidents()
+  try {
+    await ElMessageBox.confirm('Delete this incident?', 'Confirm')
+    await api.healthSafety.deleteIncident(id)
+    ElMessage.success('Deleted')
+    loadIncidents()
+  } catch (e: any) { if (e !== 'cancel') ElMessage.error('Failed to delete incident') }
 }
 
 // Update permit status

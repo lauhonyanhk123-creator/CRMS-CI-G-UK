@@ -47,7 +47,7 @@ public class RAMSTemplateController {
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Create RAMS template", description = "Create a new RAMS template")
     public ResponseEntity<ApiResponse<RAMSTemplateResponse>> create(
             @Valid @RequestBody RAMSTemplateRequest request) {
@@ -64,7 +64,7 @@ public class RAMSTemplateController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Update RAMS template", description = "Update RAMS template details")
     public ResponseEntity<ApiResponse<RAMSTemplateResponse>> update(
             @PathVariable Long id,
@@ -74,7 +74,7 @@ public class RAMSTemplateController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Delete RAMS template", description = "Soft delete RAMS template")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         ramsTemplateService.delete(id);
@@ -106,7 +106,7 @@ public class RAMSTemplateController {
     }
 
     @PostMapping("/{id}/copy")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Operation(summary = "Copy template", description = "Create a copy of existing template")
     public ResponseEntity<ApiResponse<RAMSTemplateResponse>> copyTemplate(
             @PathVariable Long id,

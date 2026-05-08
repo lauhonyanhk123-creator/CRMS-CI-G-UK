@@ -109,6 +109,7 @@ public class DashboardServiceImpl implements DashboardService {
     // =========================================================================
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public DashboardStats getStats() {
         log.info("Generating dashboard statistics");
 
@@ -141,6 +142,7 @@ public class DashboardServiceImpl implements DashboardService {
     // =========================================================================
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getDashboardStats() {
         Map<String, Object> stats = new LinkedHashMap<>();
 
@@ -175,6 +177,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getKpis() {
         Map<String, Object> kpis = new LinkedHashMap<>();
         kpis.put("_timestamp", LocalDateTime.now().toString());
@@ -191,6 +194,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<Map<String, Object>> getActivityFeed(int limit) {
         List<AuditLog> logs = auditLogRepository.findAll(
                 PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp"))
@@ -211,6 +215,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getExpiringItems(int days) {
         LocalDate threshold = LocalDate.now().plusDays(days);
         LocalDate now = LocalDate.now();
@@ -294,6 +299,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getPipelineSummary() {
         Map<String, Object> funnel = new LinkedHashMap<>();
         long awarded = 0;
@@ -319,6 +325,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getContractSummary() {
         Map<String, Object> summary = new LinkedHashMap<>();
         for (ContractStatus status : ContractStatus.values()) {
@@ -333,6 +340,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getCashflowForecast(int monthsAhead) {
         LocalDate start = LocalDate.now();
         LocalDate end = start.plusMonths(monthsAhead);
@@ -382,6 +390,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<Map<String, Object>> getRetentionSchedule() {
         return contractRepository.findByRetentionLedgerIsNotNull().stream()
                 .map(c -> {
@@ -401,6 +410,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getHealthSafetyStats(int months) {
         LocalDateTime start = LocalDateTime.now().minusMonths(months);
         List<IncidentReport> incidents = incidentRepository.findByDateRange(start, LocalDateTime.now());
@@ -440,6 +450,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getPlantUtilisation(int days) {
         LocalDate today = LocalDate.now();
 
@@ -467,6 +478,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getCisSummary() {
         int year = LocalDate.now().getYear();
         String taxYear = year + "/" + (year + 1);
@@ -491,6 +503,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getAdoptionStatus() {
         BigDecimal totalBondValue = bondRepository.sumBondValue();
         if (totalBondValue == null) totalBondValue = BigDecimal.ZERO;
@@ -509,6 +522,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Map<String, Object> getProcurementSummary() {
         LocalDate today = LocalDate.now();
 

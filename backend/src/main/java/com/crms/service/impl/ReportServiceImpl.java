@@ -51,6 +51,7 @@ public class ReportServiceImpl implements ReportService {
     private final PlantAllocationRepository plantAllocationRepository;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<CVRItem> getCVR(Long contractId, String period) {
         log.info("Generating CVR report for contract {} period {}", contractId, period);
         try {
@@ -74,6 +75,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Object getCashflow(String from, String to) {
         log.info("Generating cashflow report from {} to {}", from, to);
 
@@ -116,6 +118,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Object getRetention() {
         log.info("Generating retention schedule report");
         // Query retention ledger for all contracts
@@ -148,6 +151,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Object getCISSummary(String taxMonth) {
         log.info("Generating CIS summary for {}", taxMonth);
         // Query CIS returns for the given tax month
@@ -184,6 +188,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Object getPlantUtilization(Map<String, Object> params) {
         log.info("Generating plant utilization report");
 
@@ -228,6 +233,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Object getTenderPipeline() {
         log.info("Generating tender pipeline report");
         // Query tenders by status, group by probability
@@ -269,6 +275,7 @@ public class ReportServiceImpl implements ReportService {
     private static final BigDecimal CITB_LEVY_RATE = new BigDecimal("0.005"); // 0.5%
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Object getCITBLevy(String period) {
         log.info("Generating CITB Levy report for period {}", period);
         

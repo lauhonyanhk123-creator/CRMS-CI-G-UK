@@ -33,7 +33,7 @@ public class AuditLogController {
     private final AuditLogRepository auditLogRepository;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List audit logs", description = "Query audit logs with optional filters")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getAuditLogs(
             @RequestParam(required = false) String entityType,
