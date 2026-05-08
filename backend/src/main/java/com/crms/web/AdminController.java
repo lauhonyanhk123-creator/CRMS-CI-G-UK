@@ -137,26 +137,24 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Integration status")
     public ResponseEntity<ApiResponse<Object>> getIntegrationsStatus() {
-        Map<String, Object> integrations = new LinkedHashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
 
-        Map<String, Object> hmrc = new LinkedHashMap<>();
-        hmrc.put("name", "HMRC CIS");
-        hmrc.put("mode", System.getenv().getOrDefault("HMRC_API_MODE", "sandbox"));
-        hmrc.put("status", "configured");
-        integrations.put("hmrc", hmrc);
+        String mailHost = System.getenv().getOrDefault("MAIL_HOST", "disabled");
+        boolean smtpConfigured = !mailHost.isBlank() && !"disabled".equalsIgnoreCase(mailHost);
+        result.put("smtpConfigured", smtpConfigured);
+        result.put("smtpHost", smtpConfigured ? mailHost : null);
+        result.put("adminEmail", System.getenv().getOrDefault("MAIL_ADMIN", "admin@crms.local"));
 
-        Map<String, Object> email = new LinkedHashMap<>();
-        email.put("name", "SMTP Email");
-        email.put("host", System.getenv().getOrDefault("MAIL_HOST", "not configured"));
-        email.put("status", System.getenv().get("MAIL_HOST") != null ? "configured" : "not configured");
-        integrations.put("email", email);
+        String hmrcDemoMode = System.getenv().getOrDefault("HMRC_DEMO_MODE", "true");
+        result.put("hmrcDemoMode", "true".equalsIgnoreCase(hmrcDemoMode));
+        result.put("hmrcContractorUtr", System.getenv().get("HMRC_CONTRACTOR_UTR"));
+        result.put("hmrcBaseUrl", System.getenv().getOrDefault("HMRC_BASE_URL", "https://test-api.service.hmrc.gov.uk"));
 
-        Map<String, Object> storage = new LinkedHashMap<>();
-        storage.put("name", "MinIO Object Storage");
-        storage.put("endpoint", System.getenv().getOrDefault("MINIO_ENDPOINT", "http://localhost:9000"));
-        storage.put("status", "configured");
-        integrations.put("storage", storage);
+        String minioEndpoint = System.getenv().getOrDefault("MINIO_ENDPOINT", "http://localhost:9000");
+        result.put("minioConfigured", System.getenv().containsKey("MINIO_ENDPOINT"));
+        result.put("minioEndpoint", minioEndpoint);
+        result.put("minioBucket", System.getenv().getOrDefault("MINIO_BUCKET", "crms-documents"));
 
-        return ResponseEntity.ok(ApiResponse.success(integrations));
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 }

@@ -15,18 +15,28 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final String from;
     private final String adminAddress;
+    private final boolean smtpEnabled;
 
     public EmailServiceImpl(
             JavaMailSender mailSender,
-            @Value("${crms.mail.from}") String from,
-            @Value("${crms.mail.admin-address}") String adminAddress) {
+            @Value("${crms.mail.from:noreply@crms.local}") String from,
+            @Value("${crms.mail.admin-address:admin@crms.local}") String adminAddress,
+            @Value("${spring.mail.host:disabled}") String mailHost) {
         this.mailSender = mailSender;
         this.from = from;
         this.adminAddress = adminAddress;
+        this.smtpEnabled = !"disabled".equalsIgnoreCase(mailHost) && !mailHost.isBlank();
+        if (!this.smtpEnabled) {
+            log.warn("SMTP not configured (MAIL_HOST not set). Email notifications are disabled.");
+        }
     }
 
     @Override
     public void sendSimple(String to, String subject, String text) {
+        if (!smtpEnabled) {
+            log.info("[EMAIL DISABLED] Would have sent to {}: {}", to, subject);
+            return;
+        }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(from);

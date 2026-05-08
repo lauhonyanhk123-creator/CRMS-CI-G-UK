@@ -1212,9 +1212,15 @@ export const api = {
     getBackupStatus: () => apiClient.get('/admin/backup/status'),
     triggerBackup: () => apiClient.post('/admin/backup/trigger'),
     restoreBackup: (backupId: string) => apiClient.post(`/admin/backup/restore/${backupId}`),
-    getIntegrations: () => apiClient.get('/admin/integrations'),
+    getIntegrations: () => apiClient.get('/admin/integrations/status'),
     getSettings: () => apiClient.get('/admin/settings'),
     updateSettings: (data: any) => apiClient.put('/admin/settings', data),
+
+    hmrcOAuth: {
+      begin: () => apiClient.get<{ authorizationUrl: string; state: string; contractorUtr: string }>('/hmrc/oauth/begin'),
+      status: (contractorUtr: string) => apiClient.get<any>(`/hmrc/oauth/status?contractorUtr=${contractorUtr}`),
+      disconnect: () => apiClient.delete('/hmrc/oauth/disconnect'),
+    },
 
     users: {
       getAll: (params?: { page?: number; size?: number; sort?: string; limit?: number }) =>

@@ -117,7 +117,7 @@ public class HmrcCisServiceImpl implements HmrcCisService {
 
                 // HMRC CIS verification endpoint
                 String url = properties.getHmrc().getBaseUrl() +
-                        "/organisations/constructive-industry-scheme/subcontractors/" + utr + "/verification";
+                        "/organisations/construction-industry-scheme/subcontractors/" + utr + "/verification";
 
                 HttpEntity<String> entity = new HttpEntity<>(headers);
                 ResponseEntity<Map> response = hmrcRestTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
@@ -191,7 +191,7 @@ public class HmrcCisServiceImpl implements HmrcCisService {
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
                 String url = properties.getHmrc().getBaseUrl() +
-                        "/organisations/constructive-industry-scheme/contractors/" + contractorUtr +
+                        "/organisations/construction-industry-scheme/contractors/" + contractorUtr +
                         "/subcontractors/" + supplierUtr + "/deduction-rate";
 
                 HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -252,7 +252,7 @@ public class HmrcCisServiceImpl implements HmrcCisService {
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
                 String url = properties.getHmrc().getBaseUrl() +
-                        "/organisations/constructive-industry-scheme/contractors/" + cisReturn.getContractorUtr() +
+                        "/organisations/construction-industry-scheme/contractors/" + cisReturn.getContractorUtr() +
                         "/monthly-returns";
 
                 HttpEntity<CisReturnDto> entity = new HttpEntity<>(cisReturn, headers);

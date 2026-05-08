@@ -93,16 +93,16 @@ spring:
             threadPriority: 5
 
   mail:
-    host: ${MAIL_HOST:localhost}
+    host: ${MAIL_HOST:disabled}
     port: ${MAIL_PORT:1025}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
-          auth: false
+          auth: ${MAIL_AUTH:false}
           starttls:
-            enable: false
+            enable: ${MAIL_STARTTLS:false}
 
 # CRMS Application Configuration
 crms:

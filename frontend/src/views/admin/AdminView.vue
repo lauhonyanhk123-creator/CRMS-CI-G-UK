@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Plus, Key, WarningFilled, CircleCheckFilled, InfoFilled } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Key, WarningFilled, CircleCheckFilled, InfoFilled, Connection, Promotion } from '@element-plus/icons-vue'
 import api from '@/services/api'; import type { ElTagType } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -78,6 +78,8 @@ onMounted(() => {
   loadSettings()
   loadRoles()
   loadLicence()
+  loadIntegrations()
+  loadHmrcStatus()
 })
 
 const loadLicence = async () => {
@@ -178,6 +180,55 @@ const getRoleType = (role: string): TagType | undefined => {
 
 const getUserName = (user: AdminUser) => `${user.firstName} ${user.lastName}`
 const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '—'
+
+// ── Integrations ─────────────────────────────────────────────────────────────
+const integrations = ref<any>({})
+const hmrcStatus = ref<any>(null)
+const hmrcLoading = ref(false)
+
+const loadIntegrations = async () => {
+  try {
+    const res = await api.admin.getIntegrations()
+    integrations.value = res.data || {}
+  } catch {}
+}
+
+const loadHmrcStatus = async () => {
+  hmrcLoading.value = true
+  try {
+    const res = await api.admin.hmrcOAuth.status('')
+    hmrcStatus.value = res.data
+  } catch { hmrcStatus.value = null } finally { hmrcLoading.value = false }
+}
+
+const beginHmrcAuth = async () => {
+  try {
+    const res = await api.admin.hmrcOAuth.begin()
+    const { authorizationUrl } = res.data as any
+    window.open(authorizationUrl, '_blank')
+    ElMessage.info('Opened HMRC authorisation page in a new tab. Return here after granting access.')
+    setTimeout(loadHmrcStatus, 5000)
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || 'Failed to begin HMRC authorisation')
+  }
+}
+
+const disconnectHmrc = async () => {
+  try {
+    await ElMessageBox.confirm(
+      'This will remove the stored HMRC tokens. CIS submissions will stop working until you re-authorise.',
+      'Disconnect HMRC?',
+      { type: 'warning', confirmButtonText: 'Disconnect', cancelButtonText: 'Cancel' }
+    )
+    await api.admin.hmrcOAuth.disconnect()
+    ElMessage.success('HMRC authorisation removed')
+    loadHmrcStatus()
+  } catch (e: any) {
+    if (e !== 'cancel') ElMessage.error('Failed to disconnect HMRC')
+  }
+}
+
+
 </script>
 
 <template>
@@ -321,6 +372,111 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleString() : '
               <el-button type="primary" @click="async () => { await api.admin.updateSettings(settings); ElMessage.success('Settings saved') }">Save Settings</el-button>
             </el-form-item>
           </el-form>
+        </el-tab-pane>
+
+        <el-tab-pane label="Integrations" name="integrations">
+          <el-row :gutter="16">
+
+            <!-- HMRC MTD CIS -->
+            <el-col :span="24" style="margin-bottom: 16px">
+              <el-card shadow="never">
+                <template #header>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <el-icon><Connection /></el-icon>
+                    <span>HMRC MTD — Construction Industry Scheme (CIS)</span>
+                  </div>
+                </template>
+                <div v-if="hmrcLoading"><el-skeleton :rows="3" animated /></div>
+                <template v-else>
+                  <el-descriptions :column="2" border>
+                    <el-descriptions-item label="Status">
+                      <el-tag v-if="hmrcStatus?.authorised" :type="hmrcStatus.accessTokenExpired ? 'warning' : 'success'">
+                        {{ hmrcStatus.accessTokenExpired ? 'Token Expired' : 'Connected' }}
+                      </el-tag>
+                      <el-tag v-else type="danger">Not Connected</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="Contractor UTR">
+                      {{ hmrcStatus?.contractorUtr || integrations.hmrcContractorUtr || '—' }}
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="hmrcStatus?.authorised" label="Token Issued">
+                      {{ hmrcStatus.issuedAt ? new Date(hmrcStatus.issuedAt).toLocaleString() : '—' }}
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="hmrcStatus?.authorised" label="Expires">
+                      {{ hmrcStatus.expiresAt ? new Date(hmrcStatus.expiresAt).toLocaleString() : '—' }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="Mode">
+                      <el-tag :type="integrations.hmrcDemoMode ? 'warning' : 'success'">
+                        {{ integrations.hmrcDemoMode ? 'Demo / Sandbox' : 'Live' }}
+                      </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="hmrcStatus?.authorised" label="Refresh Token">
+                      <el-tag :type="hmrcStatus.hasRefreshToken ? 'success' : 'danger'">
+                        {{ hmrcStatus.hasRefreshToken ? 'Present' : 'Missing' }}
+                      </el-tag>
+                    </el-descriptions-item>
+                  </el-descriptions>
+                  <div style="margin-top: 14px; display:flex; gap:10px">
+                    <el-button type="primary" :icon="Promotion" @click="beginHmrcAuth">
+                      {{ hmrcStatus?.authorised ? 'Re-Authorise with HMRC' : 'Connect to HMRC' }}
+                    </el-button>
+                    <el-button v-if="hmrcStatus?.authorised" type="danger" plain @click="disconnectHmrc">
+                      Disconnect
+                    </el-button>
+                    <el-button :icon="Connection" @click="loadHmrcStatus" :loading="hmrcLoading">Refresh</el-button>
+                  </div>
+                  <el-alert
+                    v-if="!hmrcStatus?.authorised && !integrations.hmrcDemoMode"
+                    title="Action required: HMRC authorisation needed for live CIS submissions."
+                    type="warning"
+                    :closable="false"
+                    show-icon
+                    style="margin-top: 12px"
+                  />
+                  <el-alert
+                    v-if="integrations.hmrcDemoMode"
+                    title="Running in demo/sandbox mode. Set HMRC_DEMO_MODE=false and supply credentials to go live."
+                    type="info"
+                    :closable="false"
+                    show-icon
+                    style="margin-top: 12px"
+                  />
+                </template>
+              </el-card>
+            </el-col>
+
+            <!-- Email / SMTP -->
+            <el-col :xs="24" :md="12" style="margin-bottom: 16px">
+              <el-card shadow="never">
+                <template #header>Email / SMTP Notifications</template>
+                <el-descriptions :column="1" border>
+                  <el-descriptions-item label="Status">
+                    <el-tag :type="integrations.smtpConfigured ? 'success' : 'warning'">
+                      {{ integrations.smtpConfigured ? 'Configured' : 'Not configured — alerts disabled' }}
+                    </el-tag>
+                  </el-descriptions-item>
+                  <el-descriptions-item label="Host">{{ integrations.smtpHost || '—' }}</el-descriptions-item>
+                  <el-descriptions-item label="Admin address">{{ integrations.adminEmail || '—' }}</el-descriptions-item>
+                </el-descriptions>
+              </el-card>
+            </el-col>
+
+            <!-- MinIO / Document Storage -->
+            <el-col :xs="24" :md="12" style="margin-bottom: 16px">
+              <el-card shadow="never">
+                <template #header>Document Storage (MinIO)</template>
+                <el-descriptions :column="1" border>
+                  <el-descriptions-item label="Status">
+                    <el-tag :type="integrations.minioConfigured ? 'success' : 'warning'">
+                      {{ integrations.minioConfigured ? 'Configured' : 'Not configured' }}
+                    </el-tag>
+                  </el-descriptions-item>
+                  <el-descriptions-item label="Endpoint">{{ integrations.minioEndpoint || '—' }}</el-descriptions-item>
+                  <el-descriptions-item label="Bucket">{{ integrations.minioBucket || '—' }}</el-descriptions-item>
+                </el-descriptions>
+              </el-card>
+            </el-col>
+
+          </el-row>
         </el-tab-pane>
       </el-tabs>
     </el-card>
