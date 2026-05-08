@@ -1,5 +1,6 @@
 package com.crms.web;
 
+import com.crms.domain.user.enums.Role;
 import com.crms.dto.request.RegisterRequest;
 import com.crms.dto.request.UpdateUserRequest;
 import com.crms.dto.response.ApiResponse;
@@ -16,7 +17,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -26,6 +33,16 @@ import java.util.UUID;
 public class AdminController {
 
     private final UserService userService;
+
+    // In-memory settings store (survives restarts only until a proper settings entity is added)
+    private static final Map<String, Object> SYSTEM_SETTINGS = new ConcurrentHashMap<>(Map.of(
+            "companyName", "CRMS Construction Ltd",
+            "defaultRetentionPercent", 5,
+            "cisSchemeActive", true,
+            "maxFileUploadMb", 50,
+            "sessionTimeoutMinutes", 60,
+            "emailNotificationsEnabled", true
+    ));
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
@@ -62,6 +79,36 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success("User disabled", null));
+    }
+
+    @GetMapping("/roles")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "List roles", description = "Get all available system roles")
+    public ResponseEntity<ApiResponse<List<Map<String, String>>>> getRoles() {
+        List<Map<String, String>> roles = Arrays.stream(Role.values())
+                .map(r -> {
+                    Map<String, String> entry = new LinkedHashMap<>();
+                    entry.put("name", r.name());
+                    entry.put("label", r.name().replace("ROLE_", "").replace("_", " "));
+                    return entry;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(roles));
+    }
+
+    @GetMapping("/settings")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get system settings")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getSettings() {
+        return ResponseEntity.ok(ApiResponse.success(new LinkedHashMap<>(SYSTEM_SETTINGS)));
+    }
+
+    @PutMapping("/settings")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update system settings")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateSettings(@RequestBody Map<String, Object> updates) {
+        SYSTEM_SETTINGS.putAll(updates);
+        return ResponseEntity.ok(ApiResponse.success("Settings saved", new LinkedHashMap<>(SYSTEM_SETTINGS)));
     }
 
     @GetMapping("/backup/status")

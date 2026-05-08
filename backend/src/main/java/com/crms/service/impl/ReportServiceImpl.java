@@ -88,18 +88,10 @@ public class ReportServiceImpl implements ReportService {
 
         // PAID applications: use paidDate as the actual cash-in date
         // APPROVED/SUBMITTED applications: use dueDate as the forecast cash-in date
-        for (ApplicationForPayment app : applicationRepository.findAll()) {
-            LocalDate effectiveDate = null;
-            if (app.getStatus() == ApplicationStatus.PAID && app.getPaidDate() != null) {
-                effectiveDate = app.getPaidDate();
-            } else if ((app.getStatus() == ApplicationStatus.APPROVED
-                        || app.getStatus() == ApplicationStatus.SUBMITTED)
-                       && app.getDueDate() != null) {
-                effectiveDate = app.getDueDate();
-            }
-            if (effectiveDate == null || effectiveDate.isBefore(start) || effectiveDate.isAfter(end)) {
-                continue;
-            }
+        for (ApplicationForPayment app : applicationRepository.findCashflowRelevantByDateRange(start, end)) {
+            LocalDate effectiveDate = app.getStatus() == ApplicationStatus.PAID
+                    ? app.getPaidDate() : app.getDueDate();
+            if (effectiveDate == null) continue;
             String key = effectiveDate.getYear() + "-" + String.format("%02d", effectiveDate.getMonthValue());
             if (inByMonth.containsKey(key)) {
                 BigDecimal gross = app.getGrossValue() != null ? app.getGrossValue() : BigDecimal.ZERO;
