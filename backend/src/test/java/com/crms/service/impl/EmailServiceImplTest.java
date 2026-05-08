@@ -28,7 +28,7 @@ class EmailServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        emailService = new EmailServiceImpl(mailSender, FROM, ADMIN);
+        emailService = new EmailServiceImpl(mailSender, FROM, ADMIN, "localhost");
     }
 
     @Test

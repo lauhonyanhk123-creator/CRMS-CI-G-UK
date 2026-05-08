@@ -76,7 +76,7 @@ class ProcurementServiceImplTest {
 
         validRequest = new PurchaseRequisitionRequest();
         validRequest.setSiteId(SITE_ID);
-        validRequest.setRequestedById(0L);   // maps to UUID(0L, 0L)
+        validRequest.setRequestedById(new UUID(0L, 0L));
         validRequest.setNotes("Test requisition");
     }
 

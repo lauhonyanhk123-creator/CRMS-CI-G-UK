@@ -33,7 +33,7 @@ public class CustomUserDetails implements UserDetails {
         this.accountNonLocked = !user.isLocked();
         this.credentialsNonExpired = true;
         this.authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
                 .collect(Collectors.toList());
         this.user = user;
     }
