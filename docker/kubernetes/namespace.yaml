@@ -1,9 +1,0 @@
-# CRMS CI G UK - Kubernetes Namespace
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: crms
-  labels:
-    app.kubernetes.io/name: crms-ci-g-uk
-    app.kubernetes.io/managed-by: kubectl
-    environment: production
