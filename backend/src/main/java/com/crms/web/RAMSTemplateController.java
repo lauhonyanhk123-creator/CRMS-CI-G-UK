@@ -9,15 +9,18 @@ import com.crms.service.RAMSTemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/rams-templates")
 @RequiredArgsConstructor
@@ -31,8 +34,8 @@ public class RAMSTemplateController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List RAMS templates", description = "Get paginated list of RAMS templates")
     public ResponseEntity<ApiResponse<PageResponse<RAMSTemplateResponse>>> findAll(
-            @RequestParam(required = false) String trade,
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Size(max = 100) String trade,
+            @RequestParam(required = false) @Size(max = 200) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
