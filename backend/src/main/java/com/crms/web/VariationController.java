@@ -25,10 +25,12 @@ public class VariationController {
     
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "List variations", description = "Get variations by contract")
-    public ResponseEntity<ApiResponse<PageResponse<VariationResponse>>> findByContract(
-            @RequestParam Long contractId) {
-        PageResponse<VariationResponse> response = variationService.findByContract(contractId);
+    @Operation(summary = "List variations", description = "Get variations by contract, or all variations if no contractId supplied")
+    public ResponseEntity<ApiResponse<PageResponse<VariationResponse>>> findVariations(
+            @RequestParam(required = false) Long contractId) {
+        PageResponse<VariationResponse> response = contractId != null
+                ? variationService.findByContract(contractId)
+                : variationService.findAll();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     

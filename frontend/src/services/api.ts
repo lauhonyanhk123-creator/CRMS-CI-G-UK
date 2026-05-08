@@ -939,6 +939,11 @@ export const api = {
       apiClient.post(`/contracts/${contractId}/applications/${applicationId}/default-notice`)
   },
 
+  variations: {
+    getAll: (params?: { contractId?: string | number; page?: number; limit?: number }) =>
+      apiClient.get<{ content: any[]; totalElements: number }>('/variations', { params }),
+  },
+
   applicationsForPayment: {
     getAll: (params?: { status?: string; page?: number; limit?: number }) =>
       apiClient.get<{ data: ApplicationResponse[]; total: number }>('/applications', { params }),
@@ -1046,7 +1051,11 @@ export const api = {
     getCashflow: (params: { startMonth: string; endMonth: string; siteId?: string }) =>
       apiClient.get<CashflowReport[]>('/reports/cashflow', { params }),
     getRetention: (contractId: string) =>
-      apiClient.get<RetentionReport[]>(`/reports/retention?contractId=${contractId}`)
+      apiClient.get<RetentionReport[]>(`/reports/retention?contractId=${contractId}`),
+    getRetentionSchedule: () =>
+      apiClient.get<any[]>('/reports/retention-schedule'),
+    getCISSummary: (taxMonth?: string) =>
+      apiClient.get<any[]>('/reports/cis-summary', { params: taxMonth ? { taxMonth } : undefined })
   },
 
   healthSafety: {
