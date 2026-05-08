@@ -33,6 +33,21 @@ public class VariationServiceImpl implements VariationService {
     private final ContractRepository contractRepository;
     
     @Override
+    public PageResponse<VariationResponse> findAll() {
+        List<VariationResponse> content = variationRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+        return PageResponse.<VariationResponse>builder()
+                .content(content)
+                .page(0)
+                .size(content.size())
+                .totalElements((long) content.size())
+                .totalPages(1)
+                .build();
+    }
+
+    @Override
     public PageResponse<VariationResponse> findByContract(Long contractId) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));

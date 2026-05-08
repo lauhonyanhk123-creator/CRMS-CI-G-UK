@@ -9,6 +9,8 @@ import java.util.Map;
 public interface VariationService {
     
     PageResponse<VariationResponse> findByContract(Long contractId);
+
+    PageResponse<VariationResponse> findAll();
     
     VariationResponse findById(Long id);
     

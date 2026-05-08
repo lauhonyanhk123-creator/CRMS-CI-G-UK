@@ -55,37 +55,111 @@ interface ColDef { prop: string; label: string; width?: number; currency?: boole
 
 const REPORT_COLUMNS: Record<string, ColDef[]> = {
   financial_afp: [
-    { prop: 'id', label: 'Ref', width: 140 },
-    { prop: 'date', label: 'Date', width: 120 },
-    { prop: 'value', label: 'Amount', currency: true },
+    { prop: 'ref', label: 'Ref', width: 160 },
+    { prop: 'contract', label: 'Contract', width: 140 },
+    { prop: 'date', label: 'Due Date', width: 120 },
+    { prop: 'value', label: 'Gross Value', currency: true },
     { prop: 'status', label: 'Status', width: 120, tag: true }
   ],
   financial_retention: [
-    { prop: 'id', label: 'Contract ID', width: 140 },
-    { prop: 'contract', label: 'Reference', width: 140 },
-    { prop: 'date', label: 'Start Date', width: 120 },
-    { prop: 'retentionHeld', label: 'Retention Held', currency: true },
+    { prop: 'contractRef', label: 'Contract Ref', width: 150 },
+    { prop: 'title', label: 'Title' },
+    { prop: 'totalRetention', label: 'Total Held', currency: true },
+    { prop: 'releasedAtPC', label: 'Released at PC', currency: true },
+    { prop: 'releasedAtDefects', label: 'Released at Defects', currency: true },
+    { prop: 'balance', label: 'Balance', currency: true }
+  ],
+  financial_variance: [
+    { prop: 'variationRef', label: 'Ref', width: 140 },
+    { prop: 'contractRef', label: 'Contract', width: 130 },
+    { prop: 'description', label: 'Description' },
+    { prop: 'originalValue', label: 'Original', currency: true },
+    { prop: 'agreedValue', label: 'Agreed', currency: true },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  financial_invoice: [
+    { prop: 'ref', label: 'Invoice Ref', width: 160 },
+    { prop: 'contract', label: 'Contract', width: 140 },
+    { prop: 'paidDate', label: 'Paid Date', width: 120 },
+    { prop: 'value', label: 'Amount', currency: true },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  project_contracts: [
+    { prop: 'contractRef', label: 'Ref', width: 130 },
+    { prop: 'title', label: 'Title' },
+    { prop: 'client', label: 'Client', width: 160 },
+    { prop: 'startDate', label: 'Start', width: 110 },
+    { prop: 'contractValue', label: 'Value', currency: true },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  project_progress: [
+    { prop: 'name', label: 'Site', width: 180 },
+    { prop: 'client', label: 'Client', width: 160 },
+    { prop: 'startDate', label: 'Start', width: 110 },
+    { prop: 'endDate', label: 'End', width: 110 },
     { prop: 'status', label: 'Status', width: 120, tag: true }
   ],
   cis_cis300: [
-    { prop: 'id', label: 'Return ID', width: 140 },
+    { prop: 'id', label: 'Return ID', width: 120 },
     { prop: 'month', label: 'Month', width: 110 },
     { prop: 'subcontractors', label: 'Subcontractors', width: 140 },
     { prop: 'gross', label: 'Gross', currency: true },
     { prop: 'deduction', label: 'Deduction', currency: true },
     { prop: 'status', label: 'Status', width: 120, tag: true }
   ],
+  cis_verification: [
+    { prop: 'name', label: 'Subcontractor' },
+    { prop: 'utr', label: 'UTR', width: 130 },
+    { prop: 'verificationNumber', label: 'Verification #', width: 150 },
+    { prop: 'cisStatus', label: 'CIS Status', width: 130, tag: true },
+    { prop: 'verificationDate', label: 'Verified', width: 120 }
+  ],
+  cis_deductions: [
+    { prop: 'subcontractorName', label: 'Subcontractor' },
+    { prop: 'totalGrossValue', label: 'Gross', currency: true },
+    { prop: 'totalDeduction', label: 'Deduction', currency: true },
+    { prop: 'totalNetValue', label: 'Net', currency: true }
+  ],
   hr_onsite: [
-    { prop: 'id', label: 'ID', width: 120 },
+    { prop: 'employeeRef', label: 'Ref', width: 110 },
     { prop: 'name', label: 'Name' },
     { prop: 'trade', label: 'Trade', width: 140 },
-    { prop: 'site', label: 'Site', width: 140 },
+    { prop: 'employer', label: 'Employer', width: 160 },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  hr_training: [
+    { prop: 'employeeRef', label: 'Ref', width: 110 },
+    { prop: 'name', label: 'Name' },
+    { prop: 'qualificationName', label: 'Qualification' },
+    { prop: 'issuingBody', label: 'Issuing Body', width: 140 },
+    { prop: 'expiryDate', label: 'Expiry', width: 120 }
+  ],
+  hr_cscs: [
+    { prop: 'employeeRef', label: 'Ref', width: 110 },
+    { prop: 'name', label: 'Name' },
+    { prop: 'cardType', label: 'Card Type', width: 160 },
+    { prop: 'expiryDate', label: 'Expiry', width: 120 },
     { prop: 'status', label: 'Status', width: 120, tag: true }
   ],
   plant_allocation: [
-    { prop: 'id', label: 'ID', width: 120 },
+    { prop: 'plantRef', label: 'Ref', width: 110 },
     { prop: 'description', label: 'Description' },
     { prop: 'category', label: 'Category', width: 140 },
+    { prop: 'site', label: 'Current Site', width: 160 },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  plant_certification: [
+    { prop: 'plantRef', label: 'Ref', width: 110 },
+    { prop: 'description', label: 'Description' },
+    { prop: 'nextInspectionDate', label: 'Next Inspection', width: 140 },
+    { prop: 'daysUntil', label: 'Days Left', width: 100 },
+    { prop: 'status', label: 'Status', width: 120, tag: true }
+  ],
+  plant_hire: [
+    { prop: 'plantRef', label: 'Ref', width: 110 },
+    { prop: 'description', label: 'Description' },
+    { prop: 'category', label: 'Category', width: 140 },
+    { prop: 'hireRate', label: 'Hire Rate', currency: true },
     { prop: 'status', label: 'Status', width: 120, tag: true }
   ]
 }
@@ -108,80 +182,189 @@ const openReport = async (report: ReportCard) => {
   dialogVisible.value = true
   loadingReport.value = true
   reportData.value = []
-  
+
   try {
-    // Load real data based on report type
     if (report.reportType === 'financial_afp') {
-      const res = await api.applicationsForPayment.getAll({ limit: 100 })
-      reportData.value = res.data.data.map((item: any) => ({
-        id: item.id,
-        date: item.applicationDate,
-        value: item.amount,
+      const res = await api.applicationsForPayment.getAll({ limit: 500 })
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
+        ref: item.applicationRef ?? item.id,
+        contract: item.contractRef ?? item.contractId,
+        date: item.dueDate,
+        value: item.grossValue ?? item.amount,
         status: item.status
       }))
+
     } else if (report.reportType === 'financial_retention') {
-      // Load contracts and aggregate retention
-      const res = await api.contracts.getAll({ limit: 100 })
-      reportData.value = res.data.data.map((item: any) => ({
-        id: item.id,
-        contract: item.reference,
-        date: item.startDate,
-        retentionHeld: (item.value || 0) * 0.05,
+      const res = await api.reports.getRetentionSchedule()
+      const d = res.data as any
+      const rows: any[] = Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []
+      reportData.value = rows
+
+    } else if (report.reportType === 'financial_variance') {
+      const res = await api.variations.getAll({ limit: 500 })
+      const d = res.data as any
+      const rows: any[] = d?.content ?? d?.data ?? []
+      reportData.value = rows.map((item: any) => ({
+        variationRef: item.variationRef,
+        contractRef: item.contractRef,
+        description: item.description,
+        originalValue: item.originalValue,
+        agreedValue: item.agreedValue,
         status: item.status
       }))
+
+    } else if (report.reportType === 'financial_invoice') {
+      const res = await api.applicationsForPayment.getAll({ status: 'PAID', limit: 500 })
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
+        ref: item.applicationRef ?? item.id,
+        contract: item.contractRef ?? item.contractId,
+        paidDate: item.paidDate ?? item.dueDate,
+        value: item.grossValue ?? item.amount,
+        status: item.status
+      }))
+
+    } else if (report.reportType === 'project_contracts') {
+      const res = await api.contracts.getAll({ limit: 500 })
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
+        contractRef: item.contractRef,
+        title: item.title,
+        client: item.clientName ?? item.client?.name,
+        startDate: item.startDate,
+        contractValue: item.contractValue,
+        status: item.status
+      }))
+
+    } else if (report.reportType === 'project_progress') {
+      const res = await api.sites.getAll({ limit: 500 })
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
+        name: item.name,
+        client: item.clientName ?? item.client?.name,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        status: item.status
+      }))
+
+    } else if (report.reportType === 'project_gantt') {
+      ElMessage.info('Gantt view is available in the Sites module')
+      loadingReport.value = false
+      return
+
     } else if (report.reportType === 'cis_cis300') {
       const res = await api.cisReturns.getAll({ limit: 100 })
-      reportData.value = res.data.data.map((item: any) => ({
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
         id: item.id,
-        month: item.month,
-        subcontractors: item.subcontractorCount || 0,
-        gross: item.grossValue || 0,
-        deduction: item.deductionAmount || 0,
+        month: item.taxMonth ?? item.month,
+        subcontractors: item.cisReturnLines?.length ?? item.subcontractorCount ?? 0,
+        gross: item.totalGross ?? item.grossValue ?? 0,
+        deduction: item.totalDeduction ?? item.deductionAmount ?? 0,
         status: item.status
       }))
-    } else if (report.reportType === 'hr_onsite') {
-      const res = await api.operatives.getAll({ status: 'active', limit: 500 })
-      reportData.value = res.data.data.map((item: any) => ({
-        id: item.id,
+
+    } else if (report.reportType === 'cis_verification') {
+      const res = await api.subcontractors.getAll({ limit: 500 })
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
         name: item.name,
+        utr: item.utr,
+        verificationNumber: item.verificationNumber,
+        cisStatus: item.cisStatus ?? item.verificationStatus,
+        verificationDate: item.verificationDate
+      }))
+
+    } else if (report.reportType === 'cis_deductions') {
+      const res = await api.reports.getCISSummary()
+      const d = res.data as any
+      const rows: any[] = Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []
+      reportData.value = rows
+
+    } else if (report.reportType === 'hr_onsite') {
+      const res = await api.operatives.getAll({ status: 'ACTIVE', limit: 500 })
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
+        employeeRef: item.employeeRef,
+        name: `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim(),
         trade: item.trade,
-        site: item.siteId,
+        employer: item.employer?.name ?? item.employerName,
         status: item.status
       }))
+
+    } else if (report.reportType === 'hr_training') {
+      const res = await api.operatives.getAll({ limit: 500 })
+      const rows: any[] = []
+      for (const op of (res.data.data ?? [])) {
+        for (const q of ((op as any).qualifications ?? [])) {
+          rows.push({
+            employeeRef: op.employeeRef,
+            name: `${op.firstName ?? ''} ${op.lastName ?? ''}`.trim(),
+            qualificationName: (q as any).qualificationName ?? (q as any).name,
+            issuingBody: (q as any).issuingBody,
+            expiryDate: (q as any).expiryDate
+          })
+        }
+      }
+      reportData.value = rows
+
+    } else if (report.reportType === 'hr_cscs') {
+      const res = await api.operatives.getAll({ limit: 500 })
+      const rows: any[] = []
+      for (const op of (res.data.data ?? [])) {
+        for (const c of ((op as any).cards ?? [])) {
+          rows.push({
+            employeeRef: op.employeeRef,
+            name: `${op.firstName ?? ''} ${op.lastName ?? ''}`.trim(),
+            cardType: (c as any).cardType,
+            expiryDate: (c as any).expiryDate,
+            status: (c as any).expiryDate && new Date((c as any).expiryDate) < new Date() ? 'EXPIRED' : 'VALID'
+          })
+        }
+      }
+      reportData.value = rows
+
     } else if (report.reportType === 'plant_allocation') {
-      const res = await api.plant.getAll({ limit: 200 })
-      reportData.value = res.data.data.map((item: any) => ({
-        id: item.id,
+      const res = await api.plant.getAll({ limit: 500 })
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
+        plantRef: item.plantRef,
         description: item.description,
         category: item.category,
+        site: item.siteName ?? item.currentSite?.name,
         status: item.status
       }))
-    } else {
-      reportData.value = generateMockData(report.reportType)
+
+    } else if (report.reportType === 'plant_certification') {
+      const res = await api.plant.getAll({ limit: 500 })
+      const today = new Date()
+      reportData.value = (res.data.data ?? [])
+        .filter((item: any) => item.nextInspectionDate)
+        .map((item: any) => {
+          const due = new Date(item.nextInspectionDate)
+          const daysUntil = Math.ceil((due.getTime() - today.getTime()) / 86400000)
+          return {
+            plantRef: item.plantRef,
+            description: item.description,
+            nextInspectionDate: item.nextInspectionDate,
+            daysUntil,
+            status: daysUntil < 0 ? 'OVERDUE' : daysUntil <= 14 ? 'DUE_SOON' : 'OK'
+          }
+        })
+        .sort((a: any, b: any) => a.daysUntil - b.daysUntil)
+
+    } else if (report.reportType === 'plant_hire') {
+      const res = await api.plant.getAll({ limit: 500 })
+      reportData.value = (res.data.data ?? []).map((item: any) => ({
+        plantRef: item.plantRef,
+        description: item.description,
+        category: item.category,
+        hireRate: item.hireRate ?? item.dailyRate,
+        status: item.status
+      }))
     }
+
     ElMessage.success(`${report.title} loaded`)
   } catch (error) {
+    console.error(`Failed to load ${report.reportType}:`, error)
     ElMessage.error('Failed to load report data')
-    reportData.value = generateMockData(report.reportType)
+    reportData.value = []
   } finally {
     loadingReport.value = false
   }
-}
-
-const generateMockData = (reportType: string) => {
-  const now = new Date()
-  const results = []
-  const count = Math.floor(Math.random() * 10) + 5
-  
-  for (let i = 0; i < count; i++) {
-    results.push({
-      id: `${reportType}-${i + 1}`,
-      date: new Date(now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      value: Math.floor(Math.random() * 100000),
-      status: ['draft', 'submitted', 'approved', 'paid'][Math.floor(Math.random() * 4)]
-    })
-  }
-  return results
 }
 
 const downloadingPdf = ref(false)
