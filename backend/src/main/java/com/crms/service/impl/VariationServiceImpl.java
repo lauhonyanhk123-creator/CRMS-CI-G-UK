@@ -34,7 +34,7 @@ public class VariationServiceImpl implements VariationService {
     
     @Override
     public PageResponse<VariationResponse> findAll() {
-        List<VariationResponse> content = variationRepository.findAll()
+        List<VariationResponse> content = variationRepository.findAll(Pageable.ofSize(1000))
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

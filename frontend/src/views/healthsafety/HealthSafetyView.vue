@@ -114,14 +114,14 @@ const loadSites = async () => {
   try {
     const response = await api.sites.getAll({})
     sites.value = response.data.data
-  } catch { /* silent */ }
+  } catch (error) { ElMessage.error('Failed to load sites') }
 }
 
 const loadContracts = async () => {
   try {
     const response = await api.contracts.getAll({})
     contracts.value = response.data.data
-  } catch { /* silent */ }
+  } catch (error) { ElMessage.error('Failed to load contracts') }
 }
 
 const loadF10 = async () => {

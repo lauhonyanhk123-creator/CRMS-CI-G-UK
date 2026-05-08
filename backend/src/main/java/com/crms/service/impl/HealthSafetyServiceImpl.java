@@ -202,6 +202,7 @@ public class HealthSafetyServiceImpl implements HealthSafetyService {
     }
 
     // Compatibility overloads for legacy Map-based callers/tests.
+    @Transactional
     public java.util.Map<String, Object> createCPP(Long contractId, java.util.Map<String, Object> request) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));
@@ -228,6 +229,7 @@ public class HealthSafetyServiceImpl implements HealthSafetyService {
         throw new IllegalArgumentException("Unsupported CPP request type");
     }
 
+    @Transactional
     public java.util.Map<String, Object> createRAMS(Long contractId, java.util.Map<String, Object> request) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));
@@ -256,6 +258,7 @@ public class HealthSafetyServiceImpl implements HealthSafetyService {
         throw new IllegalArgumentException("Unsupported RAMS request type");
     }
 
+    @Transactional
     public java.util.Map<String, Object> createPermit(java.util.Map<String, Object> request) {
         Object permitType = request.get("permitType");
         if (permitType != null && !"PERMIT_TO_DIG".equals(String.valueOf(permitType))) {
@@ -286,6 +289,7 @@ public class HealthSafetyServiceImpl implements HealthSafetyService {
         throw new IllegalArgumentException("Unsupported permit request type");
     }
 
+    @Transactional
     public java.util.Map<String, Object> createIncident(java.util.Map<String, Object> request) {
         Long siteId = Long.valueOf(String.valueOf(request.get("siteId")));
         Site site = siteRepository.findById(siteId)
@@ -322,6 +326,7 @@ public class HealthSafetyServiceImpl implements HealthSafetyService {
     }
 
 
+    @Transactional
     public java.util.Map<String, Object> createF10(Long contractId, java.util.Map<String, Object> request) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", contractId));

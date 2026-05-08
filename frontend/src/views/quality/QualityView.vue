@@ -854,7 +854,7 @@ const saveDialog = async () => {
     closeDialog()
   } catch (error) {
     console.error('Failed to save:', error)
-    alert('Failed to save. Please try again.')
+    ElMessage.error('Failed to save. Please try again.')
   }
 }
 
@@ -957,38 +957,43 @@ const viewSignOff = (signOff: any) => editSignOff(signOff)
 
 // Delete methods
 const deleteTemplate = async (id: string) => {
-  if (confirm('Delete this template?')) {
+  try {
+    await ElMessageBox.confirm('Delete this template?', 'Confirm', { type: 'warning' })
     await api.quality.deleteITPTemplate(id)
     await loadTemplates()
-  }
+  } catch { /* cancelled */ }
 }
 
 const deleteSchedule = async (id: string) => {
-  if (confirm('Delete this schedule?')) {
+  try {
+    await ElMessageBox.confirm('Delete this schedule?', 'Confirm', { type: 'warning' })
     await api.quality.deleteITPSchedule(id)
     await loadSchedules()
-  }
+  } catch { /* cancelled */ }
 }
 
 const deleteInspection = async (id: string) => {
-  if (confirm('Delete this inspection?')) {
+  try {
+    await ElMessageBox.confirm('Delete this inspection?', 'Confirm', { type: 'warning' })
     await api.quality.deleteInspection(id)
     await loadInspections()
-  }
+  } catch { /* cancelled */ }
 }
 
 const deleteDefect = async (id: string) => {
-  if (confirm('Delete this defect?')) {
+  try {
+    await ElMessageBox.confirm('Delete this defect?', 'Confirm', { type: 'warning' })
     await api.quality.deleteDefect(id)
     await loadDefects()
-  }
+  } catch { /* cancelled */ }
 }
 
 const deleteSignOff = async (id: string) => {
-  if (confirm('Delete this sign-off?')) {
+  try {
+    await ElMessageBox.confirm('Delete this sign-off?', 'Confirm', { type: 'warning' })
     await api.quality.deleteSignOff(id)
     await loadSignOffs()
-  }
+  } catch { /* cancelled */ }
 }
 
 // Copy template
@@ -1013,40 +1018,37 @@ const createScheduleFromTemplate = async (templateId: string, contractId: string
 
 // Update defect status
 const updateDefectStatus = async (defect: any) => {
-  const newStatus = prompt('Enter new status (open/in_progress/resolved/closed):')
-  if (newStatus) {
-    try {
+  try {
+    const { value: newStatus } = await ElMessageBox.prompt(
+      'Enter new status (open/in_progress/resolved/closed):',
+      'Update Status',
+      { inputPattern: /^(open|in_progress|resolved|closed)$/, inputErrorMessage: 'Invalid status' }
+    )
+    if (newStatus) {
       await api.quality.updateDefectStatus(defect.id, newStatus)
       await loadDefects()
-    } catch (error) {
-      console.error('Failed to update defect status:', error)
     }
-  }
+  } catch { /* cancelled */ }
 }
 
 // Approve/Refuse sign-off
 const approveSignOff = async (signOff: any) => {
-  if (confirm('Approve this sign-off?')) {
-    try {
-      const signature = prompt('Enter signature (or leave empty):') || ''
-      await api.quality.approveSignOff(signOff.id, signature)
-      await loadSignOffs()
-    } catch (error) {
-      console.error('Failed to approve sign-off:', error)
-    }
-  }
+  try {
+    await ElMessageBox.confirm('Approve this sign-off?', 'Confirm', { type: 'success' })
+    const { value: signature } = await ElMessageBox.prompt('Enter signature (or leave empty):', 'Signature', { showCancelButton: true, inputValue: '' }).catch(() => ({ value: '' }))
+    await api.quality.approveSignOff(signOff.id, signature || '')
+    await loadSignOffs()
+  } catch { /* cancelled */ }
 }
 
 const refuseSignOff = async (signOff: any) => {
-  const conditions = prompt('Enter refusal conditions:')
-  if (conditions) {
-    try {
+  try {
+    const { value: conditions } = await ElMessageBox.prompt('Enter refusal conditions:', 'Refuse Sign-off', { inputPattern: /.+/, inputErrorMessage: 'Reason required' })
+    if (conditions) {
       await api.quality.refuseSignOff(signOff.id, conditions)
       await loadSignOffs()
-    } catch (error) {
-      console.error('Failed to refuse sign-off:', error)
     }
-  }
+  } catch { /* cancelled */ }
 }
 
 // Debounced search

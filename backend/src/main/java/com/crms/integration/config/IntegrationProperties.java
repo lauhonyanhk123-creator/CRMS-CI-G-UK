@@ -38,6 +38,7 @@ public class IntegrationProperties {
     public static class CompaniesHouseProperties {
         private String baseUrl = "https://api.companyinformation.service.gov.uk";
         private String apiKey;
+        private boolean demoMode = true;
         private int connectionTimeout = 10000;
         private int readTimeout = 30000;
     }
@@ -48,6 +49,7 @@ public class IntegrationProperties {
         private String apiKey;
         private String clientId;
         private String clientSecret;
+        private boolean demoMode = true;
         private int connectionTimeout = 15000;
         private int readTimeout = 30000;
     }

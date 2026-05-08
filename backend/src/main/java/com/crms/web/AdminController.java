@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,6 +34,36 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final UserService userService;
+
+    @Value("${spring.mail.host:disabled}")
+    private String mailHost;
+
+    @Value("${crms.mail.admin-address:admin@crms.local}")
+    private String mailAdminAddress;
+
+    @Value("${crms.integration.demo-mode:true}")
+    private boolean hmrcDemoMode;
+
+    @Value("${crms.integration.hmrc.contractor-utr:}")
+    private String hmrcContractorUtr;
+
+    @Value("${crms.integration.hmrc.base-url:https://test-api.service.hmrc.gov.uk}")
+    private String hmrcBaseUrl;
+
+    @Value("${crms.integration.companies-house.api-key:}")
+    private String companiesHouseApiKey;
+
+    @Value("${crms.integration.cscs.api-key:}")
+    private String cscsApiKey;
+
+    @Value("${minio.endpoint:http://localhost:9000}")
+    private String minioEndpoint;
+
+    @Value("${minio.buckets.documents:crms-documents}")
+    private String minioBucket;
+
+    @Value("${BACKUP_RETENTION_DAYS:30}")
+    private String backupRetentionDays;
 
     // In-memory settings store (survives restarts only until a proper settings entity is added)
     private static final Map<String, Object> SYSTEM_SETTINGS = new ConcurrentHashMap<>(Map.of(
@@ -118,7 +149,7 @@ public class AdminController {
         Map<String, Object> status = new LinkedHashMap<>();
         status.put("mode", "docker-volume");
         status.put("note", "Backups are managed via the 'backup' Docker Compose service profile. Run: docker compose --profile backup up backup");
-        status.put("retentionDays", System.getenv().getOrDefault("BACKUP_RETENTION_DAYS", "30"));
+        status.put("retentionDays", backupRetentionDays);
         status.put("lastBackup", null);
         return ResponseEntity.ok(ApiResponse.success(status));
     }
@@ -139,27 +170,22 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Object>> getIntegrationsStatus() {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        String mailHost = System.getenv().getOrDefault("MAIL_HOST", "disabled");
         boolean smtpConfigured = !mailHost.isBlank() && !"disabled".equalsIgnoreCase(mailHost);
         result.put("smtpConfigured", smtpConfigured);
         result.put("smtpHost", smtpConfigured ? mailHost : null);
-        result.put("adminEmail", System.getenv().getOrDefault("MAIL_ADMIN", "admin@crms.local"));
+        result.put("adminEmail", mailAdminAddress);
 
-        String hmrcDemoMode = System.getenv().getOrDefault("HMRC_DEMO_MODE", "true");
-        result.put("hmrcDemoMode", "true".equalsIgnoreCase(hmrcDemoMode));
-        result.put("hmrcContractorUtr", System.getenv().get("HMRC_CONTRACTOR_UTR"));
-        result.put("hmrcBaseUrl", System.getenv().getOrDefault("HMRC_BASE_URL", "https://test-api.service.hmrc.gov.uk"));
+        result.put("hmrcDemoMode", hmrcDemoMode);
+        result.put("hmrcContractorUtr", hmrcContractorUtr.isBlank() ? null : hmrcContractorUtr);
+        result.put("hmrcBaseUrl", hmrcBaseUrl);
 
-        String chApiKey = System.getenv().getOrDefault("COMPANIES_HOUSE_API_KEY", "");
-        result.put("companiesHouseConfigured", !chApiKey.isBlank());
+        result.put("companiesHouseConfigured", !companiesHouseApiKey.isBlank());
 
-        String cscsApiKey = System.getenv().getOrDefault("CSCS_API_KEY", "");
         result.put("cscsConfigured", !cscsApiKey.isBlank());
 
-        String minioEndpoint = System.getenv().getOrDefault("MINIO_ENDPOINT", "http://localhost:9000");
-        result.put("minioConfigured", System.getenv().containsKey("MINIO_ENDPOINT"));
+        result.put("minioConfigured", !minioEndpoint.isBlank());
         result.put("minioEndpoint", minioEndpoint);
-        result.put("minioBucket", System.getenv().getOrDefault("MINIO_BUCKET", "crms-documents"));
+        result.put("minioBucket", minioBucket);
 
         return ResponseEntity.ok(ApiResponse.success(result));
     }
