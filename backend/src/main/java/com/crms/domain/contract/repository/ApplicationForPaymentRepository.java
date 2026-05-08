@@ -37,6 +37,18 @@ public interface ApplicationForPaymentRepository extends JpaRepository<Applicati
     @Query("SELECT a FROM ApplicationForPayment a WHERE a.contract.id = :contractId AND a.status IN ('PAID', 'CERTIFIED') AND a.dueDate <= :upToDate")
     List<ApplicationForPayment> findApprovedApplicationsUpToDate(@Param("contractId") Long contractId, @Param("upToDate") LocalDate upToDate);
     long countByStatus(ApplicationStatus status);
+
+    @Query("""
+            SELECT COALESCE(SUM(a.grossValue), 0)
+            FROM ApplicationForPayment a
+            WHERE a.status IN :statuses
+              AND a.dueDate >= :from
+              AND a.dueDate <= :to
+            """)
+    BigDecimal sumGrossValueByStatusInAndDueDateBetween(
+            @Param("statuses") java.util.List<ApplicationStatus> statuses,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
     @Query("SELECT COALESCE(SUM(a.grossValue), 0) FROM ApplicationForPayment a WHERE a.contract.id = :contractId")
     java.math.BigDecimal sumGrossValueByContractId(@Param("contractId") Long contractId);
 

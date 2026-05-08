@@ -142,40 +142,26 @@ public class DashboardServiceImpl implements DashboardService {
     public Map<String, Object> getDashboardStats() {
         Map<String, Object> stats = new LinkedHashMap<>();
 
-        long activeContracts = contractRepository.findAll().stream()
-                .filter(c -> c.getStatus() == ContractStatus.ACTIVE)
-                .count();
+        long activeContracts = contractRepository.countByStatus(ContractStatus.ACTIVE);
 
-        long operativesOnSite = operativeRepository.findByStatus(OperativeStatus.ACTIVE).size();
+        long operativesOnSite = operativeRepository.countByStatus(OperativeStatus.ACTIVE);
 
-        long pendingApplications = applicationRepository.findAll().stream()
-                .filter(a -> a.getStatus() == ApplicationStatus.SUBMITTED)
-                .count();
+        long pendingApplications = applicationRepository.countByStatus(ApplicationStatus.SUBMITTED);
 
-        long plantAllocated = plantRepository.findAll().stream()
-                .filter(p -> p.getStatus() == PlantStatus.ON_HIRE)
-                .count();
+        long plantAllocated = plantRepository.countByStatus(PlantStatus.ON_HIRE);
 
         YearMonth currentMonth = YearMonth.now();
-        BigDecimal revenueMTD = applicationRepository.findAll().stream()
-                .filter(a -> a.getStatus() == ApplicationStatus.PAID || a.getStatus() == ApplicationStatus.APPROVED)
-                .filter(a -> {
-                    LocalDate dueDate = a.getDueDate();
-                    return dueDate != null && YearMonth.from(dueDate).equals(currentMonth);
-                })
-                .map(a -> a.getGrossValue() != null ? a.getGrossValue() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         LocalDate monthStart = currentMonth.atDay(1);
         LocalDate monthEnd = currentMonth.atEndOfMonth();
-        BigDecimal cisDeductionsMTD = cisReturnRepository.findAll().stream()
-                .filter(r -> r.getSubmissionDate() != null)
-                .filter(r -> {
-                    LocalDate subDate = r.getSubmissionDate();
-                    return !subDate.isBefore(monthStart) && !subDate.isAfter(monthEnd);
-                })
-                .map(r -> r.getTotalDeduction() != null ? r.getTotalDeduction() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal revenueMTD = applicationRepository.sumGrossValueByStatusInAndDueDateBetween(
+                List.of(ApplicationStatus.PAID, ApplicationStatus.APPROVED),
+                monthStart, monthEnd);
+        if (revenueMTD == null) revenueMTD = BigDecimal.ZERO;
+
+        BigDecimal cisDeductionsMTD = cisReturnRepository
+                .sumTotalDeductionBySubmissionDateBetween(monthStart, monthEnd);
+        if (cisDeductionsMTD == null) cisDeductionsMTD = BigDecimal.ZERO;
 
         stats.put("activeContracts", activeContracts);
         stats.put("operativesOnSite", operativesOnSite);

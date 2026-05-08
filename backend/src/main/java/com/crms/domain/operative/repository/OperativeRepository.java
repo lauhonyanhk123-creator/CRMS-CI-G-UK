@@ -26,6 +26,8 @@ public interface OperativeRepository extends JpaRepository<Operative, Long> {
 
     List<Operative> findByStatus(OperativeStatus status);
 
+    long countByStatus(OperativeStatus status);
+
     Page<Operative> findByLastNameContainingIgnoreCase(String lastName, Pageable pageable);
 
     @Query("SELECT o FROM Operative o WHERE o.rightToWorkExpiry <= :date AND o.status = 'ACTIVE'")

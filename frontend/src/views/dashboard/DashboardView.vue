@@ -155,12 +155,7 @@ const loadActivityFeed = async () => {
     activityFeed.value = response.data || []
   } catch (error) {
     console.error('Failed to load activity feed:', error)
-    // Provide placeholder data
-    activityFeed.value = [
-      { id: 1, action: 'Created', entityType: 'Contract', entityId: 'C-001', timestamp: new Date().toISOString() },
-      { id: 2, action: 'Updated', entityType: 'Operative', entityId: 'OP-005', timestamp: new Date(Date.now() - 3600000).toISOString() },
-      { id: 3, action: 'Approved', entityType: 'Application', entityId: 'APP-042', timestamp: new Date(Date.now() - 7200000).toISOString() }
-    ]
+    activityFeed.value = []
   } finally {
     activityLoading.value = false
   }
@@ -241,11 +236,11 @@ const loadCVRChart = async () => {
     cvrChartOption.value = {
       title: { text: 'Contracts by Status', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['Active', 'Completed', 'Pending', 'On Hold'] },
+      xAxis: { type: 'category', data: [] },
       yAxis: { type: 'value' },
-      series: [
-        { name: 'Contract Value', type: 'bar', data: [850000, 2100000, 320000, 75000], itemStyle: { color: '#1a73e8', borderRadius: [4, 4, 0, 0] } }
-      ]
+      graphic: [{ type: 'text', left: 'center', top: 'middle',
+        style: { text: 'No data available', fontSize: 14, fill: '#909399' } }],
+      series: []
     }
   } finally {
     cvrChartLoading.value = false
@@ -313,18 +308,11 @@ const loadCashflowChart = async () => {
     cashflowChartOption.value = {
       title: { text: 'Cash Flow Forecast', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'], boundaryGap: false },
+      xAxis: { type: 'category', data: [], boundaryGap: false },
       yAxis: { type: 'value' },
-      series: [
-        {
-          name: 'Cumulative Forecast',
-          type: 'line',
-          data: [180000, 320000, 480000, 680000, 850000, 1050000, 1200000],
-          smooth: true,
-          areaStyle: { color: 'rgba(26, 115, 232, 0.2)' },
-          itemStyle: { color: '#1a73e8' }
-        }
-      ]
+      graphic: [{ type: 'text', left: 'center', top: 'middle',
+        style: { text: 'No data available', fontSize: 14, fill: '#909399' } }],
+      series: []
     }
   } finally {
     cashflowLoading.value = false
@@ -391,15 +379,8 @@ const loadHSChart = async () => {
     hsChartOption.value = {
       title: { text: 'H&S Incidents (30 Days)', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
       tooltip: { trigger: 'item' },
-      series: [{
-        type: 'pie',
-        radius: ['40%', '70%'],
-        data: [
-          { value: 12, name: 'Near Misses', itemStyle: { color: '#e6a23c' } },
-          { value: 4, name: 'Minor Injuries', itemStyle: { color: '#f56c6c' } },
-          { value: 28, name: 'Observations', itemStyle: { color: '#67c23a' } }
-        ]
-      }]
+      graphic: [{ type: 'text', left: 'center', top: 'middle', style: { text: 'No data available', fontSize: 14, fill: '#909399' } }],
+      series: [{ type: 'pie', radius: ['40%', '70%'], data: [] }]
     }
   } finally {
     hsChartLoading.value = false
@@ -424,7 +405,7 @@ const loadPipeline = async () => {
     }
   } catch (error) {
     console.error('Failed to load pipeline:', error)
-    pipelineData.value = { leads: 15, qualified: 8, pricing: 5, submitted: 3, totalValue: 2500000, conversionRate: 25 }
+    pipelineData.value = { leads: 0, qualified: 0, pricing: 0, submitted: 0, totalValue: 0, conversionRate: 0 }
   } finally {
     pipelineLoading.value = false
   }
@@ -449,11 +430,7 @@ const loadLOLER = async () => {
       .slice(0, 5)
   } catch (error) {
     console.error('Failed to load LOLER:', error)
-    lolerItems.value = [
-      { plantRef: 'PL001', description: 'Tower Crane', lolerDue: dayjs().add(5, 'day').format('YYYY-MM-DD'), daysUntil: 5 },
-      { plantRef: 'PL002', description: 'Mobile Crane', lolerDue: dayjs().add(12, 'day').format('YYYY-MM-DD'), daysUntil: 12 },
-      { plantRef: 'PL003', description: 'Hoist', lolerDue: dayjs().add(20, 'day').format('YYYY-MM-DD'), daysUntil: 20 }
-    ]
+    lolerItems.value = []
   } finally {
     lolerLoading.value = false
   }
