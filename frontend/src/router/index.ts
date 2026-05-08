@@ -27,6 +27,8 @@ const AdminView = () => import('@/views/admin/AdminView.vue')
 const UserManagementView = () => import('@/views/admin/UserManagementView.vue')
 const AuditLogView = () => import('@/views/admin/AuditLogView.vue')
 const ReportsView = () => import('@/views/reports/ReportsView.vue')
+const SitesView = () => import('@/views/sites/SitesView.vue')
+const SiteDetailView = () => import('@/views/sites/SiteDetailView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -176,6 +178,18 @@ const routes: RouteRecordRaw[] = [
     name: 'AuditLog',
     component: AuditLogView,
     meta: { requiresAuth: true, title: 'Audit Log', roles: ['admin'] }
+  },
+  {
+    path: '/sites',
+    name: 'Sites',
+    component: SitesView,
+    meta: { requiresAuth: true, title: 'Sites' }
+  },
+  {
+    path: '/sites/:id',
+    name: 'SiteDetail',
+    component: SiteDetailView,
+    meta: { requiresAuth: true, title: 'Site Details' }
   },
   {
     path: '/reports',

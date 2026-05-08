@@ -341,7 +341,7 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
 
     private BigDecimal calculateRetention(Contract contract, BigDecimal valueOfWorks) {
         if (valueOfWorks == null) {
-            return null;
+            return BigDecimal.ZERO;
         }
         BigDecimal percentage = contract.getRetentionPercent() != null ? contract.getRetentionPercent() : BigDecimal.ZERO;
         return valueOfWorks.multiply(percentage).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
@@ -364,7 +364,7 @@ public class ApplicationForPaymentServiceImpl implements ApplicationForPaymentSe
      */
     public LocalDate calculatePayLessNoticeDeadline(LocalDate applicationDate) {
         if (applicationDate == null) {
-            return null;
+            return LocalDate.now().minusDays(5);
         }
         return applicationDate.minusDays(5);
     }

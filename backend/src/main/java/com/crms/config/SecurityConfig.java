@@ -38,10 +38,11 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register",
-                    "/api/v1/auth/refresh", "/error").permitAll()
+                    "/api/v1/auth/refresh", "/api/v1/hmrc/oauth/callback", "/error").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
-                .requestMatchers("/actuator/**", "/swagger-ui/**", "/swagger-ui.html",
-                    "/api-docs/**", "/v3/api-docs/**").authenticated()
+                .requestMatchers("/actuator/**").authenticated()
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
+                    "/api-docs/**", "/v3/api-docs/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) ->

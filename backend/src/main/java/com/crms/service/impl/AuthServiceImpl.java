@@ -34,15 +34,38 @@ public class AuthServiceImpl implements AuthService {
     private final TotpService totpService;
     
     @Override
+    @Transactional
     public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+        // Load user first so we can enforce lockout before attempting authentication
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new ValidationException("Invalid username or password"));
+
+        if (user.isLocked()) {
+            throw new ValidationException("Account is temporarily locked due to too many failed login attempts. Please try again later.");
+        }
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
+        } catch (Exception ex) {
+            user.incrementFailedLoginAttempts();
+            if (user.getFailedLoginAttempts() >= 5) {
+                user.setLockoutEnd(java.time.LocalDateTime.now().plusMinutes(15));
+                log.warn("Account '{}' locked after {} failed login attempts", request.getUsername(), user.getFailedLoginAttempts());
+            }
+            userRepository.save(user);
+            throw new ValidationException("Invalid username or password");
+        }
+
+        // Successful login — reset failed attempts
+        user.resetFailedLoginAttempts();
+        user.setLockoutEnd(null);
+        user.setLastLogin(java.time.LocalDateTime.now());
+        userRepository.save(user);
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new ValidationException("User not found"));
 
         // If TOTP is enabled, return a challenge token instead of the full JWT
         if (user.isTotpEnabled()) {
