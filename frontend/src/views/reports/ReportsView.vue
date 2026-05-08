@@ -184,8 +184,51 @@ const generateMockData = (reportType: string) => {
   return results
 }
 
+const downloadingPdf = ref(false)
+
 const downloadReport = () => {
-  ElMessage.success('Report download started')
+  if (!reportData.value.length) {
+    ElMessage.warning('No data to download')
+    return
+  }
+  const cols = currentColumns.value
+  const header = cols.map(c => c.label).join(',')
+  const rows = reportData.value.map(row =>
+    cols.map(c => {
+      const v = row[c.prop]
+      if (v == null) return ''
+      const s = String(v)
+      return s.includes(',') ? `"${s}"` : s
+    }).join(',')
+  )
+  const csv = [header, ...rows].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${currentReport.value?.reportType ?? 'report'}-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('CSV download started')
+}
+
+const downloadCisPdf = async (returnId: string | number) => {
+  downloadingPdf.value = true
+  try {
+    const res = await api.cisReturns.downloadPdf(returnId)
+    const blob = new Blob([res.data], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `CIS300-return-${returnId}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('PDF download started')
+  } catch {
+    ElMessage.error('Failed to download PDF')
+  } finally {
+    downloadingPdf.value = false
+  }
 }
 </script>
 
@@ -320,11 +363,30 @@ const downloadReport = () => {
               :width="col.width"
             />
           </template>
+          <!-- PDF download column — CIS300 only -->
+          <el-table-column
+            v-if="currentReport?.reportType === 'cis_cis300'"
+            label="PDF"
+            width="90"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                link
+                type="primary"
+                size="small"
+                :loading="downloadingPdf"
+                @click.stop="downloadCisPdf(row.id)"
+              >
+                PDF
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
       <template #footer>
         <el-button @click="dialogVisible = false">Close</el-button>
-        <el-button type="primary" @click="downloadReport">Download CSV</el-button>
+        <el-button type="primary" plain @click="downloadReport">Download CSV</el-button>
       </template>
     </el-dialog>
   </div>
