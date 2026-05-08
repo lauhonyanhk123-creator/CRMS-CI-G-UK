@@ -12,9 +12,9 @@ spring:
     name: crms-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/crms
-    username: crms
-    password: ${DB_PASSWORD:}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/crms}
+    username: ${DB_USERNAME:crms}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:crms}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -250,7 +250,7 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   file:
-    name: ${LOG_FILE:/var/log/crms/application.log}
+    name: ${LOG_FILE:/app/logs/application.log}
     max-size: 100MB
     max-history: 30
 

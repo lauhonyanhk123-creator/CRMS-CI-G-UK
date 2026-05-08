@@ -48,8 +48,12 @@ public class AuthController {
     
     @PostMapping("/refresh")
     @Operation(summary = "Refresh token", description = "Refresh JWT token using refresh token")
-    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@RequestBody String refreshToken) {
-        AuthResponse response = authService.refreshToken(refreshToken.replace("\"", ""));
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@RequestBody Map<String, String> body) {
+        String refreshToken = body.get("refreshToken");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("refreshToken is required"));
+        }
+        AuthResponse response = authService.refreshToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     
@@ -82,6 +86,12 @@ public class AuthController {
             @RequestBody Map<String, String> body) {
         String challengeToken = body.get("challengeToken");
         String code = body.get("code");
+        if (challengeToken == null || challengeToken.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("challengeToken is required"));
+        }
+        if (code == null || code.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("code is required"));
+        }
         AuthResponse response = authService.completeTotpChallenge(challengeToken, code);
         return ResponseEntity.ok(ApiResponse.success(response));
     }

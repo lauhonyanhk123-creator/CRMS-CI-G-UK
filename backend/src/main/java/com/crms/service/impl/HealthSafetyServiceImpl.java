@@ -201,6 +201,173 @@ public class HealthSafetyServiceImpl implements HealthSafetyService {
         return IncidentReportResponse.fromEntity(incident);
     }
 
+    // ── List / Get / Update / Delete ─────────────────────────────────────────
+
+    @Override
+    public java.util.List<F10NotificationResponse> listF10() {
+        return f10NotificationRepository.findAll().stream()
+                .map(F10NotificationResponse::fromEntity)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public F10NotificationResponse getF10(Long id) {
+        F10Notification f10 = f10NotificationRepository.findById(id)
+                .orElseThrow(() -> new com.crms.exception.ResourceNotFoundException("F10Notification", id));
+        return F10NotificationResponse.fromEntity(f10);
+    }
+
+    @Override
+    @Transactional
+    public F10NotificationResponse updateF10(Long id, com.crms.dto.request.F10CreateRequest request) {
+        F10Notification f10 = f10NotificationRepository.findById(id)
+                .orElseThrow(() -> new com.crms.exception.ResourceNotFoundException("F10Notification", id));
+        if (request.getMoreThan30Days() != null) f10.setMoreThan30Days(request.getMoreThan30Days());
+        if (request.getMoreThan500PersonDays() != null) f10.setMoreThan500PersonDays(request.getMoreThan500PersonDays());
+        if (request.getStartDate() != null) f10.setConstructionStartDate(request.getStartDate());
+        if (request.getExpectedCompletionDate() != null) f10.setConstructionEndDate(request.getExpectedCompletionDate());
+        if (request.getIsActive() != null) f10.setIsActive(request.getIsActive());
+        f10 = f10NotificationRepository.save(f10);
+        return F10NotificationResponse.fromEntity(f10);
+    }
+
+    @Override
+    @Transactional
+    public void deleteF10(Long id) {
+        if (!f10NotificationRepository.existsById(id)) {
+            throw new com.crms.exception.ResourceNotFoundException("F10Notification", id);
+        }
+        f10NotificationRepository.deleteById(id);
+    }
+
+    @Override
+    public java.util.List<ConstructionPhasePlanResponse> listCPP() {
+        return cppRepository.findAll().stream()
+                .map(ConstructionPhasePlanResponse::fromEntity)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public ConstructionPhasePlanResponse getCPP(Long id) {
+        ConstructionPhasePlan cpp = cppRepository.findById(id)
+                .orElseThrow(() -> new com.crms.exception.ResourceNotFoundException("ConstructionPhasePlan", id));
+        return ConstructionPhasePlanResponse.fromEntity(cpp);
+    }
+
+    @Override
+    @Transactional
+    public ConstructionPhasePlanResponse updateCPP(Long id, com.crms.dto.request.CPPCreateRequest request) {
+        ConstructionPhasePlan cpp = cppRepository.findById(id)
+                .orElseThrow(() -> new com.crms.exception.ResourceNotFoundException("ConstructionPhasePlan", id));
+        if (request.getTitle() != null) cpp.setTitle(request.getTitle());
+        if (request.getScopeOfWork() != null) cpp.setDescription(request.getScopeOfWork());
+        if (request.getVersion() != null) cpp.setVersion(request.getVersion());
+        if (request.getStartDate() != null) cpp.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) cpp.setEndDate(request.getEndDate());
+        if (request.getIsActive() != null) cpp.setIsActive(request.getIsActive());
+        cpp = cppRepository.save(cpp);
+        return ConstructionPhasePlanResponse.fromEntity(cpp);
+    }
+
+    @Override
+    @Transactional
+    public void deleteCPP(Long id) {
+        if (!cppRepository.existsById(id)) {
+            throw new com.crms.exception.ResourceNotFoundException("ConstructionPhasePlan", id);
+        }
+        cppRepository.deleteById(id);
+    }
+
+    @Override
+    public java.util.List<RAMSDocumentResponse> listRAMS() {
+        return ramsRepository.findAll().stream()
+                .map(RAMSDocumentResponse::fromEntity)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public RAMSDocumentResponse updateRAMS(Long id, com.crms.dto.request.RAMSCreateRequest request) {
+        RAMSDocument rams = ramsRepository.findById(id)
+                .orElseThrow(() -> new com.crms.exception.ResourceNotFoundException("RAMSDocument", id));
+        if (request.getTitle() != null) rams.setTitle(request.getTitle());
+        if (request.getScopeOfWork() != null) rams.setDescription(request.getScopeOfWork());
+        if (request.getVersion() != null) rams.setVersion(request.getVersion());
+        if (request.getExpiryDate() != null) rams.setValidUntil(request.getExpiryDate());
+        if (request.getIsActive() != null) rams.setIsActive(request.getIsActive());
+        rams = ramsRepository.save(rams);
+        return RAMSDocumentResponse.fromEntity(rams);
+    }
+
+    @Override
+    @Transactional
+    public void deleteRAMS(Long id) {
+        if (!ramsRepository.existsById(id)) {
+            throw new com.crms.exception.ResourceNotFoundException("RAMSDocument", id);
+        }
+        ramsRepository.deleteById(id);
+    }
+
+    @Override
+    public java.util.List<PermitToDigResponse> listPermits() {
+        return permitToDigRepository.findAll().stream()
+                .map(PermitToDigResponse::fromEntity)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public PermitToDigResponse updatePermit(Long id, com.crms.dto.request.PermitToDigCreateRequest request) {
+        PermitToDig permit = permitToDigRepository.findById(id)
+                .orElseThrow(() -> new com.crms.exception.ResourceNotFoundException("PermitToDig", id));
+        if (request.getLocationDescription() != null) permit.setLocationDescription(request.getLocationDescription());
+        if (request.getNatureOfExcavation() != null) permit.setWorksDescription(request.getNatureOfExcavation());
+        if (request.getStartDate() != null) permit.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) permit.setEndDate(request.getEndDate());
+        permit = permitToDigRepository.save(permit);
+        return PermitToDigResponse.fromEntity(permit);
+    }
+
+    @Override
+    @Transactional
+    public void deletePermit(Long id) {
+        if (!permitToDigRepository.existsById(id)) {
+            throw new com.crms.exception.ResourceNotFoundException("PermitToDig", id);
+        }
+        permitToDigRepository.deleteById(id);
+    }
+
+    @Override
+    public java.util.List<IncidentReportResponse> listIncidents() {
+        return incidentReportRepository.findAll().stream()
+                .map(IncidentReportResponse::fromEntity)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public IncidentReportResponse updateIncident(Long id, com.crms.dto.request.IncidentCreateRequest request) {
+        IncidentReport incident = incidentReportRepository.findById(id)
+                .orElseThrow(() -> new com.crms.exception.ResourceNotFoundException("IncidentReport", id));
+        if (request.getDescription() != null) incident.setDescription(request.getDescription());
+        if (request.getLocation() != null) incident.setLocationDescription(request.getLocation());
+        if (request.getDateTimeOfIncident() != null) incident.setIncidentDate(request.getDateTimeOfIncident());
+        if (request.getIncidentType() != null) incident.setType(request.getIncidentType());
+        if (request.getSeverity() != null) incident.setSeverity(Severity.valueOf(request.getSeverity()));
+        if (request.getRidDORNotifiable() != null) incident.setRidDORNotifiable(request.getRidDORNotifiable());
+        incident = incidentReportRepository.save(incident);
+        return IncidentReportResponse.fromEntity(incident);
+    }
+
+    @Override
+    @Transactional
+    public void deleteIncident(Long id) {
+        if (!incidentReportRepository.existsById(id)) {
+            throw new com.crms.exception.ResourceNotFoundException("IncidentReport", id);
+        }
+        incidentReportRepository.deleteById(id);
+    }
+
     // Compatibility overloads for legacy Map-based callers/tests.
     @Transactional
     public java.util.Map<String, Object> createCPP(Long contractId, java.util.Map<String, Object> request) {

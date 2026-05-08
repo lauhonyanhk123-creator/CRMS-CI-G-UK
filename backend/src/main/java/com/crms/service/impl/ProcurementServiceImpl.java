@@ -34,6 +34,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -56,22 +57,20 @@ public class ProcurementServiceImpl implements ProcurementService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, sort));
 
+        boolean hasStatus = params.containsKey("status") && params.get("status") != null;
+        boolean hasSiteId = params.containsKey("siteId") && params.get("siteId") != null;
+
         Page<PurchaseRequisition> requisitionPage;
-        if (params.containsKey("status") && params.get("status") != null) {
+        if (hasStatus && hasSiteId) {
             PurchaseRequisitionStatus status = PurchaseRequisitionStatus.valueOf(params.get("status").toString());
-            requisitionPage = requisitionRepository.findAll(pageable);
-            // Filter by status in memory for simplicity
-            List<PurchaseRequisition> filtered = requisitionPage.getContent().stream()
-                    .filter(r -> r.getStatus() == status)
-                    .collect(Collectors.toList());
-            requisitionPage = new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
-        } else if (params.containsKey("siteId") && params.get("siteId") != null) {
-            requisitionPage = requisitionRepository.findAll(pageable);
             Long siteId = Long.parseLong(params.get("siteId").toString());
-            List<PurchaseRequisition> filtered = requisitionPage.getContent().stream()
-                    .filter(r -> r.getSite() != null && r.getSite().getId().equals(siteId))
-                    .collect(Collectors.toList());
-            requisitionPage = new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
+            requisitionPage = requisitionRepository.findByStatusAndSite_Id(status, siteId, pageable);
+        } else if (hasStatus) {
+            PurchaseRequisitionStatus status = PurchaseRequisitionStatus.valueOf(params.get("status").toString());
+            requisitionPage = requisitionRepository.findByStatus(status, pageable);
+        } else if (hasSiteId) {
+            Long siteId = Long.parseLong(params.get("siteId").toString());
+            requisitionPage = requisitionRepository.findBySite_Id(siteId, pageable);
         } else {
             requisitionPage = requisitionRepository.findAll(pageable);
         }
@@ -100,8 +99,8 @@ public class ProcurementServiceImpl implements ProcurementService {
         Site site = siteRepository.findById(req.getSiteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Site", req.getSiteId()));
 
-        User requestedBy = userRepository.findById(new java.util.UUID(0L, req.getRequestedById()))
-                .orElseThrow(() -> new ResourceNotFoundException("User", req.getRequestedById()));
+        User requestedBy = userRepository.findById(req.getRequestedById())
+                .orElseThrow(() -> new ResourceNotFoundException("User", req.getRequestedById().toString()));
 
         String requisitionRef = generateRequisitionRef();
 

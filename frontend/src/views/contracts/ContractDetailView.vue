@@ -189,7 +189,7 @@ const loadPayLessNotices = async () => {
   try {
     const response = await apiClient.get(`/contracts/${contractId.value}/pay-less-notices`)
     payLessNotices.value = response.data
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 </script>
 

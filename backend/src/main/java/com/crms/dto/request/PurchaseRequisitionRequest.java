@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -19,7 +20,7 @@ public class PurchaseRequisitionRequest {
     @NotNull(message = "Site ID is required")
     private Long siteId;
 
-    private Long requestedById;
+    private UUID requestedById;
     
     private Long contractId;
     

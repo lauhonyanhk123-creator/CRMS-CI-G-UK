@@ -966,17 +966,17 @@ export const api = {
 
   subcontractors: {
     getAll: (params?: { status?: string; cisStatus?: string; search?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: Subcontractor[]; total: number }>('/subcontractors', { params }),
-    getById: (id: string) => apiClient.get<Subcontractor>(`/subcontractors/${id}`),
-    create: (data: Partial<Subcontractor>) => apiClient.post<Subcontractor>('/subcontractors', data),
-    update: (id: string, data: Partial<Subcontractor>) => apiClient.put<Subcontractor>(`/subcontractors/${id}`, data),
-    delete: (id: string) => apiClient.delete(`/subcontractors/${id}`),
-    verify: (id: string) => apiClient.post<Subcontractor>(`/subcontractors/${id}/verify`)
+      apiClient.get<{ data: Subcontractor[]; total: number }>('/companies', { params: { ...params, type: 'SUBCONTRACTOR' } }),
+    getById: (id: string) => apiClient.get<Subcontractor>(`/companies/${id}`),
+    create: (data: Partial<Subcontractor>) => apiClient.post<Subcontractor>('/companies', { ...data, companyType: 'subcontractor' }),
+    update: (id: string, data: Partial<Subcontractor>) => apiClient.put<Subcontractor>(`/companies/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/companies/${id}`),
+    verify: (id: string) => apiClient.post<Subcontractor>(`/companies/${id}/verify-cis`)
   },
 
   cis: {
     submitCisReturn: (data: { subcontractorId: string }) =>
-      apiClient.post('/cis/submit-cis-return', data)
+      apiClient.post('/cis-returns', data)
   },
 
   cisReturns: {
@@ -1000,15 +1000,15 @@ export const api = {
 
   plant: {
     getAll: (params?: { status?: string; category?: string; siteId?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: PlantItem[]; total: number }>('/plant', { params }),
-    getById: (id: string) => apiClient.get<PlantItem>(`/plant/${id}`),
-    create: (data: Partial<PlantItem>) => apiClient.post<PlantItem>('/plant', data),
-    update: (id: string, data: Partial<PlantItem>) => apiClient.put<PlantItem>(`/plant/${id}`, data),
-    delete: (id: string) => apiClient.delete(`/plant/${id}`),
+      apiClient.get<{ data: PlantItem[]; total: number }>('/plant-items', { params }),
+    getById: (id: string) => apiClient.get<PlantItem>(`/plant-items/${id}`),
+    create: (data: Partial<PlantItem>) => apiClient.post<PlantItem>('/plant-items', data),
+    update: (id: string, data: Partial<PlantItem>) => apiClient.put<PlantItem>(`/plant-items/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/plant-items/${id}`),
     addLOLER: (id: string, data: { dueDate: string; certificateNumber?: string; notes?: string }) =>
-      apiClient.post(`/plant/${id}/loler`, data),
+      apiClient.post(`/plant-items/${id}/loler`, data),
     getPlantGantt: (params?: { startDate?: string; endDate?: string; siteId?: string }) =>
-      apiClient.get<{ allocations: SiteAllocation[] }>('/plant/gantt', { params })
+      apiClient.get<{ allocations: SiteAllocation[] }>('/plant-items/gantt', { params })
   },
 
   procurement: {
@@ -1061,11 +1061,11 @@ export const api = {
   healthSafety: {
     // F10 Notifications
     getF10Notifications: (params?: { siteId?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: HealthSafetyRecord[]; total: number }>('/healthsafety/f10', { params }),
-    getF10ById: (id: string) => apiClient.get<HealthSafetyRecord>(`/healthsafety/f10/${id}`),
-    createF10: (data: Partial<HealthSafetyRecord>) => apiClient.post<HealthSafetyRecord>('/healthsafety/f10', data),
-    updateF10: (id: string, data: Partial<HealthSafetyRecord>) => apiClient.put<HealthSafetyRecord>(`/healthsafety/f10/${id}`, data),
-    deleteF10: (id: string) => apiClient.delete(`/healthsafety/f10/${id}`),
+      apiClient.get<{ data: HealthSafetyRecord[]; total: number }>('/f10-notifications', { params }),
+    getF10ById: (id: string) => apiClient.get<HealthSafetyRecord>(`/f10-notifications/${id}`),
+    createF10: (data: Partial<HealthSafetyRecord>) => apiClient.post<HealthSafetyRecord>('/f10-notifications', data),
+    updateF10: (id: string, data: Partial<HealthSafetyRecord>) => apiClient.put<HealthSafetyRecord>(`/f10-notifications/${id}`, data),
+    deleteF10: (id: string) => apiClient.delete(`/f10-notifications/${id}`),
 
     // CPP (Construction Phase Plans)
     getCPPs: (params?: { siteId?: string; page?: number; limit?: number }) =>
@@ -1085,69 +1085,69 @@ export const api = {
 
     // Permit to Dig Workflow
     getPermits: (params?: { siteId?: string; status?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: PermitToDig[]; total: number }>('/healthsafety/permits', { params }),
-    getPermitById: (id: string) => apiClient.get<PermitToDig>(`/healthsafety/permits/${id}`),
-    createPermit: (data: Partial<PermitToDig>) => apiClient.post<PermitToDig>('/healthsafety/permits', data),
-    updatePermit: (id: string, data: Partial<PermitToDig>) => apiClient.put<PermitToDig>(`/healthsafety/permits/${id}`, data),
-    deletePermit: (id: string) => apiClient.delete(`/healthsafety/permits/${id}`),
+      apiClient.get<{ data: PermitToDig[]; total: number }>('/permits-to-dig', { params }),
+    getPermitById: (id: string) => apiClient.get<PermitToDig>(`/permits-to-dig/${id}`),
+    createPermit: (data: Partial<PermitToDig>) => apiClient.post<PermitToDig>('/permits-to-dig', data),
+    updatePermit: (id: string, data: Partial<PermitToDig>) => apiClient.put<PermitToDig>(`/permits-to-dig/${id}`, data),
+    deletePermit: (id: string) => apiClient.delete(`/permits-to-dig/${id}`),
     updatePermitStatus: (id: string, status: string) =>
-      apiClient.put<PermitToDig>(`/healthsafety/permits/${id}/status`, { status }),
+      apiClient.put<PermitToDig>(`/permits-to-dig/${id}/status`, { status }),
 
     // Incident Reporting
     getIncidents: (params?: { siteId?: string; severity?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: Incident[]; total: number }>('/healthsafety/incidents', { params }),
-    getIncidentById: (id: string) => apiClient.get<Incident>(`/healthsafety/incidents/${id}`),
-    createIncident: (data: Partial<Incident>) => apiClient.post<Incident>('/healthsafety/incidents', data),
-    updateIncident: (id: string, data: Partial<Incident>) => apiClient.put<Incident>(`/healthsafety/incidents/${id}`, data),
-    deleteIncident: (id: string) => apiClient.delete(`/healthsafety/incidents/${id}`)
+      apiClient.get<{ data: Incident[]; total: number }>('/incident-reports', { params }),
+    getIncidentById: (id: string) => apiClient.get<Incident>(`/incident-reports/${id}`),
+    createIncident: (data: Partial<Incident>) => apiClient.post<Incident>('/incident-reports', data),
+    updateIncident: (id: string, data: Partial<Incident>) => apiClient.put<Incident>(`/incident-reports/${id}`, data),
+    deleteIncident: (id: string) => apiClient.delete(`/incident-reports/${id}`)
   },
 
   adoption: {
     // Adoption Cases
     getAll: (params?: { status?: string; type?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: AdoptionCase[]; total: number }>('/adoption', { params }),
-    getById: (id: string) => apiClient.get<AdoptionCase>(`/adoption/${id}`),
-    create: (data: Partial<AdoptionCase>) => apiClient.post<AdoptionCase>('/adoption', data),
-    update: (id: string, data: Partial<AdoptionCase>) => apiClient.put<AdoptionCase>(`/adoption/${id}`, data),
-    delete: (id: string) => apiClient.delete(`/adoption/${id}`),
+      apiClient.get<{ data: AdoptionCase[]; total: number }>('/adoption-cases', { params }),
+    getById: (id: string) => apiClient.get<AdoptionCase>(`/adoption-cases/${id}`),
+    create: (data: Partial<AdoptionCase>) => apiClient.post<AdoptionCase>('/adoption-cases', data),
+    update: (id: string, data: Partial<AdoptionCase>) => apiClient.put<AdoptionCase>(`/adoption-cases/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/adoption-cases/${id}`),
 
     // Bonds
     getBonds: (params?: { caseId?: string; status?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: Bond[]; total: number }>('/adoption/bonds', { params }),
-    getBondById: (id: string) => apiClient.get<Bond>(`/adoption/bonds/${id}`),
-    createBond: (data: Partial<Bond>) => apiClient.post<Bond>('/adoption/bonds', data),
-    updateBond: (id: string, data: Partial<Bond>) => apiClient.put<Bond>(`/adoption/bonds/${id}`, data),
-    deleteBond: (id: string) => apiClient.delete(`/adoption/bonds/${id}`),
+      apiClient.get<{ data: Bond[]; total: number }>('/bonds', { params }),
+    getBondById: (id: string) => apiClient.get<Bond>(`/bonds/${id}`),
+    createBond: (data: Partial<Bond>) => apiClient.post<Bond>('/bonds', data),
+    updateBond: (id: string, data: Partial<Bond>) => apiClient.put<Bond>(`/bonds/${id}`, data),
+    deleteBond: (id: string) => apiClient.delete(`/bonds/${id}`),
     addBondReduction: (bondId: string, data: { reductionDate: string; reductionAmount: number; reason: string; approvedBy?: string }) =>
-      apiClient.post<BondReduction>(`/adoption/bonds/${bondId}/reductions`, data),
+      apiClient.post<BondReduction>(`/bonds/${bondId}/reductions`, data),
     releaseBond: (bondId: string, releaseDate: string) =>
-      apiClient.post<Bond>(`/adoption/bonds/${bondId}/release`, { releaseDate }),
+      apiClient.post<Bond>(`/bonds/${bondId}/release`, { releaseDate }),
     callBond: (bondId: string, reason: string) =>
-      apiClient.post<Bond>(`/adoption/bonds/${bondId}/call`, { reason }),
+      apiClient.post<Bond>(`/bonds/${bondId}/call`, { reason }),
 
     // Commuted Sums
     getCommutedSums: (params?: { caseId?: string; status?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: CommutedSum[]; total: number }>('/adoption/commuted-sums', { params }),
-    getCommutedSumById: (id: string) => apiClient.get<CommutedSum>(`/adoption/commuted-sums/${id}`),
-    createCommutedSum: (data: Partial<CommutedSum>) => apiClient.post<CommutedSum>('/adoption/commuted-sums', data),
-    updateCommutedSum: (id: string, data: Partial<CommutedSum>) => apiClient.put<CommutedSum>(`/adoption/commuted-sums/${id}`, data),
-    deleteCommutedSum: (id: string) => apiClient.delete(`/adoption/commuted-sums/${id}`),
+      apiClient.get<{ data: CommutedSum[]; total: number }>('/commuted-sums', { params }),
+    getCommutedSumById: (id: string) => apiClient.get<CommutedSum>(`/commuted-sums/${id}`),
+    createCommutedSum: (data: Partial<CommutedSum>) => apiClient.post<CommutedSum>('/commuted-sums', data),
+    updateCommutedSum: (id: string, data: Partial<CommutedSum>) => apiClient.put<CommutedSum>(`/commuted-sums/${id}`, data),
+    deleteCommutedSum: (id: string) => apiClient.delete(`/commuted-sums/${id}`),
     addMaintenanceSchedule: (commutedSumId: string, data: { year: number; maintenanceCost: number; notes?: string }) =>
-      apiClient.post<MaintenanceSchedule>(`/adoption/commuted-sums/${commutedSumId}/maintenance-schedule`, data),
+      apiClient.post<MaintenanceSchedule>(`/commuted-sums/${commutedSumId}/maintenance-schedule`, data),
     updateMaintenanceSchedule: (commutedSumId: string, scheduleId: string, data: Partial<MaintenanceSchedule>) =>
-      apiClient.put<MaintenanceSchedule>(`/adoption/commuted-sums/${commutedSumId}/maintenance-schedule/${scheduleId}`, data),
+      apiClient.put<MaintenanceSchedule>(`/commuted-sums/${commutedSumId}/maintenance-schedule/${scheduleId}`, data),
 
     // Snagging
     getSnaggingItems: (params?: { caseId?: string; status?: string; category?: string; priority?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: SnaggingItem[]; total: number }>('/adoption/snagging', { params }),
-    getSnaggingItemById: (id: string) => apiClient.get<SnaggingItem>(`/adoption/snagging/${id}`),
-    createSnaggingItem: (data: Partial<SnaggingItem>) => apiClient.post<SnaggingItem>('/adoption/snagging', data),
-    updateSnaggingItem: (id: string, data: Partial<SnaggingItem>) => apiClient.put<SnaggingItem>(`/adoption/snagging/${id}`, data),
-    deleteSnaggingItem: (id: string) => apiClient.delete(`/adoption/snagging/${id}`),
+      apiClient.get<{ data: SnaggingItem[]; total: number }>('/snagging-items', { params }),
+    getSnaggingItemById: (id: string) => apiClient.get<SnaggingItem>(`/snagging-items/${id}`),
+    createSnaggingItem: (data: Partial<SnaggingItem>) => apiClient.post<SnaggingItem>('/snagging-items', data),
+    updateSnaggingItem: (id: string, data: Partial<SnaggingItem>) => apiClient.put<SnaggingItem>(`/snagging-items/${id}`, data),
+    deleteSnaggingItem: (id: string) => apiClient.delete(`/snagging-items/${id}`),
     updateSnaggingStatus: (id: string, status: string) =>
-      apiClient.put<SnaggingItem>(`/adoption/snagging/${id}/status`, { status }),
+      apiClient.put<SnaggingItem>(`/snagging-items/${id}/status`, { status }),
     addSnaggingInspection: (itemId: string, data: { inspectionDate: string; inspectorName: string; result: string; comments?: string; reinspectionRequired: boolean; reinspectionDate?: string }) =>
-      apiClient.post<SnaggingInspection>(`/adoption/snagging/${itemId}/inspections`, data)
+      apiClient.post<SnaggingInspection>(`/snagging-items/${itemId}/inspections`, data)
   },
 
   quality: {
@@ -1203,11 +1203,6 @@ export const api = {
   },
 
   admin: {
-    getUsers: (params?: { role?: string; status?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: User[]; total: number }>('/admin/users', { params }),
-    createUser: (data: Partial<User>) => apiClient.post<User>('/admin/users', data),
-    updateUser: (id: string, data: Partial<User>) => apiClient.put<User>(`/admin/users/${id}`, data),
-    deleteUser: (id: string) => apiClient.delete(`/admin/users/${id}`),
     getRoles: () => apiClient.get('/admin/roles'),
     getBackupStatus: () => apiClient.get('/admin/backup/status'),
     triggerBackup: () => apiClient.post('/admin/backup/trigger'),
@@ -1252,11 +1247,17 @@ export const api = {
   },
 
   wip: {
-    getAll: (params?: { startDate?: string; endDate?: string; contractId?: string; status?: string; operativeId?: string; page?: number; limit?: number }) =>
-      apiClient.get<{ data: WipEntry[]; total: number }>('/wip', { params }),
-    getById: (id: string) => apiClient.get<WipEntry>(`/wip/${id}`),
-    create: (data: Partial<WipEntry>) => apiClient.post<WipEntry>('/wip', data),
-    update: (id: string, data: Partial<WipEntry>) => apiClient.put<WipEntry>(`/wip/${id}`, data),
+    generate: (contractId: string) =>
+      apiClient.post<WipEntry>(`/wip/generate/${contractId}`),
+    getByContract: (contractId: string) =>
+      apiClient.get<WipEntry[]>(`/wip/contract/${contractId}`),
+    // The following endpoints do not exist on the backend; kept as stubs to avoid breaking imports
+    getAll: (_params?: { startDate?: string; endDate?: string; contractId?: string; status?: string; operativeId?: string; page?: number; limit?: number }): Promise<{ data: { data: WipEntry[]; total: number } }> =>
+      Promise.reject(new Error('wip.getAll is not supported; use wip.getByContract')),
+    create: (_data: Partial<WipEntry>): Promise<{ data: WipEntry }> =>
+      Promise.reject(new Error('wip.create is not supported; use wip.generate')),
+    update: (_id: string, _data: Partial<WipEntry>): Promise<{ data: WipEntry }> =>
+      Promise.reject(new Error('wip.update is not supported')),
     delete: (id: string) => apiClient.delete(`/wip/${id}`)
   },
 
@@ -1269,6 +1270,14 @@ export const api = {
       apiClient.put<RetentionLedgerEntry>(`/contracts/${contractId}/retention-ledger/${id}`, data),
     delete: (contractId: string, id: string) =>
       apiClient.delete(`/contracts/${contractId}/retention-ledger/${id}`)
+  },
+
+  cdmRegister: {
+    getAll: (params?: any) => apiClient.get('/cdm-register', { params }),
+    getById: (id: number) => apiClient.get(`/cdm-register/${id}`),
+    create: (data: any) => apiClient.post('/cdm-register', data),
+    update: (id: number, data: any) => apiClient.put(`/cdm-register/${id}`, data),
+    delete: (id: number) => apiClient.delete(`/cdm-register/${id}`),
   },
 
 }

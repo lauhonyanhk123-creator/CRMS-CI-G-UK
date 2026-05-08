@@ -21,6 +21,7 @@ public class LicenceController {
     private final LicenceService licenceService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(
         summary = "Get licence status",
         description = "Returns the current tier, user counts, and maintenance expiry. Accessible to all authenticated users; detailed installation ID restricted to admins."
@@ -28,5 +29,16 @@ public class LicenceController {
     public ResponseEntity<ApiResponse<LicenceStatus>> getLicenceStatus() {
         LicenceStatus status = licenceService.currentStatus();
         return ResponseEntity.ok(ApiResponse.success(status));
+    }
+
+    @GetMapping("/installation-id")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Get installation ID",
+        description = "Returns the raw installation ID. Admin only."
+    )
+    public ResponseEntity<ApiResponse<String>> getInstallationId() {
+        LicenceStatus status = licenceService.currentStatus();
+        return ResponseEntity.ok(ApiResponse.success(status.getInstallationId()));
     }
 }

@@ -204,7 +204,7 @@ const loadCompanies = async () => {
   try {
     const res = await api.companies.getAll({ limit: 500 })
     companies.value = res.data.data
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const loadAllData = () => {
@@ -332,7 +332,7 @@ const deleteCase = async (id: string) => {
     await api.adoption.delete(id)
     ElMessage.success('Adoption case deleted')
     loadCases()
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 // CRUD Operations - Bonds
@@ -376,7 +376,7 @@ const deleteBond = async (id: string) => {
     await api.adoption.deleteBond(id)
     ElMessage.success('Bond deleted')
     loadBonds()
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const releaseBond = async (id: string) => {
@@ -385,7 +385,7 @@ const releaseBond = async (id: string) => {
     await api.adoption.releaseBond(id, dayjs().format('YYYY-MM-DD'))
     ElMessage.success('Bond released')
     loadBonds()
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const callBond = async (id: string) => {
@@ -399,7 +399,7 @@ const callBond = async (id: string) => {
       ElMessage.success('Bond called')
       loadBonds()
     })
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 // CRUD Operations - Commuted Sums
@@ -442,7 +442,7 @@ const deleteCommutedSum = async (id: string) => {
     await api.adoption.deleteCommutedSum(id)
     ElMessage.success('Commuted sum deleted')
     loadCommutedSums()
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 // CRUD Operations - Snagging
@@ -486,7 +486,7 @@ const deleteSnagging = async (id: string) => {
     await api.adoption.deleteSnaggingItem(id)
     ElMessage.success('Snagging item deleted')
     loadSnaggingItems()
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const updateSnaggingStatus = async (id: string, status: string) => {

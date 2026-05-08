@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
 import api, { type Tender, type Company } from '@/services/api'
@@ -98,8 +98,18 @@ const winTender = async (tender: Tender) => {
 }
 
 const loseTender = async (tender: Tender) => {
-  const reason = prompt('Enter reason for losing:')
-  if (!reason) return
+  let reason: string
+  try {
+    const { value } = await ElMessageBox.prompt('Enter reason for losing:', 'Mark as Lost', {
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      inputPattern: /.+/,
+      inputErrorMessage: 'Please enter a reason'
+    })
+    reason = value
+  } catch {
+    return // cancelled
+  }
   try {
     await api.tenders.lose(tender.id, reason)
     ElMessage.info('Tender marked as lost')

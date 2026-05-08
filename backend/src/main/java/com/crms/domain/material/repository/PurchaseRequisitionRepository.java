@@ -26,4 +26,10 @@ public interface PurchaseRequisitionRepository extends JpaRepository<PurchaseReq
     Optional<PurchaseRequisition> findByIdWithLines(@Param("id") Long id);
 
     boolean existsByRequisitionRef(String requisitionRef);
+
+    Page<PurchaseRequisition> findByStatus(PurchaseRequisitionStatus status, Pageable pageable);
+
+    Page<PurchaseRequisition> findBySite_Id(Long siteId, Pageable pageable);
+
+    Page<PurchaseRequisition> findByStatusAndSite_Id(PurchaseRequisitionStatus status, Long siteId, Pageable pageable);
 }

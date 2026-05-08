@@ -104,14 +104,14 @@ const loadSites = async () => {
   try {
     const response = await api.sites.getAll({ limit: 100 })
     sites.value = response.data.data
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const loadSuppliers = async () => {
   try {
     const response = await api.companies.getAll({ type: 'supplier', limit: 100 })
     suppliers.value = response.data.data
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 const handleTabChange = (tab: string | number) => {
@@ -206,7 +206,7 @@ const handleDeleteReq = async (row: Requisition) => {
     // Note: Delete API not available in current api.ts, just show success for demo
     ElMessage.success('Requisition deleted')
     loadRequisitions()
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 // PO CRUD
@@ -299,7 +299,7 @@ const handleDeletePO = async (row: PurchaseOrder) => {
     })
     ElMessage.success('Purchase Order deleted')
     loadPurchaseOrders()
-  } catch {}
+  } catch (e) { console.error(e) }
 }
 
 // Item management helpers

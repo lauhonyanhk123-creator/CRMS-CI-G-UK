@@ -150,6 +150,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, title: 'Health & Safety' }
   },
   {
+    path: '/health-safety/cdm-register',
+    name: 'CDMRegister',
+    component: () => import('@/views/health-safety/CDMRegisterView.vue'),
+    meta: { requiresAuth: true, title: 'CDM Register' }
+  },
+  {
     path: '/adoption',
     name: 'Adoption',
     component: AdoptionView,
