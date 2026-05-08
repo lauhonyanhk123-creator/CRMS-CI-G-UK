@@ -73,4 +73,17 @@ public interface ApplicationForPaymentRepository extends JpaRepository<Applicati
             @Param("companyId") Long companyId,
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
+
+    /**
+     * Fetch applications relevant to a cashflow window: PAID apps with paidDate in range,
+     * and APPROVED/SUBMITTED apps with dueDate in range.
+     */
+    @Query("""
+            SELECT a FROM ApplicationForPayment a
+            WHERE (a.status = 'PAID' AND a.paidDate >= :from AND a.paidDate <= :to)
+               OR (a.status IN ('APPROVED', 'SUBMITTED') AND a.dueDate >= :from AND a.dueDate <= :to)
+            """)
+    List<ApplicationForPayment> findCashflowRelevantByDateRange(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 }
