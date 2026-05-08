@@ -26,4 +26,14 @@ public interface CISReturnRepository extends JpaRepository<CISReturn, Long> {
 
     @Query("SELECT c FROM CISReturn c WHERE c.taxMonth = :taxMonth AND c.status != 'DRAFT'")
     Optional<CISReturn> findSubmittedByTaxMonth(@Param("taxMonth") String taxMonth);
+
+    @Query("""
+            SELECT COALESCE(SUM(c.totalDeduction), 0)
+            FROM CISReturn c
+            WHERE c.submissionDate >= :from
+              AND c.submissionDate <= :to
+            """)
+    java.math.BigDecimal sumTotalDeductionBySubmissionDateBetween(
+            @Param("from") java.time.LocalDate from,
+            @Param("to") java.time.LocalDate to);
 }
