@@ -16,6 +16,8 @@ const site = ref<Site | null>(null)
 const operatives = ref<Operative[]>([])
 const plantItems = ref<PlantItem[]>([])
 const documents = ref<Document[]>([])
+const activityLog = ref<any[]>([])
+const activityLoading = ref(false)
 
 onMounted(() => loadData())
 
@@ -34,7 +36,22 @@ const loadData = async () => {
     plantItems.value = plantRes.data.data || []
     documents.value = docsRes.data.data || []
   } catch { ElMessage.error('Failed to load site') } finally { loading.value = false }
+  loadActivityLog()
 }
+
+const loadActivityLog = async () => {
+  activityLoading.value = true
+  try {
+    const res = await api.auditLog.getAll({ entityType: 'SITE', entityId: siteId.value, limit: 50 })
+    activityLog.value = res.data.data || []
+  } catch {
+    activityLog.value = []
+  } finally {
+    activityLoading.value = false
+  }
+}
+
+const formatDateTime = (ts?: string) => ts ? new Date(ts).toLocaleString() : '—'
 
 const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString() : '—'
 
@@ -199,21 +216,20 @@ const downloadDocument = async (doc: Document) => {
       </el-tab-pane>
 
       <el-tab-pane label="Activity Log">
-        <el-card shadow="never">
-          <el-empty description="Activity log feature coming soon">
-            <template #image>
-              <el-icon :size="64" color="#909399"><Location /></el-icon>
-            </template>
-            <template #description>
-              <p>Track all site activity including:</p>
-              <ul style="text-align: left; margin-top: 8px; color: #606266;">
-                <li>Operative check-ins/out</li>
-                <li>Plant deliveries and removals</li>
-                <li>Document uploads</li>
-                <li>Status changes</li>
-              </ul>
-            </template>
-          </el-empty>
+        <el-card shadow="never" v-loading="activityLoading">
+          <el-empty v-if="activityLog.length === 0 && !activityLoading" description="No activity recorded for this site" />
+          <el-timeline v-else>
+            <el-timeline-item
+              v-for="entry in activityLog"
+              :key="entry.id"
+              :timestamp="formatDateTime(entry.createdAt ?? entry.timestamp)"
+              placement="top"
+            >
+              <strong>{{ entry.action }}</strong>
+              <span v-if="entry.username" style="margin-left: 8px; color: #606266;">by {{ entry.username }}</span>
+              <p v-if="entry.details" style="margin: 4px 0 0; color: #909399; font-size: 12px;">{{ entry.details }}</p>
+            </el-timeline-item>
+          </el-timeline>
         </el-card>
       </el-tab-pane>
     </el-tabs>

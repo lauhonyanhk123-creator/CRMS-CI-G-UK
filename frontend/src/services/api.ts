@@ -1240,7 +1240,8 @@ export const api = {
       endDate?: string;
       userId?: string;
       action?: string;
-      entityType?: string
+      entityType?: string;
+      entityId?: string;
     }) => apiClient.get<{ data: any[]; total: number }>('/audit-logs', { params })
   },
 
