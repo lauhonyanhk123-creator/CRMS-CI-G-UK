@@ -35,6 +35,7 @@ import com.crms.domain.operative.enums.OperativeStatus;
 import com.crms.domain.operative.repository.CardRepository;
 import com.crms.domain.operative.repository.OperativeRepository;
 import com.crms.domain.operative.repository.QualificationRepository;
+import com.crms.domain.operative.repository.TimesheetRepository;
 import com.crms.domain.plant.entity.LOLERExamination;
 import com.crms.domain.plant.entity.PlantAllocation;
 import com.crms.domain.plant.entity.PlantItem;
@@ -95,6 +96,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final CommutedSumMovementRepository commutedSumRepository;
     private final PlantAllocationRepository plantAllocationRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
+    private final TimesheetRepository timesheetRepository;
     private final DeliveryNoteRepository deliveryNoteRepository;
     private final ConcreteTicketRepository concreteTicketRepository;
     private final MuckawayTicketRepository muckawayTicketRepository;
@@ -595,7 +597,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(contract -> {
                     BigDecimal valueToDate = applicationRepository.sumGrossValueByContractId(contract.getId());
                     if (valueToDate == null) valueToDate = BigDecimal.ZERO;
-                    BigDecimal costToDate = BigDecimal.ZERO; // cost tracking not yet implemented
+                    BigDecimal costToDate = calculateContractCostToDate(contract);
                     BigDecimal grossMargin = valueToDate.subtract(costToDate);
                     BigDecimal marginPercent = BigDecimal.ZERO;
                     if (valueToDate.compareTo(BigDecimal.ZERO) > 0) {
@@ -613,6 +615,39 @@ public class DashboardServiceImpl implements DashboardService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    private BigDecimal calculateContractCostToDate(com.crms.domain.contract.entity.Contract contract) {
+        if (contract.getSite() == null) return BigDecimal.ZERO;
+        Long siteId = contract.getSite().getId();
+        LocalDate start = contract.getStartDate() != null ? contract.getStartDate() : LocalDate.of(2000, 1, 1);
+        LocalDate today = LocalDate.now();
+        BigDecimal labour = BigDecimal.ZERO;
+        BigDecimal materials = BigDecimal.ZERO;
+        BigDecimal plant = BigDecimal.ZERO;
+        try {
+            BigDecimal w = timesheetRepository.calculateTotalWagesBySiteAndPeriod(siteId, start, today);
+            if (w != null) labour = w;
+        } catch (Exception ignored) {}
+        try {
+            BigDecimal m = purchaseOrderRepository.sumReceivedNetValueBySiteAndDateRange(siteId, start, today);
+            if (m != null) materials = m;
+        } catch (Exception ignored) {}
+        try {
+            for (com.crms.domain.plant.entity.PlantAllocation alloc :
+                    plantAllocationRepository.findBySiteAndDateRangeWithPlant(siteId, start, today)) {
+                if (alloc.getPlant() == null || alloc.getPlant().getDailyHireRate() == null) continue;
+                LocalDate allocStart = alloc.getStartDate() != null && alloc.getStartDate().isAfter(start)
+                        ? alloc.getStartDate() : start;
+                LocalDate allocEnd = alloc.getEndDate() == null || alloc.getEndDate().isAfter(today)
+                        ? today : alloc.getEndDate();
+                if (!allocStart.isAfter(allocEnd)) {
+                    long days = java.time.temporal.ChronoUnit.DAYS.between(allocStart, allocEnd) + 1;
+                    plant = plant.add(alloc.getPlant().getDailyHireRate().multiply(BigDecimal.valueOf(days)));
+                }
+            }
+        } catch (Exception ignored) {}
+        return labour.add(materials).add(plant);
     }
 
     private List<DashboardStats.CashflowItem> calculateCashflowForecast() {

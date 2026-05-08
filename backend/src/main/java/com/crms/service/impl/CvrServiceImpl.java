@@ -7,6 +7,10 @@ import com.crms.domain.contract.enums.ContractStatus;
 import com.crms.domain.contract.repository.*;
 import com.crms.domain.material.entity.MuckawayTicket;
 import com.crms.domain.material.repository.MuckawayTicketRepository;
+import com.crms.domain.material.repository.PurchaseOrderRepository;
+import com.crms.domain.operative.repository.TimesheetRepository;
+import com.crms.domain.plant.entity.PlantAllocation;
+import com.crms.domain.plant.repository.PlantAllocationRepository;
 import com.crms.dto.response.CVRReport;
 import com.crms.dto.response.CVRItem;
 import com.crms.repository.BCISIndexRepository;
@@ -64,6 +68,9 @@ public class CvrServiceImpl implements CvrService {
     private final RetentionMovementRepository retentionMovementRepository;
     private final BCISIndexRepository bcisIndexRepository;
     private final MuckawayTicketRepository muckawayTicketRepository;
+    private final TimesheetRepository timesheetRepository;
+    private final PurchaseOrderRepository purchaseOrderRepository;
+    private final PlantAllocationRepository plantAllocationRepository;
 
     // BCIS Series 3 = All-in Materials Index (used for Schedule R indexation)
     private static final int BCIS_MATERIALS_SERIES = 3;
@@ -460,18 +467,73 @@ public class CvrServiceImpl implements CvrService {
      * Returns: [total, plant, materials, labour, subcontract, dayworks, disallowed]
      */
     private BigDecimal[] calculateCostsByCategory(Long contractId, LocalDate valuationDate) {
-        BigDecimal totalValue = calculateGrossValue(contractId, valuationDate);
+        Contract contract = contractRepository.findById(contractId).orElse(null);
+        Long siteId = (contract != null && contract.getSite() != null) ? contract.getSite().getId() : null;
+        LocalDate contractStart = (contract != null && contract.getStartDate() != null)
+                ? contract.getStartDate() : LocalDate.of(2000, 1, 1);
 
-        BigDecimal plant = totalValue.multiply(new BigDecimal("0.25"));
-        BigDecimal materials = totalValue.multiply(new BigDecimal("0.35"));
-        BigDecimal labour = totalValue.multiply(new BigDecimal("0.20"));
+        // --- Labour: real wages from timesheets ---
+        BigDecimal labour = BigDecimal.ZERO;
+        if (siteId != null) {
+            try {
+                BigDecimal wages = timesheetRepository.calculateTotalWagesBySiteAndPeriod(
+                        siteId, contractStart, valuationDate);
+                if (wages != null) labour = wages;
+            } catch (Exception e) {
+                log.warn("Could not calculate labour costs for site {}: {}", siteId, e.getMessage());
+            }
+        }
+
+        // --- Materials: sum of received purchase order net values ---
+        BigDecimal materials = BigDecimal.ZERO;
+        if (siteId != null) {
+            try {
+                BigDecimal poValue = purchaseOrderRepository.sumReceivedNetValueBySiteAndDateRange(
+                        siteId, contractStart, valuationDate);
+                if (poValue != null) materials = poValue;
+            } catch (Exception e) {
+                log.warn("Could not calculate materials costs for site {}: {}", siteId, e.getMessage());
+            }
+        }
+
+        // --- Plant: daily hire rate × allocated days within contract period ---
+        BigDecimal plant = BigDecimal.ZERO;
+        if (siteId != null) {
+            try {
+                List<PlantAllocation> allocations = plantAllocationRepository
+                        .findBySiteAndDateRangeWithPlant(siteId, contractStart, valuationDate);
+                for (PlantAllocation alloc : allocations) {
+                    if (alloc.getPlant() == null || alloc.getPlant().getDailyHireRate() == null) continue;
+                    LocalDate allocStart = alloc.getStartDate() != null && alloc.getStartDate().isAfter(contractStart)
+                            ? alloc.getStartDate() : contractStart;
+                    LocalDate allocEnd = alloc.getEndDate() == null || alloc.getEndDate().isAfter(valuationDate)
+                            ? valuationDate : alloc.getEndDate();
+                    if (!allocStart.isAfter(allocEnd)) {
+                        long days = java.time.temporal.ChronoUnit.DAYS.between(allocStart, allocEnd) + 1;
+                        plant = plant.add(alloc.getPlant().getDailyHireRate().multiply(BigDecimal.valueOf(days)));
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Could not calculate plant costs for site {}: {}", siteId, e.getMessage());
+            }
+        }
+
+        // Subcontract: fallback to 15% of gross value (no subcontract AFP cost model yet)
+        BigDecimal totalValue = calculateGrossValue(contractId, valuationDate);
         BigDecimal subcontract = totalValue.multiply(new BigDecimal("0.15"));
-        BigDecimal dayworks = BigDecimal.ZERO;
-        BigDecimal disallowed = BigDecimal.ZERO;
+
+        // If all real values are zero (no data yet), fall back to full percentage model
+        boolean hasRealData = labour.compareTo(BigDecimal.ZERO) > 0
+                || materials.compareTo(BigDecimal.ZERO) > 0
+                || plant.compareTo(BigDecimal.ZERO) > 0;
+        if (!hasRealData) {
+            plant = totalValue.multiply(new BigDecimal("0.25"));
+            materials = totalValue.multiply(new BigDecimal("0.35"));
+            labour = totalValue.multiply(new BigDecimal("0.20"));
+        }
 
         BigDecimal total = plant.add(materials).add(labour).add(subcontract);
-
-        return new BigDecimal[]{total, plant, materials, labour, subcontract, dayworks, disallowed};
+        return new BigDecimal[]{total, plant, materials, labour, subcontract, BigDecimal.ZERO, BigDecimal.ZERO};
     }
 
     /**
