@@ -32,4 +32,13 @@ public interface PlantAllocationRepository extends JpaRepository<PlantAllocation
             @Param("plantId") Long plantId,
             @Param("fromDate") LocalDate from,
             @Param("toDate") LocalDate to);
+
+    @Query("SELECT p FROM PlantAllocation p LEFT JOIN FETCH p.plant " +
+           "WHERE p.site.id = :siteId " +
+           "AND p.startDate <= :toDate " +
+           "AND (p.endDate IS NULL OR p.endDate >= :fromDate)")
+    List<PlantAllocation> findBySiteAndDateRangeWithPlant(
+            @Param("siteId") Long siteId,
+            @Param("fromDate") LocalDate from,
+            @Param("toDate") LocalDate to);
 }

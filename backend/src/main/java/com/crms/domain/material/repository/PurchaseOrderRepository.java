@@ -32,4 +32,17 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     Optional<BigDecimal> sumReceivedValueBySupplierId(@Param("supplierId") Long supplierId);
 
     boolean existsByPurchaseOrderRef(String purchaseOrderRef);
+
+    @Query("""
+            SELECT COALESCE(SUM(p.netValue), 0)
+            FROM PurchaseOrder p
+            WHERE p.site.id = :siteId
+              AND p.status IN ('RECEIVED', 'PARTIALLY_RECEIVED')
+              AND p.deliveryDate >= :from
+              AND p.deliveryDate <= :to
+            """)
+    BigDecimal sumReceivedNetValueBySiteAndDateRange(
+            @Param("siteId") Long siteId,
+            @Param("from") java.time.LocalDate from,
+            @Param("to") java.time.LocalDate to);
 }
