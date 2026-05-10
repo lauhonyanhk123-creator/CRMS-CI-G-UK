@@ -254,8 +254,8 @@ onUnmounted(() => {
         <div class="header-left">
           <el-icon 
             class="collapse-btn" 
-            @click="toggleSidebar"
             size="20"
+            @click="toggleSidebar"
           >
             <Fold v-if="!isCollapsed" />
             <Expand v-else />
@@ -272,7 +272,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Global Search -->
-        <div class="global-search" v-click-outside="closeSearch">
+        <div v-click-outside="closeSearch" class="global-search">
           <el-input
             v-model="searchQuery"
             placeholder="Search contracts, operatives, sites..."

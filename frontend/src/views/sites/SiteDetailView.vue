@@ -83,7 +83,7 @@ const downloadDocument = async (doc: Document) => {
 </script>
 
 <template>
-  <div class="site-detail-view" v-if="site">
+  <div v-if="site" class="site-detail-view">
     <PageHeader 
       :title="site.name" 
       :breadcrumbs="[
@@ -216,7 +216,7 @@ const downloadDocument = async (doc: Document) => {
       </el-tab-pane>
 
       <el-tab-pane label="Activity Log">
-        <el-card shadow="never" v-loading="activityLoading">
+        <el-card v-loading="activityLoading" shadow="never">
           <el-empty v-if="activityLog.length === 0 && !activityLoading" description="No activity recorded for this site" />
           <el-timeline v-else>
             <el-timeline-item

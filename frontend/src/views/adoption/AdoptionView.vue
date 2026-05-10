@@ -559,8 +559,8 @@ const getSnaggingStatusColor = (status: string): TagType => {
     </PageHeader>
 
     <!-- Alert Cards -->
-    <el-row :gutter="16" class="alert-row" v-if="bondAlerts.length || snaggingAlerts.length">
-      <el-col :span="12" v-if="bondAlerts.length">
+    <el-row v-if="bondAlerts.length || snaggingAlerts.length" :gutter="16" class="alert-row">
+      <el-col v-if="bondAlerts.length" :span="12">
         <el-card shadow="never" class="alert-card bond-alert">
           <template #header>
             <div class="card-header">
@@ -573,7 +573,7 @@ const getSnaggingStatusColor = (status: string): TagType => {
           </div>
         </el-card>
       </el-col>
-      <el-col :span="12" v-if="snaggingAlerts.length">
+      <el-col v-if="snaggingAlerts.length" :span="12">
         <el-card shadow="never" class="alert-card snagging-alert">
           <template #header>
             <div class="card-header">

@@ -56,7 +56,7 @@ const handleBack = () => {
   <div class="page-header">
     <div class="header-content">
       <div class="header-left">
-        <el-button v-if="showBack" :icon="ArrowLeft" text @click="handleBack" class="back-button" />
+        <el-button v-if="showBack" :icon="ArrowLeft" text class="back-button" @click="handleBack" />
         <div class="breadcrumb-wrapper">
           <el-breadcrumb separator="/">
             <el-breadcrumb-item v-for="crumb in allBreadcrumbs" :key="crumb.title">

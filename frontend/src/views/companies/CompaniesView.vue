@@ -444,7 +444,7 @@ const getCompanyTypeLabel = (type: string) => {
           </el-col>
         </el-row>
         
-        <el-form-item label="CIS Status" v-if="form.companyType === 'subcontractor'">
+        <el-form-item v-if="form.companyType === 'subcontractor'" label="CIS Status">
           <el-select v-model="form.cisStatus" placeholder="Select CIS status">
             <el-option
               v-for="status in cisStatuses"

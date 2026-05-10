@@ -354,7 +354,7 @@ const getClientName = (clientId: string) => {
 </script>
 
 <template>
-  <div class="project-detail-view" v-if="project">
+  <div v-if="project" class="project-detail-view">
     <PageHeader 
       :title="project.name" 
       :breadcrumbs="[
@@ -390,7 +390,7 @@ const getClientName = (clientId: string) => {
             <el-button type="primary" @click="openAddContract">Add Contract</el-button>
           </div>
 
-          <el-table :data="contracts" stripe v-loading="loading">
+          <el-table v-loading="loading" :data="contracts" stripe>
             <el-table-column prop="reference" label="Reference" width="120" />
             <el-table-column prop="title" label="Title" min-width="200" />
             <el-table-column label="Client" width="150">
@@ -429,7 +429,7 @@ const getClientName = (clientId: string) => {
             <el-button type="primary" @click="openAddTender">Add Tender</el-button>
           </div>
 
-          <el-table :data="tenders" stripe v-loading="loading">
+          <el-table v-loading="loading" :data="tenders" stripe>
             <el-table-column prop="title" label="Title" min-width="200" />
             <el-table-column label="Client" width="150">
               <template #default="{ row }">{{ row.client?.name || row.clientId }}</template>
@@ -483,7 +483,7 @@ const getClientName = (clientId: string) => {
             </el-upload>
           </div>
 
-          <el-table :data="documents" stripe v-loading="loading">
+          <el-table v-loading="loading" :data="documents" stripe>
             <el-table-column prop="filename" label="Filename" min-width="200" />
             <el-table-column label="Size" width="100">
               <template #default="{ row }">
@@ -648,7 +648,7 @@ const getClientName = (clientId: string) => {
     </el-drawer>
   </div>
 
-  <el-skeleton v-else :rows="10" animated v-loading="loading" />
+  <el-skeleton v-else v-loading="loading" :rows="10" animated />
 </template>
 
 <style lang="scss" scoped>

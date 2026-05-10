@@ -45,11 +45,11 @@ const gradientStyle = computed(() => ({
 </script>
 
 <template>
-  <el-card shadow="never" class="stats-card" v-loading="loading">
+  <el-card v-loading="loading" shadow="never" class="stats-card">
     <div class="stats-content">
       <div class="stats-icon" :style="gradientStyle">
         <el-icon :size="24" color="#fff">
-          <component v-if="typeof icon === 'object'" :is="icon" />
+          <component :is="icon" v-if="typeof icon === 'object'" />
           <span v-else>{{ icon }}</span>
         </el-icon>
       </div>
