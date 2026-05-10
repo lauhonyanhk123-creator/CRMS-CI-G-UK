@@ -346,11 +346,6 @@ const getTenderStageType = (stage: string): TagType => {
   }
   return map[stage] ?? 'info'
 }
-
-const getClientName = (clientId: string) => {
-  const client = companies.value.find(c => c.id === clientId)
-  return client?.name || clientId
-}
 </script>
 
 <template>

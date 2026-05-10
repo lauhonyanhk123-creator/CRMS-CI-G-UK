@@ -92,7 +92,7 @@ const loadData = async () => {
     })
     tableData.value = response.data.data
     total.value = response.data.total
-  } catch (error) {
+  } catch {
     ElMessage.error('Failed to load companies')
   } finally {
     loading.value = false
@@ -172,7 +172,7 @@ const handleSubmit = async () => {
       }
       drawerVisible.value = false
       loadData()
-    } catch (error) {
+    } catch {
       ElMessage.error(`Failed to ${isEditing.value ? 'update' : 'create'} company`)
     } finally {
       drawerLoading.value = false

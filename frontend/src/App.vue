@@ -8,7 +8,6 @@ import { useOfflineSync } from '@/composables/useOfflineSync'
 import NetworkStatus from '@/components/common/NetworkStatus.vue'
 import api from '@/services/api'
 import {
-  Menu,
   Fold,
   Expand,
   User,
@@ -53,11 +52,6 @@ const isCollapsed = computed(() => appStore.sidebarCollapsed)
 
 const user = computed(() => authStore.user)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.push('/login')
-}
 
 const toggleSidebar = () => {
   appStore.toggleSidebar()

@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, WarningFilled, Edit, Delete, View } from '@element-plus/icons-vue'
+import { Plus, WarningFilled, Edit, Delete, View } from '@element-plus/icons-vue'
 import api, {
   type AdoptionCase,
   type Bond,
   type CommutedSum,
   type SnaggingItem,
-  type Company,
-  type BondReduction,
-  type MaintenanceSchedule,
-  type SnaggingInspection
-} from '@/services/api'; import type { ElTagType } from '@/services/api'
+  type Company
+} from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import dayjs from 'dayjs'
@@ -388,18 +385,18 @@ const releaseBond = async (id: string) => {
   } catch (e) { console.error(e) }
 }
 
-const callBond = async (id: string) => {
+const _callBond = async (_id: string) => {
   try {
     await ElMessageBox.prompt('Enter reason for calling bond:', 'Call Bond', {
       confirmButtonText: 'Call',
       cancelButtonText: 'Cancel',
       inputErrorMessage: 'Please enter a reason'
     }).then(async ({ value }) => {
-      await api.adoption.callBond(id, value)
+      await api.adoption.callBond(_id, value)
       ElMessage.success('Bond called')
       loadBonds()
     })
-  } catch (e) { console.error(e) }
+  } catch { /* cancelled */ }
 }
 
 // CRUD Operations - Commuted Sums

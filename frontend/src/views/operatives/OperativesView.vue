@@ -21,8 +21,6 @@ const filters = reactive({
   limit: 20
 })
 
-const smartCheckingId = ref('')
-
 // Dialog state
 const dialogVisible = ref(false)
 const dialogMode = ref<'add' | 'edit'>('add')
@@ -188,16 +186,6 @@ const handleExport = () => {
 
 const handleSearch = () => { filters.page = 1; loadData() }
 const handlePageChange = (page: number) => { filters.page = page; loadData() }
-
-const smartCheckCard = async (operative: Operative) => {
-  if (!operative.cscsCard) { ElMessage.warning('No CSCS card on record'); return }
-  smartCheckingId.value = operative.id
-  try {
-    await api.operatives.smartCheckCard(operative.id, operative.cscsCard.id ?? '')
-    ElMessage.success('Smart Check completed')
-    loadData()
-  } catch { ElMessage.error('Smart Check failed') } finally { smartCheckingId.value = '' }
-}
 
 const getCardExpiryStatus = (card?: Operative['cscsCard']) => {
   if (!card) return 'none'

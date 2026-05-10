@@ -2,9 +2,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { View, Edit, Refresh, Upload, Plus, Delete } from '@element-plus/icons-vue'
+import { Refresh, Plus } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
-import api, { type Company, type Contact, type Site, type Contract, type Document } from '@/services/api'; import type { ElTagType } from '@/services/api'
+import api, { type Company, type Contact, type Site, type Contract, type Document } from '@/services/api';
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import FileUpload from '@/components/common/FileUpload.vue'
@@ -60,7 +60,7 @@ const loadCompany = async () => {
     sites.value = sitesRes.data.data
     contracts.value = contractsRes.data.data
     documents.value = docsRes.data.data
-  } catch (error) {
+  } catch {
     ElMessage.error('Failed to load company details')
   } finally {
     loading.value = false
@@ -90,7 +90,7 @@ const refreshCompaniesHouse = async () => {
     await api.companies.refreshCompaniesHouse(companyId.value)
     ElMessage.success('Companies House data refreshed')
     loadCompany()
-  } catch (error) {
+  } catch {
     ElMessage.error('Failed to refresh data')
   }
 }
@@ -142,7 +142,7 @@ await contactFormRef.value.validate(async (valid: boolean) => {
       ElMessage.success('Contact saved')
       contactDrawerVisible.value = false
       loadCompany()
-    } catch (error) {
+    } catch {
       ElMessage.error('Failed to save contact')
     }
   })

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
-import api from '@/services/api'; import type { ElTagType } from '@/services/api'
+import { Plus } from '@element-plus/icons-vue'
+import api from '@/services/api'
 import PageHeader from '@/components/common/PageHeader.vue'
 
 interface AdminUser {
@@ -130,7 +130,7 @@ const handleSave = async () => {
     }
     dialogVisible.value = false
     loadUsers()
-  } catch (error: any) {
+  } catch {
     // Error shown by interceptor
   } finally {
     dialogLoading.value = false

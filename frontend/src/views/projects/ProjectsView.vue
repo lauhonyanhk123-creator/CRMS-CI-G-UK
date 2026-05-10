@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance } from 'element-plus'
@@ -73,7 +73,7 @@ const loadData = async () => {
     })
     tableData.value = response.data.data
     total.value = response.data.total
-  } catch (error) {
+  } catch {
     ElMessage.error('Failed to load sites')
   } finally {
     loading.value = false
@@ -84,7 +84,7 @@ const loadCompanies = async () => {
   try {
     const response = await api.companies.getAll({ limit: 100 })
     companies.value = response.data.data
-  } catch (error) {
+  } catch {
     console.error('Failed to load companies')
   }
 }
@@ -137,7 +137,7 @@ const handleSubmit = async () => {
       }
       drawerVisible.value = false
       loadData()
-    } catch (error) {
+    } catch {
       ElMessage.error('Failed to save site')
     } finally {
       drawerLoading.value = false

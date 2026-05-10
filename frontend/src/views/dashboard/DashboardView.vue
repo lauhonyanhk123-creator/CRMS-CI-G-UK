@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -11,11 +11,10 @@ import {
   GridComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { useApi } from '@/composables/useApi'
 import api from '@/services/api'
 import StatsCard from '@/components/common/StatsCard.vue'
 import { ElSkeleton } from 'element-plus'
-import { Plus, DataLine, Document, Van, Coin, User, Folder } from '@element-plus/icons-vue'
+import { Plus, Document, User, Folder } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(relativeTime)
@@ -142,7 +141,7 @@ const loadKpis = async () => {
       plantOnSite: stats.plantAllocated ?? plantRes.data?.total ?? 0,
       pendingApplications: stats.pendingApplications ?? appsRes.data?.total ?? 0
     }
-  } catch (error) {
+  } catch {
     console.error('Failed to load KPIs:', error)
   } finally {
     statsLoading.value = false
@@ -153,7 +152,7 @@ const loadActivityFeed = async () => {
   try {
     const response = await apiClient.get('/dashboard/activity-feed', { params: { limit: 10 } })
     activityFeed.value = response.data || []
-  } catch (error) {
+  } catch {
     console.error('Failed to load activity feed:', error)
     activityFeed.value = []
   } finally {
@@ -163,28 +162,6 @@ const loadActivityFeed = async () => {
 
 const navigateTo = (route: string) => {
   router.push(route)
-}
-
-const loadStats = async () => {
-  try {
-    const [contractsRes, sitesRes, plantRes, appsRes] = await Promise.all([
-      api.contracts.getAll({ status: 'active', limit: 1 }),
-      api.sites.getAll({ status: 'active', limit: 1 }),
-      api.plant.getAll({ status: 'allocated', limit: 1 }),
-      api.applications.getByContract('').catch(() => ({ data: [] }))
-    ])
-    
-    statsData.value = {
-      totalContracts: contractsRes.data.total || 0,
-      activeSites: sitesRes.data.total || 0,
-      plantOnSite: plantRes.data.total || 0,
-      pendingApplications: Array.isArray(appsRes.data) ? appsRes.data.filter((a: any) => a.status === 'submitted').length : 0
-    }
-  } catch (error) {
-    console.error('Failed to load stats:', error)
-  } finally {
-    statsLoading.value = false
-  }
 }
 
 const loadCVRChart = async () => {
@@ -231,7 +208,7 @@ const loadCVRChart = async () => {
         }
       ]
     }
-  } catch (error) {
+  } catch {
     console.error('Failed to load contract summary chart:', error)
     cvrChartOption.value = {
       title: { text: 'Contracts by Status', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
@@ -374,7 +351,7 @@ const loadHSChart = async () => {
         }
       ]
     }
-  } catch (error) {
+  } catch {
     console.error('Failed to load H&S chart:', error)
     hsChartOption.value = {
       title: { text: 'H&S Incidents (30 Days)', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
@@ -428,7 +405,7 @@ const loadLOLER = async () => {
       .filter((p: any) => dayjs(p.lolerDue).isBefore(thirtyDaysFromNow))
       .sort((a: any, b: any) => a.daysUntil - b.daysUntil)
       .slice(0, 5)
-  } catch (error) {
+  } catch {
     console.error('Failed to load LOLER:', error)
     lolerItems.value = []
   } finally {
@@ -446,23 +423,13 @@ const loadWIPSummary = async () => {
       approved: entries.filter((e: any) => e.status === 'approved').length,
       pending: entries.filter((e: any) => ['draft', 'submitted', 'reviewed'].includes(e.status)).length
     }
-  } catch (error) {
-    console.error('Failed to load WIP summary:', error)
+  } catch {
+    console.error('Failed to load WIP summary')
     wipSummary.value = { totalEntries: 0, approved: 0, pending: 0 }
   }
 }
 
 const formatCurrency = (value: number) => {
-  if (value >= 1000000) {
-    return `£${(value / 1000000).toFixed(1)}M`
-  }
-  return `£${(value / 1000).toFixed(0)}k`
-}
-
-const getAFR = computed(() => {
-  // Accident Frequency Rate calculation (simplified)
-  return 0.42
-})
 </script>
 
 <template>

@@ -604,7 +604,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, View, CopyDocument, Refresh, Check, Close } from '@element-plus/icons-vue'
 import api, { type TemplateStatus, type DefectPriority, type DefectStatus } from '@/services/api'
@@ -1001,9 +1001,7 @@ const copyTemplate = async (id: string) => {
   try {
     await api.quality.copyITPTemplate(id)
     await loadTemplates()
-  } catch (error) {
-    console.error('Failed to copy template:', error)
-  }
+  } catch { /* cancelled */ }
 }
 
 // Create schedule from template
@@ -1011,9 +1009,7 @@ const createScheduleFromTemplate = async (templateId: string, contractId: string
   try {
     await api.quality.createITPScheduleFromTemplate(templateId, contractId)
     await loadSchedules()
-  } catch (error) {
-    console.error('Failed to create schedule from template:', error)
-  }
+  } catch { /* cancelled */ }
 }
 
 // Update defect status

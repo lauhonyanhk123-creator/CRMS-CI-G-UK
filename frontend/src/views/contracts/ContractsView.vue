@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Plus, View, Edit } from '@element-plus/icons-vue'
+import { Search, Plus } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import api, { type Contract, type Company, type Site } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
