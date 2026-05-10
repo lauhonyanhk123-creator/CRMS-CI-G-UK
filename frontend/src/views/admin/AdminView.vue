@@ -422,7 +422,7 @@ const disconnectHmrc = async () => {
                     <el-button v-if="hmrcStatus?.authorised" type="danger" plain @click="disconnectHmrc">
                       Disconnect
                     </el-button>
-                    <el-button :icon="Connection" @click="loadHmrcStatus" :loading="hmrcLoading">Refresh</el-button>
+                    <el-button :icon="Connection" :loading="hmrcLoading" @click="loadHmrcStatus">Refresh</el-button>
                   </div>
                   <el-alert
                     v-if="!hmrcStatus?.authorised && !integrations.hmrcDemoMode"
@@ -488,7 +488,8 @@ const disconnectHmrc = async () => {
                   </el-descriptions-item>
                   <el-descriptions-item label="Used for">Company search &amp; profile lookup</el-descriptions-item>
                 </el-descriptions>
-                <el-alert v-if="!integrations.companiesHouseConfigured" type="info" :closable="false" show-icon style="margin-top:10px"
+                <el-alert
+v-if="!integrations.companiesHouseConfigured" type="info" :closable="false" show-icon style="margin-top:10px"
                   title="Set COMPANIES_HOUSE_API_KEY to enable live company lookups. Register free at developer.company-information.service.gov.uk" />
               </el-card>
             </el-col>
@@ -505,7 +506,8 @@ const disconnectHmrc = async () => {
                   </el-descriptions-item>
                   <el-descriptions-item label="Used for">Operative card &amp; qualification verification</el-descriptions-item>
                 </el-descriptions>
-                <el-alert v-if="!integrations.cscsConfigured" type="info" :closable="false" show-icon style="margin-top:10px"
+                <el-alert
+v-if="!integrations.cscsConfigured" type="info" :closable="false" show-icon style="margin-top:10px"
                   title="Set CSCS_API_KEY, CSCS_CLIENT_ID, CSCS_CLIENT_SECRET to enable live card verification. Register at cscs.uk.com" />
               </el-card>
             </el-col>

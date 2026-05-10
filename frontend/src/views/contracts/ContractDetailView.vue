@@ -194,7 +194,7 @@ const loadPayLessNotices = async () => {
 </script>
 
 <template>
-  <div class="contract-detail-view" v-if="contract">
+  <div v-if="contract" class="contract-detail-view">
     <PageHeader :title="`${contract.reference} - ${contract.title}`" :breadcrumbs="[{ title: 'Contracts', path: '/contracts' }, { title: contract.reference }]" />
 
     <el-tabs>
@@ -289,7 +289,7 @@ const loadPayLessNotices = async () => {
               <span>Documents ({{ documents.length }})</span>
             </div>
           </template>
-          <el-table :data="documents" stripe v-loading="loadingDocuments">
+          <el-table v-loading="loadingDocuments" :data="documents" stripe>
             <el-table-column prop="filename" label="Filename" min-width="200" />
             <el-table-column prop="category" label="Category" width="120">
               <template #default="{ row }">
@@ -323,7 +323,7 @@ const loadPayLessNotices = async () => {
               <span>Adoption Cases ({{ adoptionCases.length }})</span>
             </div>
           </template>
-          <el-table :data="adoptionCases" stripe v-loading="loadingAdoptionCases">
+          <el-table v-loading="loadingAdoptionCases" :data="adoptionCases" stripe>
             <el-table-column prop="caseRef" label="Case Ref" width="120" />
             <el-table-column prop="title" label="Title" min-width="200" />
             <el-table-column prop="type" label="Type" width="100">

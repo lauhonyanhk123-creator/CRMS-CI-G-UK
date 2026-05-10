@@ -509,7 +509,7 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString()
               </el-form-item>
             </el-col>
             <el-col :span="1">
-              <el-button link type="danger" @click="removeReqItem(index)" :disabled="reqFormData.items.length <= 1">×</el-button>
+              <el-button link type="danger" :disabled="reqFormData.items.length <= 1" @click="removeReqItem(index)">×</el-button>
             </el-col>
           </el-row>
         </div>
@@ -597,7 +597,7 @@ const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString()
               </el-form-item>
             </el-col>
             <el-col :span="1">
-              <el-button link type="danger" @click="removePOItem(index)" :disabled="poFormData.items.length <= 1">×</el-button>
+              <el-button link type="danger" :disabled="poFormData.items.length <= 1" @click="removePOItem(index)">×</el-button>
             </el-col>
           </el-row>
         </div>

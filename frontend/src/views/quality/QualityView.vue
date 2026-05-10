@@ -10,7 +10,7 @@
           <option value="defects">Defects</option>
           <option value="signoffs">NHBC/LABC Sign-offs</option>
         </select>
-        <button @click="openCreateDialog" class="btn-primary">
+        <button class="btn-primary" @click="openCreateDialog">
           <Plus class="icon" />
           New {{ tabLabels[activeTab as keyof typeof tabLabels] }}
         </button>
@@ -58,10 +58,10 @@
             <td>{{ template.version }}</td>
             <td><span :class="['status-badge', template.status]">{{ template.status }}</span></td>
             <td class="actions-cell">
-              <button @click="viewTemplate(template)" class="btn-icon" title="View"><View /></button>
-              <button @click="editTemplate(template)" class="btn-icon" title="Edit"><Edit /></button>
-              <button @click="copyTemplate(template.id)" class="btn-icon" title="Copy"><CopyDocument /></button>
-              <button @click="deleteTemplate(template.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
+              <button class="btn-icon" title="View" @click="viewTemplate(template)"><View /></button>
+              <button class="btn-icon" title="Edit" @click="editTemplate(template)"><Edit /></button>
+              <button class="btn-icon" title="Copy" @click="copyTemplate(template.id)"><CopyDocument /></button>
+              <button class="btn-icon btn-danger" title="Delete" @click="deleteTemplate(template.id)"><Delete /></button>
             </td>
           </tr>
           <tr v-if="templates.length === 0">
@@ -71,7 +71,7 @@
       </table>
 
       <div class="pagination">
-        <button @click="templatePage--" :disabled="templatePage === 0">Previous</button>
+        <button :disabled="templatePage === 0" @click="templatePage--">Previous</button>
         <span>Page {{ templatePage + 1 }}</span>
         <button @click="templatePage++">Next</button>
       </div>
@@ -114,10 +114,10 @@
             <td>{{ schedule.items?.length || 0 }}</td>
             <td><span :class="['status-badge', schedule.status]">{{ schedule.status }}</span></td>
             <td class="actions-cell">
-              <button @click="viewSchedule(schedule)" class="btn-icon" title="View"><View /></button>
-              <button @click="editSchedule(schedule)" class="btn-icon" title="Edit"><Edit /></button>
-              <button @click="createScheduleFromTemplate(schedule.templateId, schedule.contractId)" class="btn-icon" title="Duplicate"><CopyDocument /></button>
-              <button @click="deleteSchedule(schedule.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
+              <button class="btn-icon" title="View" @click="viewSchedule(schedule)"><View /></button>
+              <button class="btn-icon" title="Edit" @click="editSchedule(schedule)"><Edit /></button>
+              <button class="btn-icon" title="Duplicate" @click="createScheduleFromTemplate(schedule.templateId, schedule.contractId)"><CopyDocument /></button>
+              <button class="btn-icon btn-danger" title="Delete" @click="deleteSchedule(schedule.id)"><Delete /></button>
             </td>
           </tr>
           <tr v-if="schedules.length === 0">
@@ -159,9 +159,9 @@
             <td>{{ inspection.inspectionDate }}</td>
             <td><span :class="['status-badge', inspection.result]">{{ inspection.result }}</span></td>
             <td class="actions-cell">
-              <button @click="viewInspection(inspection)" class="btn-icon" title="View"><View /></button>
-              <button @click="editInspection(inspection)" class="btn-icon" title="Edit"><Edit /></button>
-              <button @click="deleteInspection(inspection.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
+              <button class="btn-icon" title="View" @click="viewInspection(inspection)"><View /></button>
+              <button class="btn-icon" title="Edit" @click="editInspection(inspection)"><Edit /></button>
+              <button class="btn-icon btn-danger" title="Delete" @click="deleteInspection(inspection.id)"><Delete /></button>
             </td>
           </tr>
           <tr v-if="inspections.length === 0">
@@ -215,10 +215,10 @@
             <td><span :class="['status-badge', defect.status]">{{ defect.status }}</span></td>
             <td>{{ defect.assignedOperative || defect.assignedContractor || '-' }}</td>
             <td class="actions-cell">
-              <button @click="viewDefect(defect)" class="btn-icon" title="View"><View /></button>
-              <button @click="editDefect(defect)" class="btn-icon" title="Edit"><Edit /></button>
-              <button @click="updateDefectStatus(defect)" class="btn-icon" title="Update Status"><Refresh /></button>
-              <button @click="deleteDefect(defect.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
+              <button class="btn-icon" title="View" @click="viewDefect(defect)"><View /></button>
+              <button class="btn-icon" title="Edit" @click="editDefect(defect)"><Edit /></button>
+              <button class="btn-icon" title="Update Status" @click="updateDefectStatus(defect)"><Refresh /></button>
+              <button class="btn-icon btn-danger" title="Delete" @click="deleteDefect(defect.id)"><Delete /></button>
             </td>
           </tr>
           <tr v-if="defects.length === 0">
@@ -273,11 +273,11 @@
             <td>{{ signOff.inspectionDate }}</td>
             <td><span :class="['status-badge', signOff.result]">{{ signOff.result }}</span></td>
             <td class="actions-cell">
-              <button @click="viewSignOff(signOff)" class="btn-icon" title="View"><View /></button>
-              <button @click="editSignOff(signOff)" class="btn-icon" title="Edit"><Edit /></button>
-              <button v-if="signOff.result === 'pending'" @click="approveSignOff(signOff)" class="btn-icon btn-success" title="Approve"><Check /></button>
-              <button v-if="signOff.result === 'pending'" @click="refuseSignOff(signOff)" class="btn-icon btn-warning" title="Refuse"><Close /></button>
-              <button @click="deleteSignOff(signOff.id)" class="btn-icon btn-danger" title="Delete"><Delete /></button>
+              <button class="btn-icon" title="View" @click="viewSignOff(signOff)"><View /></button>
+              <button class="btn-icon" title="Edit" @click="editSignOff(signOff)"><Edit /></button>
+              <button v-if="signOff.result === 'pending'" class="btn-icon btn-success" title="Approve" @click="approveSignOff(signOff)"><Check /></button>
+              <button v-if="signOff.result === 'pending'" class="btn-icon btn-warning" title="Refuse" @click="refuseSignOff(signOff)"><Close /></button>
+              <button class="btn-icon btn-danger" title="Delete" @click="deleteSignOff(signOff.id)"><Delete /></button>
             </td>
           </tr>
           <tr v-if="signOffs.length === 0">
@@ -292,7 +292,7 @@
       <div class="dialog">
         <div class="dialog-header">
           <h2>{{ dialogMode === 'create' ? 'Create' : 'Edit' }} {{ tabLabels[activeTab as keyof typeof tabLabels] }}</h2>
-          <button @click="closeDialog" class="dialog-close">&times;</button>
+          <button class="dialog-close" @click="closeDialog">&times;</button>
         </div>
 
         <!-- Template Dialog -->
@@ -333,9 +333,9 @@
                 <option value="monitor">Monitor</option>
               </select>
               <input v-model="item.responsibleParty" type="text" placeholder="Responsible Party" class="item-responsible" />
-              <button @click="removeTemplateItem(index)" class="btn-remove">-</button>
+              <button class="btn-remove" @click="removeTemplateItem(index)">-</button>
             </div>
-            <button @click="addTemplateItem" class="btn-add-item">+ Add Item</button>
+            <button class="btn-add-item" @click="addTemplateItem">+ Add Item</button>
           </div>
         </div>
 
@@ -501,7 +501,7 @@
             <div class="form-group checkbox-group">
               <label><input v-model="defectForm.reinspectionRequired" type="checkbox" /> Re-inspection Required</label>
             </div>
-            <div class="form-group" v-if="defectForm.reinspectionRequired">
+            <div v-if="defectForm.reinspectionRequired" class="form-group">
               <label>Re-inspection Date</label>
               <input v-model="defectForm.reinspectionDate" type="date" />
             </div>
@@ -595,8 +595,8 @@
         </div>
 
         <div class="dialog-footer">
-          <button @click="closeDialog" class="btn-secondary">Cancel</button>
-          <button @click="saveDialog" class="btn-primary">{{ dialogMode === 'create' ? 'Create' : 'Update' }}</button>
+          <button class="btn-secondary" @click="closeDialog">Cancel</button>
+          <button class="btn-primary" @click="saveDialog">{{ dialogMode === 'create' ? 'Create' : 'Update' }}</button>
         </div>
       </div>
     </div>

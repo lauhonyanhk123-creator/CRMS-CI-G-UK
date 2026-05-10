@@ -121,7 +121,7 @@ const getProjectCode = (contractId: string) => {
           </el-button>
         </div>
       </template>
-      <el-table :data="wipEntries" stripe v-loading="loading">
+      <el-table v-loading="loading" :data="wipEntries" stripe>
         <el-table-column label="Entry Date" width="120">
           <template #default="{ row }">{{ formatDate(row.entryDate) }}</template>
         </el-table-column>

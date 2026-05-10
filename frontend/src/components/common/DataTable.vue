@@ -75,8 +75,8 @@ const getCellStyle = (column: Props['columns'][0]) => {
         :placeholder="searchPlaceholder"
         clearable
         :prefix-icon="Search"
-        @input="handleSearch"
         class="search-input"
+        @input="handleSearch"
       />
       <slot name="toolbar" />
     </div>
@@ -85,8 +85,8 @@ const getCellStyle = (column: Props['columns'][0]) => {
       v-loading="loading"
       :data="data"
       stripe
-      @row-click="handleRowClick"
       class="table"
+      @row-click="handleRowClick"
     >
       <el-table-column
         v-for="column in columns"
@@ -121,9 +121,9 @@ const getCellStyle = (column: Props['columns'][0]) => {
       :page-sizes="[10, 20, 50, 100]"
       :total="total"
       layout="total, sizes, prev, pager, next, jumper"
+      class="pagination"
       @current-change="handlePageChange"
       @size-change="handleSizeChange"
-      class="pagination"
     />
   </div>
 </template>
