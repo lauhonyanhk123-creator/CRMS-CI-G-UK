@@ -151,7 +151,18 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        // No additionalData - use CSS custom properties in :root instead of Sass variables
+      }
+    }
+  },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'element-plus': ['element-plus'],
+          'echarts': ['echarts', 'vue-echarts'],
+          'vendor': ['vue', 'vue-router', 'pinia', 'axios', 'dayjs']
+        }
       }
     }
   }

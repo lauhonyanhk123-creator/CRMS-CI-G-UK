@@ -50,9 +50,9 @@ const form = ref({
 })
 
 // Licence UI helpers
-const licenceBannerType = computed((): 'danger' | 'warning' | 'success' | 'info' => {
+const licenceBannerType = computed((): 'error' | 'warning' | 'success' | 'info' => {
   if (!licence.value) return 'info'
-  if (licence.value.atCapacity) return 'danger'
+  if (licence.value.atCapacity) return 'error'
   if (licence.value.maintenanceExpired) return 'warning'
   if (licence.value.daysUntilExpiry >= 0 && licence.value.daysUntilExpiry <= 30) return 'warning'
   return 'success'
@@ -60,7 +60,7 @@ const licenceBannerType = computed((): 'danger' | 'warning' | 'success' | 'info'
 
 const licenceBannerIcon = computed(() => {
   const t = licenceBannerType.value
-  return t === 'danger' || t === 'warning' ? WarningFilled : CircleCheckFilled
+  return t === 'error' || t === 'warning' ? WarningFilled : CircleCheckFilled
 })
 
 const userCapPercent = computed(() => {
