@@ -51,3 +51,4 @@ backend/target/generated-sources/
 *.tmp
 *.bak
 *.orig
+.pnpm-store/
