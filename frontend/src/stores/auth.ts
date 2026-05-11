@@ -162,6 +162,6 @@ export const useAuthStore = defineStore('auth', () => {
   persist: {
     key: 'crms-auth',
     storage: localStorage,
-    pick: ['user', 'token', 'refreshToken']
+    paths: ['user', 'token', 'refreshToken']
   }
 })
