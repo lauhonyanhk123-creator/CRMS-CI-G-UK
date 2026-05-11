@@ -1,74 +1,152 @@
 # CRMS Load Testing
 
-Performance testing scripts using k6 for load testing the CRMS backend.
+This directory contains k6 load testing scripts for validating CRMS performance under realistic load.
 
 ## Prerequisites
 
-```bash
-# Install k6
-# macOS
-brew install k6
+- [k6](https://k6.io/docs/getting-started/installation/) installed
+- Backend running at `http://localhost:8080`
+- Database seeded with test data
 
-# Linux
-sudo gpg -k
-sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-sudo apt-get update
-sudo apt-get install k6
+## Quick Start
+
+### 1. Start the Backend
+
+```bash
+cd /workspace/docker
+docker compose up -d backend db redis
 ```
 
-## Run Load Test
+### 2. Run Load Tests
 
-### 1. Start the application
 ```bash
-cd docker
-docker compose up -d
-```
+# Navigate to this directory
+cd docker/load-testing
 
-### 2. Get an admin token
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin@crms.com","password":"Admin123!"}' \
-  | jq -r '.data.token'
-```
-
-### 3. Run the load test
-```bash
-# Without authentication
+# Run with default settings (5 VUs, 30s ramp-up to 100 VUs)
 k6 run load-test.js
 
-# With authentication
-ADMIN_TOKEN=your_token_here k6 run load-test.js
+# Run with custom credentials
+ADMIN_USERNAME=admin ADMIN_PASSWORD=yourpass k6 run load-test.js
 
-# Use staging URL
-BASE_URL=https://staging.your-domain.com k6 run load-test.js
+# Point to different backend URL
+BASE_URL=http://staging.crms.local k6 run load-test.js
 ```
 
-## Test Scenarios
+## Test Configuration
 
-The load test simulates realistic usage:
-- **Ramp up**: 10 → 50 → 100 → 50 → 0 users
-- **Duration**: ~5 minutes
-- **Endpoints tested**: Dashboard, Tenders, Contracts, Operatives, Plant, Subcontractors, Reports
+### Environment Variables
 
-## Success Criteria
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BASE_URL` | `http://localhost:8080` | Backend base URL |
+| `ADMIN_USERNAME` | `admin` | Login username |
+| `ADMIN_PASSWORD` | `admin123` | Login password |
 
-| Metric | Threshold |
-|--------|-----------|
-| Response Time p95 | < 500ms |
-| Response Time p99 | < 1000ms |
-| Error Rate | < 1% |
+### Load Test Stages
 
-## Output
+The default test runs through these stages:
 
-- Console summary printed to stdout
-- JSON results saved to `loadtest-results.json`
+1. **Ramp-up**: 30s → 10 VUs
+2. **Sustained**: 1m → 50 VUs
+3. **Peak**: 2m → 100 VUs
+4. **Cool-down**: 1m → 50 VUs
+5. **Ramp-down**: 30s → 0 VUs
 
-## Continuous Load Testing
+### Thresholds
 
-For sustained load testing:
+| Metric | Threshold | Description |
+|--------|-----------|-------------|
+| `http_req_duration` | p(95) < 500ms | 95% of requests under 500ms |
+| `http_req_duration` | p(99) < 1000ms | 99% of requests under 1s |
+| `http_req_failed` | rate < 0.01 | Less than 1% failure rate |
+
+## Expected Results
+
+A successful test should show:
+
+```
+=== CRMS Load Test Results ===
+
+Duration: 300.0s
+Total Requests: ~10,000
+Failed Requests: < 100
+
+Response Time:
+  avg: < 100ms
+  p95: < 500ms
+  p99: < 1000ms
+  max: < 2000ms
+
+Throughput:
+  avg: > 30 req/s
+
+Error Rate: < 1%
+
+✅ TEST PASSED
+```
+
+## Other Test Scripts
+
+### `stress-test.js`
+
+Aggressive stress test with higher VUs:
+
 ```bash
-# 10 minutes at 50 concurrent users
-k6 run --duration 10m --vus 50 load-test.js
+k6 run stress-test.js
+```
+
+### `smoke-test.js`
+
+Quick validation test (10 VUs, 30s):
+
+```bash
+k6 run smoke-test.js
+```
+
+## Interpreting Results
+
+### High Error Rate
+
+- Check backend logs for exceptions
+- Verify database connections (HikariCP pool size)
+- Check for rate limiting (429 responses)
+- Review API endpoint performance
+
+### High Latency
+
+- Database query optimization (add indexes)
+- Enable caching (Redis)
+- Check connection pool settings
+- Review N+1 query patterns
+
+### Low Throughput
+
+- Database bottleneck (check slow query log)
+- Insufficient connection pool size
+- Network latency
+- CPU/thread exhaustion
+
+## CI/CD Integration
+
+Add to your CI pipeline:
+
+```yaml
+# .github/workflows/load-test.yml
+- name: Run Load Tests
+  run: |
+    cd docker/load-testing
+    k6 run load-test.js \
+      --out json=loadtest-results.json \
+      --summary-export=loadtest-summary.json
+  env:
+    ADMIN_PASSWORD: ${{ secrets.LOAD_TEST_PASSWORD }}
+```
+
+## Cleanup
+
+Results are saved to `loadtest-results.json` in the current directory.
+
+```bash
+rm -f loadtest-results.json loadtest-summary.json
 ```
