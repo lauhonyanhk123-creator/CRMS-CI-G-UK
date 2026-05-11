@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Plus } from '@element-plus/icons-vue'
+import { Refresh, Plus, Edit } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
 import api, { type Company, type Contact, type Site, type Contract, type Document } from '@/services/api';
 import StatusBadge from '@/components/common/StatusBadge.vue'

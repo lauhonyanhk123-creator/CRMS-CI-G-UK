@@ -141,7 +141,7 @@ const loadKpis = async () => {
       plantOnSite: stats.plantAllocated ?? plantRes.data?.total ?? 0,
       pendingApplications: stats.pendingApplications ?? appsRes.data?.total ?? 0
     }
-  } catch {
+  } catch (error) {
     console.error('Failed to load KPIs:', error)
   } finally {
     statsLoading.value = false
@@ -152,7 +152,7 @@ const loadActivityFeed = async () => {
   try {
     const response = await apiClient.get('/dashboard/activity-feed', { params: { limit: 10 } })
     activityFeed.value = response.data || []
-  } catch {
+  } catch (error) {
     console.error('Failed to load activity feed:', error)
     activityFeed.value = []
   } finally {
@@ -208,7 +208,7 @@ const loadCVRChart = async () => {
         }
       ]
     }
-  } catch {
+  } catch (error) {
     console.error('Failed to load contract summary chart:', error)
     cvrChartOption.value = {
       title: { text: 'Contracts by Status', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
@@ -351,7 +351,7 @@ const loadHSChart = async () => {
         }
       ]
     }
-  } catch {
+  } catch (error) {
     console.error('Failed to load H&S chart:', error)
     hsChartOption.value = {
       title: { text: 'H&S Incidents (30 Days)', left: 'center', textStyle: { fontSize: 14, fontWeight: 500 } },
@@ -405,7 +405,7 @@ const loadLOLER = async () => {
       .filter((p: any) => dayjs(p.lolerDue).isBefore(thirtyDaysFromNow))
       .sort((a: any, b: any) => a.daysUntil - b.daysUntil)
       .slice(0, 5)
-  } catch {
+  } catch (error) {
     console.error('Failed to load LOLER:', error)
     lolerItems.value = []
   } finally {
@@ -423,13 +423,20 @@ const loadWIPSummary = async () => {
       approved: entries.filter((e: any) => e.status === 'approved').length,
       pending: entries.filter((e: any) => ['draft', 'submitted', 'reviewed'].includes(e.status)).length
     }
-  } catch {
+  } catch (error) {
     console.error('Failed to load WIP summary')
     wipSummary.value = { totalEntries: 0, approved: 0, pending: 0 }
   }
 }
 
 const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+}
 </script>
 
 <template>
