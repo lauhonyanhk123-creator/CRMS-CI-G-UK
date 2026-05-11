@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Edit, Delete } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import api, { type Requisition, type PurchaseOrder, type DeliveryNote, type Site, type Company } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -198,7 +198,7 @@ const handleSaveReq = async () => {
   } catch { ElMessage.error('Failed to save requisition') }
 }
 
-const handleDeleteReq = async (row: Requisition) => {
+const handleDeleteReq = async (_row: Requisition) => {
   try {
     await ElMessageBox.confirm('Are you sure you want to delete this requisition?', 'Confirm Delete', {
       type: 'warning'
@@ -292,7 +292,7 @@ const handleSavePO = async () => {
   } catch { ElMessage.error('Failed to save purchase order') }
 }
 
-const handleDeletePO = async (row: PurchaseOrder) => {
+const handleDeletePO = async (_row: PurchaseOrder) => {
   try {
     await ElMessageBox.confirm('Are you sure you want to delete this purchase order?', 'Confirm Delete', {
       type: 'warning'

@@ -4,7 +4,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
 import api, { type Tender, type Company } from '@/services/api'
-import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import { exportCsv } from '@/utils/exportCsv'
 

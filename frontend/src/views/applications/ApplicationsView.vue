@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, View, Check, Close, Money } from '@element-plus/icons-vue'
+import { Plus, Check, Close, Money } from '@element-plus/icons-vue'
 import api, { type ApplicationResponse, type Contract } from '@/services/api'
-import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import dayjs from 'dayjs'
 import { exportCsv } from '@/utils/exportCsv'
@@ -46,15 +45,6 @@ const form = reactive({
     amount: number
   }>
 })
-
-const statusOptions = [
-  { label: 'Submitted', value: 'SUBMITTED' },
-  { label: 'Measured', value: 'MEASURED' },
-  { label: 'Agreed', value: 'AGREED' },
-  { label: 'Approved', value: 'APPROVED' },
-  { label: 'Paid', value: 'PAID' },
-  { label: 'Rejected', value: 'REJECTED' }
-]
 
 onMounted(() => {
   loadContracts()

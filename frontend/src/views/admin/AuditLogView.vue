@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import api from '@/services/api'; import type { ElTagType } from '@/services/api'
+import api from '@/services/api'
 import PageHeader from '@/components/common/PageHeader.vue'
 
 interface AuditLogEntry {

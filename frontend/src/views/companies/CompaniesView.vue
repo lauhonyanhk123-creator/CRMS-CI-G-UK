@@ -4,10 +4,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Delete, View, Edit } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance } from 'element-plus'
-import api, { type Company, type Address, type BankDetails } from '@/services/api'; import type { ElTagType } from '@/services/api'
+import api, { type Company, type Address, type BankDetails } from '@/services/api';
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
-import dayjs from 'dayjs'
 
 const router = useRouter()
 
@@ -93,7 +92,7 @@ const loadData = async () => {
     })
     tableData.value = response.data.data
     total.value = response.data.total
-  } catch (error) {
+  } catch {
     ElMessage.error('Failed to load companies')
   } finally {
     loading.value = false
@@ -173,7 +172,7 @@ const handleSubmit = async () => {
       }
       drawerVisible.value = false
       loadData()
-    } catch (error) {
+    } catch {
       ElMessage.error(`Failed to ${isEditing.value ? 'update' : 'create'} company`)
     } finally {
       drawerLoading.value = false

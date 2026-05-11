@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Key, Check, CloseBold } from '@element-plus/icons-vue'
+import { Key } from '@element-plus/icons-vue'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 

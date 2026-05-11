@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { useAppStore } from '@/stores/app'
 
 const appStore = useAppStore()
-
 const isOnline = computed(() => appStore.isOnline)
 </script>
 

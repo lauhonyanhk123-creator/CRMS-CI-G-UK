@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Key, WarningFilled, CircleCheckFilled, InfoFilled, Connection, Promotion } from '@element-plus/icons-vue'
-import api from '@/services/api'; import type { ElTagType } from '@/services/api'
+import { Plus, Key, WarningFilled, CircleCheckFilled, Connection, Promotion } from '@element-plus/icons-vue'
+import api from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 
@@ -56,11 +56,6 @@ const licenceBannerType = computed((): 'error' | 'warning' | 'success' | 'info' 
   if (licence.value.maintenanceExpired) return 'warning'
   if (licence.value.daysUntilExpiry >= 0 && licence.value.daysUntilExpiry <= 30) return 'warning'
   return 'success'
-})
-
-const licenceBannerIcon = computed(() => {
-  const t = licenceBannerType.value
-  return t === 'error' || t === 'warning' ? WarningFilled : CircleCheckFilled
 })
 
 const userCapPercent = computed(() => {

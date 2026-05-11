@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Edit, Delete, View, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, ArrowDown } from '@element-plus/icons-vue'
 import api, { type HealthSafetyRecord, type RAMS, type PermitToDig, type Incident } from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -114,14 +114,14 @@ const loadSites = async () => {
   try {
     const response = await api.sites.getAll({})
     sites.value = response.data.data
-  } catch (error) { ElMessage.error('Failed to load sites') }
+  } catch { ElMessage.error('Failed to load sites') }
 }
 
 const loadContracts = async () => {
   try {
     const response = await api.contracts.getAll({})
     contracts.value = response.data.data
-  } catch (error) { ElMessage.error('Failed to load contracts') }
+  } catch { ElMessage.error('Failed to load contracts') }
 }
 
 const loadF10 = async () => {
@@ -246,7 +246,7 @@ const openIncidentEdit = (row: Incident) => {
 }
 
 // View detail
-const viewDetail = async (row: any, type: string) => {
+const _viewDetail = async (row: any, _type: string) => {
   detailRecord.value = row
   showDetailDrawer.value = true
 }

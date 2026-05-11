@@ -55,7 +55,7 @@ const handleLogin = async () => {
       } else if (result === 'ok') {
         router.push('/dashboard')
       }
-    } catch (error) {
+    } catch {
       ElMessage.error('Login failed. Please check your credentials.')
     } finally {
       loading.value = false
