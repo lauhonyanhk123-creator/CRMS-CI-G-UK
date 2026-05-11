@@ -8,6 +8,15 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    include: ['src/test/**/*.test.{ts,vue}'],
+    exclude: [
+      'node_modules',
+      'e2e',
+      'dist',
+      '**/*.e2e.{ts,js}',
+      'playwright.config.ts',
+      'vitest.config.ts'
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
