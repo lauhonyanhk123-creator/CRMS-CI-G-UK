@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-05-11T02:50:28.698893",
+  "tests": [
+    {
+      "name": "Page Title",
+      "status": "PASS",
+      "value": "CRMS - Contract Management System"
+    },
+    {
+      "name": "Login Page Load",
+      "status": "PASS",
+      "value": "Elements found: 0"
+    },
+    {
+      "name": "Console Errors",
+      "status": "PASS",
+      "value": "0 critical, 4 total"
+    }
+  ],
+  "screenshots": [
+    "login_page.png",
+    "page_structure.png"
+  ],
+  "console_errors": [
+    {
+      "type": "error",
+      "text": "The script has an unsupported MIME type ('text/html').",
+      "location": {
+        "url": "",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Service worker registration failed: SecurityError: Failed to register a ServiceWorker for scope ('http://localhost:5173/') with script ('http://localhost:5173/sw.js'): The script has an unsupported MIME type ('text/html').",
+      "location": {
+        "url": "http://localhost:5173/src/composables/usePWA.ts",
+        "lineNumber": 76,
+        "columnNumber": 16
+      }
+    },
+    {
+      "type": "error",
+      "text": "The script has an unsupported MIME type ('text/html').",
+      "location": {
+        "url": "",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Service worker registration failed: SecurityError: Failed to register a ServiceWorker for scope ('http://localhost:5173/') with script ('http://localhost:5173/sw.js'): The script has an unsupported MIME type ('text/html').",
+      "location": {
+        "url": "http://localhost:5173/src/composables/usePWA.ts",
+        "lineNumber": 76,
+        "columnNumber": 16
+      }
+    }
+  ],
+  "ui_elements": {
+    "login_view": 0,
+    "login_container": 0,
+    "login_header": 0,
+    "h1_title": 0,
+    "el_card": 0,
+    "login_form": 0,
+    "username_input": 0,
+    "password_input": 0,
+    "submit_button": 0,
+    "el_button": 0,
+    "el_checkbox": 0,
+    "demo_buttons": 0
+  },
+  "navigation": {
+    "items": [],
+    "count": 0
+  }
+}
