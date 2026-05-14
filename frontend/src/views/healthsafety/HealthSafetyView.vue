@@ -15,9 +15,7 @@ const showCPPDialog = ref(false)
 const showRAMSDialog = ref(false)
 const showPermitDialog = ref(false)
 const showIncidentDialog = ref(false)
-const showDetailDrawer = ref(false)
 const editingId = ref<string | null>(null)
-const detailRecord = ref<any>(null)
 
 // Form refs
 const f10FormRef = ref()
@@ -243,12 +241,6 @@ const openIncidentEdit = (row: Incident) => {
   editingId.value = row.id
   Object.assign(incidentForm, { title: row.title, siteId: row.siteId || '', status: row.status, data: row.data })
   showIncidentDialog.value = true
-}
-
-// View detail
-const _viewDetail = async (row: any, _type: string) => {
-  detailRecord.value = row
-  showDetailDrawer.value = true
 }
 
 // CRUD operations

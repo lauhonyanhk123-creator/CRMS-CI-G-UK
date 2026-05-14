@@ -75,7 +75,6 @@ describe('LoginView', () => {
     const wrapper = mount(LoginView, {
       global: { plugins: [router], stubs }
     })
-    const button = wrapper.find('button')
     // isFormValid is false with empty fields, button should have disabled attribute
     expect((wrapper.vm as any).isFormValid).toBe(false)
   })

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { TrendCharts } from '@element-plus/icons-vue'
 import type { Component } from 'vue'
 
 // Inline trend icons since TrendUp/TrendDown may not be in @element-plus/icons-vue

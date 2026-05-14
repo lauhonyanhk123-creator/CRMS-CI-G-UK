@@ -291,7 +291,7 @@ const handleExport = () => {
 }
 
 const getRowActions = (row: ApplicationResponse) => {
-  const actions: Array<{ label: string; action: Function; type?: string; icon?: any }> = [
+  const actions: Array<{ label: string; action: () => void; type?: string; icon?: any }> = [
     { label: 'View Details', action: () => viewApplication(row), type: 'primary' }
   ]
   

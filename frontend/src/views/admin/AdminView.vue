@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Key, WarningFilled, CircleCheckFilled, Connection, Promotion } from '@element-plus/icons-vue'
+import { Plus, Key, Connection, Promotion } from '@element-plus/icons-vue'
 import api from '@/services/api'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
