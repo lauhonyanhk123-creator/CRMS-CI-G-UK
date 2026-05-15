@@ -128,8 +128,8 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
       # Security
-      APP_SECRET_KEY: ${APP_SECRET_KEY:-changeme}
-      JWT_SECRET: ${JWT_SECRET:-changeme}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?APP_SECRET_KEY must be set in .env (see .env.example)}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env - generate with: openssl rand -base64 32}
       # HMRC Integration (sandbox by default)
       HMRC_API_MODE: sandbox
       # File storage
