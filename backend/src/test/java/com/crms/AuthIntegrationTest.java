@@ -2,6 +2,7 @@ package com.crms;
 
 import com.crms.config.JwtConfig;
 import com.crms.config.SecurityConfig;
+import com.crms.config.TestMetricsConfig;
 import com.crms.domain.user.entity.User;
 import com.crms.domain.user.enums.Role;
 import com.crms.dto.request.ChangePasswordRequest;
@@ -54,7 +55,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     JwtAuthenticationFilter.class,
     JwtTokenProvider.class,
     JwtConfig.class,
-    PasswordEncoderConfig.class
+    PasswordEncoderConfig.class,
+    TestMetricsConfig.class
 })
 @TestPropertySource(properties = {
     "app.jwt.secret=dGhpcy1pcy1jcm1zLXRlc3Qtand0LXNlY3JldC1rZXk=",
