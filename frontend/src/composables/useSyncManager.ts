@@ -1,7 +1,6 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { ElNotification } from 'element-plus'
 import { useOfflineSync, type PendingOperation } from './useOfflineSync'
-import { useAppStore } from '@/stores/app'
 
 export interface SyncManagerOptions {
   autoSync?: boolean
@@ -24,7 +23,6 @@ export function useSyncManager(options: SyncManagerOptions = {}) {
   } = options
 
   const offlineSync = useOfflineSync()
-  const appStore = useAppStore()
 
   const isSyncing = ref(false)
   const lastSyncTime = ref<number | null>(null)

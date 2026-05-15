@@ -76,7 +76,7 @@ const verifyCIS = async () => {
     cisVerificationResult.value = response.data
     company.value = response.data
     ElMessage.success('CIS verification completed')
-  } catch (error) {
+  } catch {
     ElMessage.error('CIS verification failed')
   } finally {
     verifyingCIS.value = false

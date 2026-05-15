@@ -385,20 +385,6 @@ const releaseBond = async (id: string) => {
   } catch (e) { console.error(e) }
 }
 
-const _callBond = async (_id: string) => {
-  try {
-    await ElMessageBox.prompt('Enter reason for calling bond:', 'Call Bond', {
-      confirmButtonText: 'Call',
-      cancelButtonText: 'Cancel',
-      inputErrorMessage: 'Please enter a reason'
-    }).then(async ({ value }) => {
-      await api.adoption.callBond(_id, value)
-      ElMessage.success('Bond called')
-      loadBonds()
-    })
-  } catch { /* cancelled */ }
-}
-
 // CRUD Operations - Commuted Sums
 const openCommutedSumDialog = (row?: CommutedSum) => {
   if (row) {

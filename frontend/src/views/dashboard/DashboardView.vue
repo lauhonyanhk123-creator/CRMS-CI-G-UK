@@ -423,7 +423,7 @@ const loadWIPSummary = async () => {
       approved: entries.filter((e: any) => e.status === 'approved').length,
       pending: entries.filter((e: any) => ['draft', 'submitted', 'reviewed'].includes(e.status)).length
     }
-  } catch (error) {
+  } catch {
     console.error('Failed to load WIP summary')
     wipSummary.value = { totalEntries: 0, approved: 0, pending: 0 }
   }

@@ -1,8 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
-import { useAppStore } from '@/stores/app'
-import { useOfflineSync, type PendingOperation } from './useOfflineSync'
+import { useOfflineSync } from './useOfflineSync'
 import router from '@/router'
 
 // Cache TTL in milliseconds
@@ -254,8 +253,6 @@ export class OfflineApiService {
     config: AxiosRequestConfig,
     options: OfflineApiOptions = {}
   ): Promise<{ data: T; source: 'network' | 'cache' | 'queued' }> {
-    const cacheEnabled = options.cacheEnabled ?? this.cacheEnabled
-    const staleWhileRevalidate = options.staleWhileRevalidate ?? false
     const queueIfOffline = options.queueIfOffline ?? this.queueIfOffline
     const method = config.method || 'GET'
 

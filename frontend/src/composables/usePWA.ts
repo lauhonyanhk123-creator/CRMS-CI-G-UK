@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ElNotification } from 'element-plus'
 import { useAppStore } from '@/stores/app'
 import { useOfflineSync } from './useOfflineSync'
@@ -128,7 +128,7 @@ export function usePWA() {
     return permission === 'granted'
   }
 
-  const showNotification = (title: string, options?: NotificationOptions) => {
+  const showNotification = (title: string, options?: Record<string, unknown>) => {
     if (Notification.permission === 'granted') {
       new Notification(title, options)
     }

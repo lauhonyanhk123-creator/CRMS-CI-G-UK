@@ -342,7 +342,7 @@ const loadPayLessNotices = async () => {
               </template>
             </el-table-column>
             <el-table-column label="Actions" width="100">
-              <template #default="{ row: _row }">
+              <template #default>
                 <el-button link type="primary" size="small">View</el-button>
               </template>
             </el-table-column>

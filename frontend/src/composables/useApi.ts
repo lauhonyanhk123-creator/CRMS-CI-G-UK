@@ -1,4 +1,4 @@
-import { ref, isRef } from 'vue'
+import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { AxiosError, AxiosRequestConfig } from 'axios'
 
@@ -20,7 +20,7 @@ export function useApi<T = any>(
   request: (config?: AxiosRequestConfig) => Promise<{ data: T }>,
   options: UseApiOptions = {}
 ): UseApiReturn<T> {
-  const { showSuccess = false, showError = true, errorTitle = 'Error' } = options
+  const { showSuccess = false, showError = true } = options
 
   const data = ref<T | null>(null) as import('vue').Ref<T | null>
   const loading = ref(false)

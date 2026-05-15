@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 
 interface Props {
@@ -23,7 +23,7 @@ interface Props {
   searchPlaceholder?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   loading: false,
   emptyText: 'No data available',
   showPagination: true,
