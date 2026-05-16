@@ -28,6 +28,24 @@ services:
         max-size: "100m"
         max-file: "20"
 
+  redis:
+    image: redis:7-alpine
+    container_name: crms-prod-redis
+    restart: always
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - crms-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 640M
+
   minio:
     image: minio/minio:latest
     container_name: crms-prod-minio
@@ -54,6 +72,7 @@ services:
     depends_on:
       - postgres
       - minio
+      - redis
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/crms
       SPRING_DATASOURCE_USERNAME: crms
@@ -66,6 +85,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       HMRC_API_MODE: ${HMRC_API_MODE:-production}
       SPRING_PROFILES_ACTIVE: prod
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     volumes:
       - uploads_prod:/data/uploads
     secrets:
@@ -128,6 +150,7 @@ networks:
 volumes:
   postgres_prod_data:
   minio_prod_data:
+  redis_prod_data:
   uploads_prod:
   nginx_prod_logs:
 

@@ -46,7 +46,7 @@ CREATE INDEX idx_itp_template_item_template ON itp_template_items (template_id);
 CREATE TABLE itp_schedules (
     id                  BIGSERIAL PRIMARY KEY,
     title               VARCHAR(255)    NOT NULL,
-    contract_id         BIGINT          NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+    contract_id         UUID            NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
     template_id         BIGINT          REFERENCES itp_templates(id) ON DELETE SET NULL,
     start_date          DATE,
     due_date            DATE,
@@ -138,7 +138,7 @@ CREATE INDEX idx_inspection_attachment_record ON inspection_attachments (inspect
 CREATE TABLE defects (
     id                   BIGSERIAL PRIMARY KEY,
     title                VARCHAR(255)    NOT NULL,
-    contract_id          BIGINT          NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+    contract_id          UUID            NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
     description          TEXT            NOT NULL,
     location             VARCHAR(500)    NOT NULL,
     priority             VARCHAR(50)     NOT NULL DEFAULT 'MEDIUM',
@@ -187,7 +187,7 @@ CREATE INDEX idx_defect_photo_defect ON defect_photos (defect_id);
 -- ============================================================
 CREATE TABLE sign_offs (
     id                    BIGSERIAL PRIMARY KEY,
-    contract_id           BIGINT          NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+    contract_id           UUID            NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
     building_control_type VARCHAR(50)     NOT NULL,
     inspection_type       VARCHAR(255)    NOT NULL,
     reference_number      VARCHAR(255),

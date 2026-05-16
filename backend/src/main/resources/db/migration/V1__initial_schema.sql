@@ -209,7 +209,7 @@ CREATE TABLE tender_documents (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
-    version BIGINT DEFAULT 0,
+    lock_version BIGINT DEFAULT 0,
     deleted_at TIMESTAMP
 );
 CREATE INDEX idx_tender_documents_tender ON tender_documents(tender_id);
@@ -915,7 +915,7 @@ CREATE TABLE construction_phase_plans (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
-    version BIGINT DEFAULT 0,
+    lock_version BIGINT DEFAULT 0,
     deleted_at TIMESTAMP
 );
 
@@ -952,7 +952,7 @@ CREATE TABLE rams_documents (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
-    version BIGINT DEFAULT 0,
+    lock_version BIGINT DEFAULT 0,
     deleted_at TIMESTAMP
 );
 CREATE INDEX idx_rams_documents_contract ON rams_documents(contract_id);

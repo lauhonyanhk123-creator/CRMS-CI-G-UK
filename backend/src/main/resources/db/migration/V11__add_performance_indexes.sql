@@ -1,30 +1,21 @@
 -- V11__add_performance_indexes.sql
 -- Construction Resource Management System for UK Groundworks
 -- Additional performance indexes for common query patterns
+--
+-- NOTE: Indexes for tables created in V14 (itp_*, inspection_records, defects, sign_offs)
+-- and V17 (commuted_sums, snagging_items, cdm_register, wip_reports, cost_transactions)
+-- are deferred to V19 so they run after those tables exist.
 
 -- ============================================
 -- Additional composite indexes for queries not covered in V6
 -- ============================================
 
--- Documents: indexes for document management queries
-CREATE INDEX IF NOT EXISTS idx_documents_entity ON documents(entity_type, entity_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_documents_type_created ON documents(type, created_at DESC) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_documents_uploaded_by ON documents(uploaded_by, created_at DESC) WHERE deleted_at IS NULL;
-
--- Commuted Sums: indexes for adoption case financial tracking
-CREATE INDEX IF NOT EXISTS idx_commuted_sums_case_status ON commuted_sums(adoption_case_id, status) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_commuted_sums_status_dates ON commuted_sums(status, commencement_date) WHERE deleted_at IS NULL;
-
 -- Commuted Sum Movements: indexes for financial ledger queries
-CREATE INDEX IF NOT EXISTS idx_commuted_sum_movements_case_date ON commuted_sum_movements(commuted_sum_id, movement_date DESC) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_commuted_sum_movements_case_date ON commuted_sum_movements(adoption_case_id, movement_date DESC) WHERE deleted_at IS NULL;
 
 -- Bonds: indexes for bond tracking
 CREATE INDEX IF NOT EXISTS idx_bonds_case_status ON bonds(adoption_case_id, status) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_bonds_expiry ON bonds(expiry_date, status) WHERE deleted_at IS NULL;
-
--- Snagging Items: indexes for defect/snagging tracking
-CREATE INDEX IF NOT EXISTS idx_snagging_items_case_status ON snagging_items(adoption_case_id, status) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_snagging_items_priority_status ON snagging_items(priority, status) WHERE deleted_at IS NULL;
 
 -- Adoption Stages: additional indexes for stage sequencing
 CREATE INDEX IF NOT EXISTS idx_adoption_stages_case_status ON adoption_stages(adoption_case_id, status) WHERE deleted_at IS NULL;
@@ -39,38 +30,20 @@ CREATE INDEX IF NOT EXISTS idx_daily_pre_use_checks_plant_date ON daily_pre_use_
 CREATE INDEX IF NOT EXISTS idx_daily_pre_use_checks_operator ON daily_pre_use_checks(operative_id, check_date DESC) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_daily_pre_use_checks_site_date ON daily_pre_use_checks(site_id, check_date DESC) WHERE deleted_at IS NULL;
 
--- CAT Scan Records: indexes for underground service scanning
-CREATE INDEX IF NOT EXISTS idx_cat_scan_records_site_date ON cat_scan_records(site_id, scan_date DESC) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_cat_scan_records_status ON cat_scan_records(status, scan_date DESC) WHERE deleted_at IS NULL;
-
--- F10 Notifications: indexes for CDM notification tracking
-CREATE INDEX IF EXISTS idx_f10_notifications_project_status ON f10_notifications(project_id, status) WHERE deleted_at IS NULL;
-CREATE INDEX IF EXISTS idx_f10_notifications_expiry ON f10_notifications(expiry_date, status) WHERE deleted_at IS NULL;
-
--- CDM Register: indexes for construction phase plan tracking
-CREATE INDEX IF NOT EXISTS idx_cdm_register_contract_status ON cdm_register(contract_id, status) WHERE deleted_at IS NULL;
-
--- ITP Schedules: indexes for inspection and test plan tracking
-CREATE INDEX IF NOT EXISTS idx_itp_schedules_contract_status ON itp_schedules(contract_id, status) WHERE deleted_at IS NULL;
-
--- Sign-offs: indexes for quality sign-off tracking
-CREATE INDEX IF NOT EXISTS idx_sign_offs_schedule_status ON sign_offs(itp_schedule_id, status) WHERE deleted_at IS NULL;
-
--- Inspection Records: indexes for inspection history
-CREATE INDEX IF NOT EXISTS idx_inspection_records_schedule_item ON inspection_records(itp_schedule_id, itp_item_id) WHERE deleted_at IS NULL;
-
--- Defects: indexes for defect tracking
-CREATE INDEX IF NOT EXISTS idx_defects_contract_status ON defects(contract_id, status) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_defects_priority_status ON defects(priority, status) WHERE deleted_at IS NULL;
-
 -- Retention Movements: indexes for retention ledger queries
 CREATE INDEX IF NOT EXISTS idx_retention_movements_ledger_date ON retention_movements(retention_ledger_id, movement_date DESC) WHERE deleted_at IS NULL;
 
--- Payment Certificates: indexes for payment cycle queries
-CREATE INDEX IF NOT EXISTS idx_payment_certificates_contract_period ON payment_certificates(contract_id, certificate_period_start) WHERE deleted_at IS NULL;
+-- Payment Certificates: index on the actual FK column
+CREATE INDEX IF NOT EXISTS idx_payment_certificates_application ON payment_certificates(application_id) WHERE deleted_at IS NULL;
 
--- Pay Less Notices: indexes for notice tracking
-CREATE INDEX IF NOT EXISTS idx_pay_less_notices_certificate ON pay_less_notices(payment_certificate_id) WHERE deleted_at IS NULL;
+-- Pay Less Notices: index on the actual FK column
+CREATE INDEX IF NOT EXISTS idx_pay_less_notices_application ON pay_less_notices(application_id) WHERE deleted_at IS NULL;
+
+-- F10 Notifications: index on contract FK
+CREATE INDEX IF NOT EXISTS idx_f10_notifications_contract ON f10_notifications(contract_id) WHERE deleted_at IS NULL;
+
+-- CAT Scan Records: index on scan_date (no site_id or status column in this table)
+CREATE INDEX IF NOT EXISTS idx_cat_scan_records_scan_date ON cat_scan_records(scan_date DESC) WHERE deleted_at IS NULL;
 
 -- ============================================
 -- Partial indexes for frequently filtered queries

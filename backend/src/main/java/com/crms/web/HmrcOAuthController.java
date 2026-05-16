@@ -8,12 +8,14 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RestController
@@ -25,6 +27,9 @@ public class HmrcOAuthController {
 
     private final HmrcOAuthService oAuthService;
     private final IntegrationProperties properties;
+    private final StringRedisTemplate redisTemplate;
+
+    private static final String OAUTH_STATE_PREFIX = "hmrc:oauth:state:";
 
     @GetMapping("/begin")
     @PreAuthorize("hasRole('ADMIN')")
@@ -38,6 +43,7 @@ public class HmrcOAuthController {
         }
 
         String state = UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set(OAUTH_STATE_PREFIX + state, "1", 10, TimeUnit.MINUTES);
         String authUrl = oAuthService.buildAuthorizationUrl(state);
 
         log.info("HMRC OAuth2 authorisation initiated for contractor UTR {}", contractorUtr);
@@ -63,6 +69,14 @@ public class HmrcOAuthController {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("HMRC authorisation denied: " + errorDescription));
         }
+
+        // Validate CSRF state parameter
+        if (state == null || !Boolean.TRUE.equals(redisTemplate.hasKey(OAUTH_STATE_PREFIX + state))) {
+            log.warn("HMRC OAuth2 callback received invalid or missing state parameter");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Invalid or expired OAuth2 state — please restart the authorisation flow"));
+        }
+        redisTemplate.delete(OAUTH_STATE_PREFIX + state);
 
         String contractorUtr = properties.getHmrc().getContractorUtr();
         if (contractorUtr == null || contractorUtr.isBlank()) {

@@ -31,16 +31,17 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, jwtConfig.getExpiration());
+        return buildToken(extraClaims, userDetails, jwtConfig.getExpiration(), "access");
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails, jwtConfig.getRefreshExpiration());
+        return buildToken(new HashMap<>(), userDetails, jwtConfig.getRefreshExpiration(), "refresh");
     }
 
-    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
+    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration, String tokenType) {
         Map<String, Object> claims = new HashMap<>(extraClaims);
-        claims.put("jti", UUID.randomUUID().toString()); // unique per token
+        claims.put("jti", UUID.randomUUID().toString());
+        claims.put("token_type", tokenType);
         return Jwts.builder()
                 .claims(claims)
                 .subject(userDetails.getUsername())
@@ -114,15 +115,15 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(String username) {
-        return generateToken(new HashMap<>(), User.withUsername(username).password("").authorities("USER").build());
+        return buildToken(new HashMap<>(), User.withUsername(username).password("").authorities("USER").build(), jwtConfig.getExpiration(), "access");
     }
 
     public String generateRefreshToken(String username) {
-        return generateRefreshToken(User.withUsername(username).password("").authorities("USER").build());
+        return buildToken(new HashMap<>(), User.withUsername(username).password("").authorities("USER").build(), jwtConfig.getRefreshExpiration(), "refresh");
     }
 
     public String generateToken(Map<String, Object> extraClaims, String username) {
-        return generateToken(extraClaims, User.withUsername(username).password("").authorities("USER").build());
+        return buildToken(extraClaims, User.withUsername(username).password("").authorities("USER").build(), jwtConfig.getExpiration(), "access");
     }
     public String generateToken(String username, java.util.Set<com.crms.domain.user.enums.Role> roles) {
         Map<String, Object> claims = new HashMap<>();
@@ -148,6 +149,16 @@ public class JwtTokenProvider {
         try {
             Claims claims = extractAllClaims(token);
             return Boolean.TRUE.equals(claims.get("totp_challenge"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            String type = (String) claims.get("token_type");
+            return "access".equals(type);
         } catch (Exception e) {
             return false;
         }
