@@ -18,7 +18,7 @@ services:
     environment:
       POSTGRES_DB: crms
       POSTGRES_USER: crms
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -50,8 +50,8 @@ services:
       retries: 3
       start_period: 60s
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-crms}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-changeme}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set in .env}
       MINIO_SITE_NAME: "CRMS CI G UK"
       MINIO_SITE_REGION: "eu-west-2"
       TZ: "Europe/London"
@@ -73,11 +73,11 @@ services:
     restart: unless-stopped
     command: >
       redis-server
-      --requirepass ${REDIS_PASSWORD:-changeme}
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env}
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -116,20 +116,22 @@ services:
       # Database
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/crms
       SPRING_DATASOURCE_USERNAME: crms
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       # MinIO
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-crms}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-changeme}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set in .env}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set in .env}
       # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env}
       # Security
-      APP_SECRET_KEY: ${APP_SECRET_KEY:-changeme}
-      JWT_SECRET: ${JWT_SECRET:-changeme}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?APP_SECRET_KEY must be set in .env (see .env.example)}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env - generate with: openssl rand -base64 32}
+      # CORS — set to your actual frontend domain in .env (see .env.example)
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:}
       # HMRC Integration (sandbox by default)
       HMRC_API_MODE: sandbox
       # File storage
@@ -215,7 +217,7 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_DB: crms
       POSTGRES_USER: crms
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       BACKUP_DIR: /backups
       RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
     volumes:

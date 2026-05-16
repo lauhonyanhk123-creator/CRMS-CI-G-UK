@@ -42,7 +42,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.addRole(Role.ROLE_IT_ADMIN);
             
             userRepository.save(admin);
-            log.info("Default admin user created successfully: admin@crms.local / Admin123!");
+            log.info("Default admin user created: admin@crms.local (see V18 migration for initial credentials)");
             
             // Create additional default users
             createDefaultUser("ops_director", "ops@crms.local", "Operations", "Director", 

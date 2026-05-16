@@ -71,6 +71,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // --- End blacklist check ---
 
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
+                // Reject TOTP challenge tokens — they are not access tokens
+                if (jwtTokenProvider.isTotpChallengeToken(jwt)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"TOTP challenge token cannot be used as Bearer auth\",\"code\":\"INVALID_TOKEN_TYPE\"}");
+                    return;
+                }
+                // Reject refresh tokens presented as Bearer auth
+                if (!jwtTokenProvider.isAccessToken(jwt)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"Refresh token cannot be used as Bearer auth\",\"code\":\"INVALID_TOKEN_TYPE\"}");
+                    return;
+                }
+
                 String username = jwtTokenProvider.extractUsername(jwt);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);

@@ -9,8 +9,8 @@ CREATE TABLE cdm_register (
     project_name                    VARCHAR(255) NOT NULL,
     project_address                 TEXT,
     project_description             TEXT,
-    client_id                       BIGINT NOT NULL REFERENCES companies(id),
-    site_id                         BIGINT REFERENCES sites(id),
+    client_id                       UUID NOT NULL REFERENCES companies(id),
+    site_id                         UUID REFERENCES sites(id),
     principal_designer_name         VARCHAR(255),
     principal_designer_email        VARCHAR(255),
     principal_designer_phone        VARCHAR(100),
@@ -41,7 +41,7 @@ CREATE INDEX idx_cdm_notification_number ON cdm_register (notification_number);
 -- ─── Commuted Sums (Adoption) ────────────────────────────────────────────────
 CREATE TABLE commuted_sums (
     id                 BIGSERIAL PRIMARY KEY,
-    adoption_case_id   BIGINT NOT NULL REFERENCES adoption_cases(id),
+    adoption_case_id   UUID NOT NULL REFERENCES adoption_cases(id),
     commuted_sum_type  VARCHAR(100) NOT NULL,
     total_amount       NUMERIC(12,2) NOT NULL,
     paid_amount        NUMERIC(12,2) NOT NULL DEFAULT 0,
@@ -57,7 +57,7 @@ CREATE INDEX idx_cs_type ON commuted_sums (commuted_sum_type);
 -- ─── Snagging Items (Adoption) ───────────────────────────────────────────────
 CREATE TABLE snagging_items (
     id                      BIGSERIAL PRIMARY KEY,
-    adoption_case_id        BIGINT NOT NULL REFERENCES adoption_cases(id),
+    adoption_case_id        UUID NOT NULL REFERENCES adoption_cases(id),
     description             VARCHAR(1000) NOT NULL,
     location                VARCHAR(255),
     priority                VARCHAR(50) NOT NULL DEFAULT 'MEDIUM',
@@ -80,7 +80,7 @@ CREATE INDEX idx_snagging_priority ON snagging_items (priority);
 -- ─── WIP Reports (Financial) ─────────────────────────────────────────────────
 CREATE TABLE wip_reports (
     id                BIGSERIAL PRIMARY KEY,
-    contract_id       BIGINT NOT NULL REFERENCES contracts(id),
+    contract_id       UUID NOT NULL REFERENCES contracts(id),
     report_date       DATE NOT NULL,
     period_start      DATE NOT NULL,
     period_end        DATE NOT NULL,
@@ -124,7 +124,7 @@ CREATE INDEX idx_je_wip_report      ON journal_entries (wip_report_id);
 -- ─── Cost Transactions (Financial) ───────────────────────────────────────────
 CREATE TABLE cost_transactions (
     id               BIGSERIAL PRIMARY KEY,
-    contract_id      BIGINT NOT NULL REFERENCES contracts(id),
+    contract_id      UUID NOT NULL REFERENCES contracts(id),
     transaction_date DATE NOT NULL,
     description      VARCHAR(500),
     category         VARCHAR(100),
